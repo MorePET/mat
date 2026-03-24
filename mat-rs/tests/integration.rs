@@ -1,6 +1,6 @@
 //! Integration tests: load actual py-mat TOML data and verify material properties.
 
-use mat_rs::{MaterialDb, parse_formula, formula_to_mass_fractions, mass_to_atom_fractions, atom_to_mass_fractions};
+use rs_materials::{MaterialDb, parse_formula, formula_to_mass_fractions, mass_to_atom_fractions, atom_to_mass_fractions};
 
 fn db() -> MaterialDb {
     MaterialDb::from_pymat_data().expect("failed to load py-mat data")
@@ -376,5 +376,5 @@ fn thread_safety() {
     // MaterialDb should be Send + Sync for Arc sharing
     fn assert_send_sync<T: Send + Sync>() {}
     assert_send_sync::<MaterialDb>();
-    assert_send_sync::<mat_rs::Material>();
+    assert_send_sync::<rs_materials::Material>();
 }

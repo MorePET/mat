@@ -1,8 +1,8 @@
-name: Release mat-rs
+name: Release rs-materials
 
 on:
   push:
-    tags: ["mat-rs/v*"]
+    tags: ["rs-materials/v*"]
 
 permissions:
   contents: write

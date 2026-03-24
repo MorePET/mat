@@ -1,5 +1,5 @@
 [package]
-name = "mat-rs"
+name = "rs-materials"
 version = "0.1.0"
 edition = "2024"
 description = "Material database and formula parsing for Monte Carlo particle transport"

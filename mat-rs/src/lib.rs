@@ -1,4 +1,4 @@
-//! # mat-rs
+//! # rs-materials
 //!
 //! Material database and formula parsing for Monte Carlo particle transport.
 //!
@@ -9,9 +9,9 @@
 //! ## Quick start
 //!
 //! ```no_run
-//! use mat_rs::MaterialDb;
+//! use rs_materials::MaterialDb;
 //!
-//! let db = MaterialDb::open("path/to/py-mat/data").unwrap();
+//! let db = MaterialDb::open("path/to/mat/data").unwrap();
 //! let lyso = db.get("lyso").unwrap();
 //! assert_eq!(lyso.density(), Some(7.1));
 //! ```
@@ -19,7 +19,7 @@
 //! ## Formula parsing (standalone)
 //!
 //! ```
-//! let elems = mat_rs::parse_formula("Lu1.8Y0.2SiO5").unwrap();
+//! let elems = rs_materials::parse_formula("Lu1.8Y0.2SiO5").unwrap();
 //! assert_eq!(elems[0], ("Lu".into(), 1.8));
 //! ```
 
