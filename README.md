@@ -1,27 +1,51 @@
-# pymat
+# mat
 
-A hierarchical material library for CAD applications with build123d integration.
+Material database for CAD and Monte Carlo particle transport.
+
+Shared TOML data files with language-specific packages:
+
+| Package | Language | Registry | Import |
+|---------|----------|----------|--------|
+| [py-materials](https://pypi.org/project/py-materials/) | Python | PyPI | `import pymat` |
+| [rs-materials](mat-rs/) | Rust | crates.io | `use rs_materials::...` |
 
 ## Features
+
+### Python (py-materials)
 
 - **Hierarchical Materials**: Chain grades, tempers, treatments, and vendors
 - **Property Inheritance**: Children inherit parent properties unless overridden
 - **Lazy Loading**: Categories load on first access
-- **TOML Data Storage**: Easy-to-edit material definitions
 - **build123d Integration**: Apply materials to shapes with automatic mass calculation
 - **PBR Rendering**: Physically-based rendering properties for visualization
 - **periodictable Integration**: Auto-fill density from chemical formulas
 - **Factory Functions**: Temperature/pressure-dependent materials (water, air, saline)
-- **Separation of Concerns**: Optical properties (physics) separate from PBR (visualization)
+
+### Rust (rs-materials)
+
+- **TOML Database Reader**: Loads all 7 material categories with property inheritance
+- **Formula Parser**: Fractional stoichiometry (`Lu1.8Y0.2SiO5` → element/count pairs)
+- **Mass/Atom Fraction Conversion**: Bidirectional with roundtrip correctness
+- **Scintillator Properties**: Light yield, decay time, emission peak, refractive index
+- **Thread-Safe**: `Send + Sync` for `Arc` sharing in multi-threaded transport engines
 
 ## Installation
 
+### Python
+
 ```bash
 # With uv (recommended)
-uv add git+https://github.com/MorePET/py-mat.git@latest
+uv add git+https://github.com/MorePET/mat.git@latest
 
 # Or specify version
-uv add git+https://github.com/MorePET/py-mat.git@v1.0.0
+uv add git+https://github.com/MorePET/mat.git@v1.0.0
+```
+
+### Rust
+
+```toml
+[dependencies]
+rs-materials = { git = "https://github.com/MorePET/mat.git" }
 ```
 
 ## Quick Start
@@ -400,6 +424,6 @@ MIT
 
 ## Links
 
-- **GitHub**: https://github.com/MorePET/py-mat
-- **Issues**: https://github.com/MorePET/py-mat/issues
+- **GitHub**: https://github.com/MorePET/mat
+- **Issues**: https://github.com/MorePET/mat/issues
 

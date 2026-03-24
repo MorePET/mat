@@ -1,12 +1,12 @@
-# Release Process for py-mat
+# Release Process for mat
 
 ## Creating a New Release
 
-When releasing a new version of py-mat:
+When releasing a new version of mat:
 
 1. **Update version numbers:**
    ```bash
-   cd /Users/larsgerchow/Projects/py-mat
+   cd /Users/larsgerchow/Projects/mat
    
    # Edit version in:
    # - pyproject.toml
@@ -37,7 +37,7 @@ Projects can now use:
 
 ```toml
 [tool.uv.sources]
-pymat = { git = "https://github.com/MorePET/py-mat.git", tag = "latest" }
+pymat = { git = "https://github.com/MorePET/mat.git", tag = "latest" }
 ```
 
 This gives:
@@ -50,12 +50,12 @@ This gives:
 
 ### Pin to specific version:
 ```toml
-pymat = { git = "https://github.com/MorePET/py-mat.git", tag = "v0.1.1" }
+pymat = { git = "https://github.com/MorePET/mat.git", tag = "v0.1.1" }
 ```
 
 ### Track main branch (bleeding edge):
 ```toml
-pymat = { git = "https://github.com/MorePET/py-mat.git", branch = "main" }
+pymat = { git = "https://github.com/MorePET/mat.git", branch = "main" }
 ```
 
 ### From PyPI (when published):
