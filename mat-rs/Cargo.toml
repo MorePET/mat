@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 description = "Material database and formula parsing for Monte Carlo particle transport"
 license = "MIT"
+repository = "https://github.com/MorePET/mat"
+homepage = "https://github.com/MorePET/mat"
+keywords = ["materials", "physics", "monte-carlo", "scintillator"]
+categories = ["science"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
