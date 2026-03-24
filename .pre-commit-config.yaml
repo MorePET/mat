@@ -1,0 +1,84 @@
+---
+# .pre-commit-config.yaml
+
+exclude: ^.github_data/|^docs/issues/|^docs/pull-requests/
+
+repos:
+  # General Pre-commit Hooks (Fixes formatting issues)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # v5.0.0
+    hooks:
+      # Enforce topic branch naming:
+      # - chore/<short_summary> (no issue required)
+      # - <type>/<issue_number>-<short_summary> (for feature, bugfix, etc.)
+      # - worktree/<issue_number> (autonomous worktree branches)
+      # Allows main, dev, and branches matching the convention.
+      - id: no-commit-to-branch
+        name: branch-name (enforce <type>/<issue>-<summary>)
+        args:
+          - --branch
+          - __none__  # override default so main/dev are not protected
+          - --pattern
+          - "^(?!main$)(?!dev$)(?!^(chore)/[a-z0-9]+(-[a-z0-9]+)*$)(?!^(feature|bugfix|hotfix|release|docs|test|refactor)/[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$)(?!^worktree/[0-9]+$).+$"
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  # Python Linting and Formatting (Ruff)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: aad66557af3b56ba6d4d69cd1b6cba87cef50cbb  # v0.14.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # YAML Linting
+  - repo: https://github.com/adrienverge/yamllint
+    rev: 81e9f98ffd059efe8aa9c1b1a42e5cce61b640c6  # v1.35.1
+    hooks:
+      - id: yamllint
+        args: ["--format", "parsable", "--strict"]
+
+  # Shellcheck
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: a23f6b85d0fdd5bb9d564e2579e678033debbdff  # v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        args: ["-x"]
+        exclude: ^\.envrc$
+
+  # Markdown Linting (excludes auto-generated docs)
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: f93643d339dfee2a1022e7b05e8b5a281bfac553  # v0.9.23
+    hooks:
+      - id: pymarkdown
+        name: pymarkdown
+        args: ["-c", ".pymarkdown", "fix"]
+        exclude: ^(README\.md|CONTRIBUTE\.md|TESTING\.md)
+
+  # Justfile formatting
+  - repo: local
+    hooks:
+      - id: just-fmt
+        name: just (format justfiles)
+        entry: just --fmt --unstable
+        language: system
+        files: ^justfile(\..*)?$
+        pass_filenames: false
+
+  # Typo Linting
+  - repo: https://github.com/crate-ci/typos
+    rev: 07d900b8fa1097806b8adb6391b0d3e0ac2fdea7  # v1.39.0
+    hooks:
+      - id: typos

@@ -1,0 +1,21 @@
+{
+  "files.associations": {
+    "justfile": "just",
+    "Justfile": "just",
+    "justfile.*": "just"
+  },
+  "python.defaultInterpreterPath": "/opt/venv/bin/python3",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll": "explicit"
+    }
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true
+  }
+}

@@ -1,0 +1,147 @@
+# Canonical repository labels.
+# Single source of truth — referenced by:
+#   - uv run setup-labels                   (provision labels on a repo)
+#   - .cursor/skills/issue_triage/SKILL.md  (triage label check)
+#   - .cursor/skills/issue_create/SKILL.md  (agent label mapping)
+#   - .github/ISSUE_TEMPLATE/*.yml          (template label values)
+#
+# Label reconciliation:
+#   Run `uv run setup-labels` after repo creation to create/update labels
+#   The `setup-labels` command is provided by devcontainer bootstrap tooling.
+#   from this taxonomy. Use `--prune` to remove org-default labels that don't
+#   match the taxonomy. Use `--dry-run` to preview changes first.
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+
+[[labels]]
+name = "bug"
+description = "Something isn't working"
+color = "d73a4a"
+
+[[labels]]
+name = "chore"
+description = "General tasks (e.g. update dependencies, contact a manufacturer, read a paper)"
+color = "c5def5"
+
+[[labels]]
+name = "discussion"
+description = "Discuss new ideas"
+color = "d4c5f9"
+
+[[labels]]
+name = "docs"
+description = "Improvements or additions to documentation"
+color = "0075ca"
+
+[[labels]]
+name = "feature"
+description = "New feature or request"
+color = "a2eeef"
+
+[[labels]]
+name = "refactor"
+description = "Modifications that do not bring any significant change (e.g. style, reorganization)"
+color = "fbca04"
+
+[[labels]]
+name = "security"
+description = "Vulnerability fixes or security improvements"
+color = "e4e669"
+
+[[labels]]
+name = "wontfix"
+description = "This will not be worked on (duplicate, irrelevant...)"
+color = "ffffff"
+
+# ── Priority ──────────────────────────────────────────────────────────────────
+
+[[labels]]
+name = "priority:backlog"
+description = "Someday/maybe, no timeline"
+color = "c5def5"
+
+[[labels]]
+name = "priority:blocking"
+description = "Blocks other work or a release"
+color = "b60205"
+
+[[labels]]
+name = "priority:high"
+description = "Should be done in the current milestone"
+color = "d93f0b"
+
+[[labels]]
+name = "priority:low"
+description = "Nice to have, do when capacity allows"
+color = "0e8a16"
+
+[[labels]]
+name = "priority:medium"
+description = "Important but not urgent"
+color = "fbca04"
+
+# ── Area ──────────────────────────────────────────────────────────────────────
+
+[[labels]]
+name = "area:ci"
+description = "CI/CD, GitHub Actions, workflows"
+color = "1d76db"
+
+[[labels]]
+name = "area:docs"
+description = "Documentation, README, guides"
+color = "1d76db"
+
+[[labels]]
+name = "area:image"
+description = "Container image, Dockerfile, build"
+color = "1d76db"
+
+[[labels]]
+name = "area:testing"
+description = "Test infrastructure, BATS, pytest"
+color = "1d76db"
+
+[[labels]]
+name = "area:workflow"
+description = "Developer workflow, commands, rules, skills"
+color = "1d76db"
+
+[[labels]]
+name = "area:workspace"
+description = "Workspace tooling, justfile, templates"
+color = "1d76db"
+
+# ── Effort ────────────────────────────────────────────────────────────────────
+
+[[labels]]
+name = "effort:large"
+description = "More than 4 hours or multi-session"
+color = "f9d0c4"
+
+[[labels]]
+name = "effort:medium"
+description = "1-4 hours"
+color = "fef2c0"
+
+[[labels]]
+name = "effort:small"
+description = "Less than 1 hour"
+color = "c2e0c6"
+
+# ── SemVer ────────────────────────────────────────────────────────────────────
+
+[[labels]]
+name = "semver:major"
+description = "Breaking change"
+color = "b60205"
+
+[[labels]]
+name = "semver:minor"
+description = "New feature, backward-compatible"
+color = "fbca04"
+
+[[labels]]
+name = "semver:patch"
+description = "Bug fix, backward-compatible"
+color = "0e8a16"

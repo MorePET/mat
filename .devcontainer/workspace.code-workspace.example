@@ -1,0 +1,27 @@
+{
+    "$schema": "https://aka.ms/vscode-workspace-schema",
+    "name": "devcontainer",
+    "folders": [
+        {
+            "name": "devcontainer",
+            "path": "."
+        },
+        {
+            "name": "Project 2",
+            "path": "../project2"
+        },
+        {
+            "name": "Project 3",
+            "path": "/home/user/projects/project3"
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "**/.git": true,
+            "**/.DS_Store": true
+        },
+        "search.exclude": {
+            ".pre-commit-cache": true
+        }
+    }
+}

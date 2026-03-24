@@ -1,0 +1,25 @@
+---
+services:
+  devcontainer:
+    image: ghcr.io/vig-os/devcontainer:${DEVCONTAINER_VERSION:-latest}
+    volumes:
+      # Mount the project folder to a subdirectory of workspace
+      - ..:/workspace/py_mat:cached
+      # Container socket for Docker-out-of-Docker (DooD) - enables sidecars
+      # Path is set by initialize.sh in .env, falls back to Docker default
+      - "${CONTAINER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock"
+    environment:
+      # PRE_COMMIT_HOME, UV_PROJECT_ENVIRONMENT, VIRTUAL_ENV are set in the image (Containerfile)
+      # Tell Podman/Docker to use the mounted socket (for sidecars and container builds)
+      - CONTAINER_HOST=unix:///var/run/docker.sock
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    # Keep container running for VS Code to attach
+    command: sleep infinity
+    # Use root user (default from image)
+    user: root
+    # Keep stdin open and allocate a pseudo-TTY for interactive use
+    stdin_open: true
+    tty: true
+    # Disable SELinux labeling to allow socket access (required for sidecars)
+    security_opt:
+      - label=disable

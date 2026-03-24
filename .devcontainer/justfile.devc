@@ -1,0 +1,305 @@
+# ===============================================================================
+# DEVCONTAINER RECIPES - DO NOT EDIT
+# Managed by vigOS devcontainer. Customizations go in root justfile.
+# ===============================================================================
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# -------------------------------------------------------------------------------
+# VERSION CHECK
+# -------------------------------------------------------------------------------
+
+# Check for devcontainer updates (verbose)
+# Usage: just check [config|on|off|<duration>]
+# Examples: just check, just check config, just check off, just check 7d
+[group('info')]
+check *args:
+    #!/usr/bin/env bash
+    SCRIPT_DIR="$(cd "{{source_directory()}}/scripts" && pwd)" || {
+        echo "Error: Could not locate .devcontainer/scripts directory"
+        exit 1
+    }
+
+    if [[ ! -f "$SCRIPT_DIR/version-check.sh" ]]; then
+        echo "Error: version-check.sh not found at $SCRIPT_DIR"
+        exit 1
+    fi
+
+    # No args provided: default to verbose check mode.
+    # Otherwise pass all args through as provided by just.
+    "$SCRIPT_DIR/version-check.sh" {{ if args == '' { 'check' } else { args } }}
+
+# Upgrade devcontainer to latest version (host-side only)
+# This recipe MUST be run from a host terminal, not inside the container
+[group('info')]
+devcontainer-upgrade:
+    #!/usr/bin/env bash
+    # Detect if running inside a container
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo ""
+        echo "❌ ERROR: This command must be run from a HOST terminal"
+        echo ""
+        echo "You are currently inside the devcontainer."
+        echo "Open a new terminal on your host machine and run:"
+        echo ""
+        echo "    cd $(pwd)"
+        echo "    just devcontainer-upgrade"
+        echo ""
+        echo "Or use the curl method:"
+        echo ""
+        echo "    curl -sSf https://vig-os.github.io/devcontainer/install.sh | sh -s -- --force ."
+        echo ""
+        exit 1
+    fi
+
+    # We're on the host - proceed with upgrade
+    echo "🚀 Upgrading devcontainer to latest version..."
+    echo ""
+
+    # Check if podman or docker is available
+    if command -v podman &> /dev/null; then
+        RUNTIME="podman"
+    elif command -v docker &> /dev/null; then
+        RUNTIME="docker"
+    else
+        echo "❌ ERROR: Neither podman nor docker is installed"
+        echo ""
+        echo "Please install one of them first:"
+        echo "  macOS:  brew install podman && podman machine init && podman machine start"
+        echo "  Linux:  sudo apt install podman   # or equivalent for your distro"
+        echo ""
+        exit 1
+    fi
+
+    echo "✓ Using $RUNTIME"
+    echo ""
+    echo "Downloading and running install script..."
+    curl -sSf https://vig-os.github.io/devcontainer/install.sh | sh -s -- --force .
+
+# -------------------------------------------------------------------------------
+# DEVCONTAINER (host-side only)
+# -------------------------------------------------------------------------------
+# These recipes must be run from the host, not inside the container.
+# Compose command: podman compose preferred, fallback to docker compose.
+
+# Start devcontainer + sidecars via compose
+[group('devcontainer')]
+up:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just up"
+        exit 1
+    fi
+    cd .devcontainer || exit 1
+    COMPOSE_OPTS="-f docker-compose.yml -f docker-compose.project.yaml"
+    [ -f docker-compose.local.yaml ] && COMPOSE_OPTS="$COMPOSE_OPTS -f docker-compose.local.yaml"
+    if command -v podman &>/dev/null && podman compose version &>/dev/null 2>&1; then
+        podman compose $COMPOSE_OPTS up -d
+    elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
+        docker compose $COMPOSE_OPTS up -d
+    else
+        echo "[ERROR] Need podman or docker with compose"
+        exit 1
+    fi
+
+# Stop and remove containers
+[group('devcontainer')]
+down:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just down"
+        exit 1
+    fi
+    cd .devcontainer || exit 1
+    COMPOSE_OPTS="-f docker-compose.yml -f docker-compose.project.yaml"
+    [ -f docker-compose.local.yaml ] && COMPOSE_OPTS="$COMPOSE_OPTS -f docker-compose.local.yaml"
+    if command -v podman &>/dev/null && podman compose version &>/dev/null 2>&1; then
+        podman compose $COMPOSE_OPTS down
+    elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
+        docker compose $COMPOSE_OPTS down
+    else
+        echo "[ERROR] Need podman or docker with compose"
+        exit 1
+    fi
+
+# Show container status
+[group('devcontainer')]
+status:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just status"
+        exit 1
+    fi
+    cd .devcontainer || exit 1
+    COMPOSE_OPTS="-f docker-compose.yml -f docker-compose.project.yaml"
+    [ -f docker-compose.local.yaml ] && COMPOSE_OPTS="$COMPOSE_OPTS -f docker-compose.local.yaml"
+    if command -v podman &>/dev/null && podman compose version &>/dev/null 2>&1; then
+        podman compose $COMPOSE_OPTS ps
+    elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
+        docker compose $COMPOSE_OPTS ps
+    else
+        echo "[ERROR] Need podman or docker with compose"
+        exit 1
+    fi
+
+# Tail container logs
+[group('devcontainer')]
+logs *args:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just logs"
+        exit 1
+    fi
+    cd .devcontainer || exit 1
+    COMPOSE_OPTS="-f docker-compose.yml -f docker-compose.project.yaml"
+    [ -f docker-compose.local.yaml ] && COMPOSE_OPTS="$COMPOSE_OPTS -f docker-compose.local.yaml"
+    if command -v podman &>/dev/null && podman compose version &>/dev/null 2>&1; then
+        podman compose $COMPOSE_OPTS logs {{ args }}
+    elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
+        docker compose $COMPOSE_OPTS logs {{ args }}
+    else
+        echo "[ERROR] Need podman or docker with compose"
+        exit 1
+    fi
+
+# Open bash in running devcontainer
+[group('devcontainer')]
+shell:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just shell"
+        exit 1
+    fi
+    cd .devcontainer || exit 1
+    COMPOSE_OPTS="-f docker-compose.yml -f docker-compose.project.yaml"
+    [ -f docker-compose.local.yaml ] && COMPOSE_OPTS="$COMPOSE_OPTS -f docker-compose.local.yaml"
+    if command -v podman &>/dev/null && podman compose version &>/dev/null 2>&1; then
+        podman compose $COMPOSE_OPTS exec devcontainer bash
+    elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
+        docker compose $COMPOSE_OPTS exec devcontainer bash
+    else
+        echo "[ERROR] Need podman or docker with compose"
+        exit 1
+    fi
+
+# Restart service(s)
+[group('devcontainer')]
+restart *args:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just restart"
+        exit 1
+    fi
+    cd .devcontainer || exit 1
+    COMPOSE_OPTS="-f docker-compose.yml -f docker-compose.project.yaml"
+    [ -f docker-compose.local.yaml ] && COMPOSE_OPTS="$COMPOSE_OPTS -f docker-compose.local.yaml"
+    if command -v podman &>/dev/null && podman compose version &>/dev/null 2>&1; then
+        podman compose $COMPOSE_OPTS restart {{ args }}
+    elif command -v docker &>/dev/null && docker compose version &>/dev/null 2>&1; then
+        docker compose $COMPOSE_OPTS restart {{ args }}
+    else
+        echo "[ERROR] Need podman or docker with compose"
+        exit 1
+    fi
+
+# Open Cursor/VS Code attached to the running container
+[group('devcontainer')]
+open:
+    #!/usr/bin/env bash
+    if [[ -f "/.dockerenv" ]] || [[ -n "${container:-}" ]]; then
+        echo "[ERROR] Run this from the host: just open"
+        exit 1
+    fi
+    if command -v cursor &>/dev/null; then
+        cursor .
+    elif command -v code &>/dev/null; then
+        code .
+    else
+        echo "[ERROR] Neither cursor nor code found. Install Cursor or VS Code."
+        exit 1
+    fi
+
+# -------------------------------------------------------------------------------
+# SIDECAR
+# -------------------------------------------------------------------------------
+
+# List available sidecar containers
+[group('sidecar')]
+sidecars:
+    #!/usr/bin/env bash
+    if command -v podman &>/dev/null; then
+        RUNTIME="podman"
+    elif command -v docker &>/dev/null; then
+        RUNTIME="docker"
+    else
+        echo "[ERROR] Need podman or docker"
+        exit 1
+    fi
+    echo "Available sidecar containers:"
+    echo ""
+    # Get running sidecars (exclude devcontainer itself)
+    # Construct format string using printf to avoid just interpolation
+    FORMAT=$(printf '\x7b\x7b.Names\x7d\x7d')
+    RUNNING=$($RUNTIME ps --format "$FORMAT" 2>/dev/null | grep -v "^devcontainer$" || true)
+    if [ -n "$RUNNING" ]; then
+        echo "$RUNNING" | while read -r name; do
+            echo "  [OK] $name (running)"
+        done
+    else
+        echo "  (no sidecars currently running)"
+    fi
+    echo ""
+    echo "To use a sidecar: just sidecar <name> <recipe> [args...]"
+    echo "Example: just sidecar postgres migrate"
+
+# Execute a just recipe in a sidecar container
+# Usage: just sidecar <container-name> <recipe> [args...]
+
+# Example: just sidecar postgres migrate / just sidecar redis flush
+[group('sidecar')]
+sidecar name *args:
+    #!/usr/bin/env bash
+    if command -v podman &>/dev/null; then
+        RUNTIME="podman"
+    elif command -v docker &>/dev/null; then
+        RUNTIME="docker"
+    else
+        echo "[ERROR] Need podman or docker"
+        exit 1
+    fi
+    # Construct format string using printf to avoid just interpolation
+    FORMAT=$(printf '\x7b\x7b.Names\x7d\x7d')
+
+    # Check if container exists (running or stopped)
+    if ! $RUNTIME ps -a --format "$FORMAT" 2>/dev/null | grep -q "^{{ name }}$"; then
+        echo "[ERROR] Sidecar container '{{ name }}' not found"
+        echo ""
+        echo "Available sidecars:"
+        RUNNING=$($RUNTIME ps --format "$FORMAT" 2>/dev/null | grep -v "^devcontainer$" || true)
+        if [ -n "$RUNNING" ]; then
+            echo "$RUNNING" | while read -r n; do
+                echo "  - $n"
+            done
+        else
+            echo "  (no sidecars found)"
+        fi
+        echo ""
+        echo "Tip: Add sidecars to docker-compose.project.yaml or docker-compose.local.yaml"
+        echo "Then run: just sidecars"
+        exit 1
+    fi
+
+    # Check if container is running
+    if ! $RUNTIME ps --format "$FORMAT" 2>/dev/null | grep -q "^{{ name }}$"; then
+        echo "[!]  Sidecar container '{{ name }}' exists but is not running"
+        echo "Starting container..."
+        $RUNTIME start {{ name }} || {
+            echo "[ERROR] Failed to start container '{{ name }}'"
+            exit 1
+        }
+        # Wait a moment for container to be ready
+        sleep 1
+    fi
+
+    # Execute the recipe in the sidecar
+    $RUNTIME exec {{ name }} just {{ args }}

@@ -1,0 +1,33 @@
+# docker-compose.project.yaml
+#
+# Project/team-specific compose overrides.
+#
+# Use this file for configuration that should be SHARED with your team:
+#   - Project-specific sidecars (databases, caches, etc.)
+#   - Shared environment variables
+#   - Additional volume mounts needed by everyone
+#
+# This file is:
+#   - Git tracked (commit your changes)
+#   - Preserved during devcontainer upgrades (init-workspace.sh --force)
+#
+# For personal/local overrides, use docker-compose.local.yaml instead.
+#
+# Example:
+#
+#   services:
+#     devcontainer:
+#       environment:
+#         - PROJECT_API_URL=https://api.example.com
+#
+#     postgres:
+#       image: postgres:16-alpine
+#       environment:
+#         POSTGRES_PASSWORD: devpassword
+#       volumes:
+#         - postgres-data:/var/lib/postgresql/data
+#
+#   volumes:
+#     postgres-data:
+
+services: {}

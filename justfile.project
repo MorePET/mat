@@ -1,0 +1,107 @@
+# ===============================================================================
+# PROJECT RECIPES - Team-shared customizations
+# This file is git-tracked and preserved during devcontainer upgrades.
+# Add team-shared recipes here that everyone on the project should use.
+# ===============================================================================
+# ===============================================================================
+# PROJECT VARIABLES
+# ===============================================================================
+
+project := "py_mat"
+# ===============================================================================
+# INFO
+# ===============================================================================
+
+# Show project information
+[group('info')]
+info:
+    @echo "Project: {{ project }}"
+
+# -------------------------------------------------------------------------------
+# CODE QUALITY
+# -------------------------------------------------------------------------------
+
+# Run all linters
+[group('quality')]
+lint:
+    uv run ruff check .
+
+# Format code
+[group('quality')]
+format:
+    uv run ruff format .
+
+# Run pre-commit hooks on all files
+[group('quality')]
+precommit:
+    uv run pre-commit run --all-files
+
+# -------------------------------------------------------------------------------
+# TESTING
+# -------------------------------------------------------------------------------
+
+# Run tests with pytest
+[group('test')]
+test *args:
+    uv run pytest {{ args }}
+
+# Run tests with coverage
+[group('test')]
+test-cov *args:
+    uv run pytest --cov --cov-report=term-missing {{ args }}
+
+# -------------------------------------------------------------------------------
+# DEPENDENCIES
+# -------------------------------------------------------------------------------
+
+# Sync all dependencies (idempotent, fast if nothing changed)
+[group('deps')]
+sync:
+    @if [ -f pyproject.toml ]; then uv sync --all-extras --all-groups; fi
+
+# Update all dependencies
+[group('deps')]
+update:
+    uv lock --upgrade
+    @just sync
+
+# -------------------------------------------------------------------------------
+# BUILD
+# -------------------------------------------------------------------------------
+
+# Clean build artifacts
+[group('build')]
+clean-artifacts:
+    rm -rf .pytest_cache .ruff_cache .coverage htmlcov dist build *.egg-info
+    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+
+# -------------------------------------------------------------------------------
+# GIT
+# -------------------------------------------------------------------------------
+
+# Pretty one-line git log (last 20 commits)
+[group('git')]
+log:
+    git log --oneline -20
+
+# Show current branch + list recent branches
+[group('git')]
+branch:
+    #!/usr/bin/env bash
+    echo "Current: $(git branch --show-current)"
+    echo ""
+    echo "Recent branches:"
+    git branch -a | head -15
+
+# ===============================================================================
+# PROJECT-SPECIFIC RECIPES
+# ===============================================================================
+# Uncomment and customize for your project:
+# # Run the application
+# [group('app')]
+# run *args:
+#     uv run python -m {{project}} {{args}}
+# # Run database migrations (if using sidecar)
+# [group('app')]
+# migrate:
+#     just sidecar postgres migrate

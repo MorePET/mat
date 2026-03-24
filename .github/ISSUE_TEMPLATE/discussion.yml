@@ -1,0 +1,70 @@
+---
+name: Discussion
+description: Discuss a new idea, approach, or open question
+title: '[DISCUSSION] '
+labels: ['discussion']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for open-ended discussions: new ideas, design
+        questions, trade-off analysis, or anything that benefits from
+        team input before becoming actionable work.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        A clear description of the topic, idea, or question you want
+        to discuss
+      placeholder: Describe the topic...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / Motivation
+      description: |
+        Why is this discussion relevant now? What triggered it?
+      placeholder: Background, observations, pain points, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options / Alternatives
+      description: |
+        If you've already considered approaches, list them here
+      placeholder: |
+        1. Option A — ...
+        2. Option B — ...
+  - type: textarea
+    id: open-questions
+    attributes:
+      label: Open Questions
+      description: |
+        Specific questions you'd like the team to weigh in on
+      placeholder: |
+        - Question 1?
+        - Question 2?
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: Related Issues
+      description: Link to any related issues or pull requests
+      placeholder: 'Related to #123, see also #456'
+  - type: dropdown
+    id: changelog-category
+    attributes:
+      label: Changelog Category
+      description: |
+        Discussions rarely need a changelog entry. Change if this
+        leads directly to a visible change.
+      options:
+        - No changelog needed
+        - Added
+        - Changed
+      default: 0
+    validations:
+      required: true

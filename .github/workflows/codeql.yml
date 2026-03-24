@@ -1,0 +1,58 @@
+# CodeQL Static Analysis
+#
+# Runs GitHub CodeQL analysis on Python scripts used in the build toolchain.
+# While these are build tools (not product code), static analysis provides
+# defense-in-depth for scripts that handle git operations, file I/O, and
+# subprocess execution.
+#
+# Triggers:
+#   - Pull requests to dev, release/**, and main
+#   - Pushes to main (post-merge analysis)
+#   - Weekly schedule (catch newly disclosed patterns)
+
+name: CodeQL
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    branches:
+      - dev
+      - 'release/**'
+      - main
+  push:
+    branches:
+      - main
+    paths:
+      - '**.py'
+  schedule:
+    - cron: '15 2 * * 1'  # Monday at 02:15 UTC
+
+permissions: {}  # restrict default; job declares its own
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      security-events: write   # upload SARIF results
+      contents: read           # read repository
+      actions: read            # required for private repos (harmless for public)
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['python']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@0d579ffd059c29b07949a3cce3983f0780820c98  # v4
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@0d579ffd059c29b07949a3cce3983f0780820c98  # v4
+        with:
+          category: '/language:${{ matrix.language }}'

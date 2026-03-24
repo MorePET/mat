@@ -1,0 +1,179 @@
+# Composite action to set up the CI environment
+#
+# Installs Python, uv, pre-commit, and optionally syncs project dependencies and installs:
+# - Podman (for container operations)
+# - Node.js (for JS tooling)
+# - Devcontainer CLI + docker-compose wrapper (for integration tests)
+# - BATS + helper libraries (for shell script testing)
+#
+# IMPORTANT: The caller must checkout the repository before using this action.
+# This action does NOT checkout code, allowing callers to control ref, token,
+# persist-credentials, and other checkout options.
+#
+# Inputs:
+#   sync-dependencies:        Run uv sync to install project deps (default: false)
+#   install-podman:           Install podman (default: false)
+#   install-node:             Install Node.js (default: false)
+#   node-version:             Node.js version (default: '20')
+#   install-devcontainer-cli: Install devcontainer CLI + docker-compose wrapper (default: false)
+#   install-bats:             Install BATS + helper libraries (default: false)
+#
+# Outputs:
+#   uv-version: The version of uv that was installed
+#
+# Usage:
+#   # Minimal (Python + uv only)
+#   - uses: actions/checkout@v4
+#   - uses: ./.github/actions/setup-env
+#
+#   # With project dependencies
+#   - uses: actions/checkout@v4
+#   - uses: ./.github/actions/setup-env
+#     with:
+#       sync-dependencies: 'true'
+#
+#   # All tools
+#   - uses: actions/checkout@v4
+#   - uses: ./.github/actions/setup-env
+#     with:
+#       sync-dependencies: 'true'
+#       install-podman: 'true'
+#       install-devcontainer-cli: 'true'
+
+name: 'Setup Environment'
+description: 'Set up CI environment with Python, uv, pre-commit, and optional tools (podman, Node.js, devcontainer CLI, BATS)'
+
+inputs:
+  sync-dependencies:
+    description: 'Run uv sync to install project dependencies'
+    required: false
+    default: 'false'
+  install-podman:
+    description: 'Install podman for container operations'
+    required: false
+    default: 'false'
+  install-node:
+    description: 'Install Node.js'
+    required: false
+    default: 'false'
+  node-version:
+    description: 'Node.js version (when install-node is true)'
+    required: false
+    default: '20'
+  install-devcontainer-cli:
+    description: 'Install @devcontainers/cli and docker-compose wrapper (requires Node.js)'
+    required: false
+    default: 'false'
+  install-just:
+    description: 'Install just command runner for Justfile support'
+    required: false
+    default: 'true'
+  install-bats:
+    description: 'Install BATS and helper libraries (support, assert, file) for shell testing'
+    required: false
+    default: 'false'
+
+outputs:
+  uv-version:
+    description: 'Version of uv installed'
+    value: ${{ steps.setup-uv.outputs.uv-version }}
+
+runs:
+  using: composite
+  steps:
+    # ── Python ───────────────────────────────────────────────────────────
+    - name: "Set up Python"
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
+      with:
+        python-version-file: "pyproject.toml"
+
+    # ── uv ─────────────────────────────────────────────────────────────
+    - name: Install uv
+      id: setup-uv
+      uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b  # v7
+      with:
+        enable-cache: true
+        # Install a specific version of uv.
+        version: "0.10.0"
+
+    # ── pre-commit ───────────────────────────────────────────────────────────
+    - name: Install pre-commit
+      shell: bash
+      run: python -m pip install --upgrade pre-commit
+
+    # ── Python dependencies ───────────────────────────────────────────────
+    - name: Sync Python dependencies
+      if: inputs.sync-dependencies == 'true'
+      shell: bash
+      run: uv sync --frozen --all-extras
+
+    # ── Podman ──────────────────────────────────────────────────────────
+    - name: Install podman
+      if: inputs.install-podman == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        if ! command -v podman &> /dev/null; then
+          echo "Installing podman..."
+          sudo apt-get update -qq
+          sudo apt-get install -y podman
+        fi
+        echo "podman $(podman --version)"
+
+    # ── Node.js ─────────────────────────────────────────────────────────
+    # Also installed when install-devcontainer-cli is true (npm is required)
+    - name: Install Node.js
+      if: inputs.install-node == 'true' || inputs.install-devcontainer-cli == 'true'
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # ── Just (task runner) ──────────────────────────────────────────────
+    - name: Install just
+      if: inputs.install-just == 'true'
+      uses: taiki-e/install-action@3035223527de4d6eb6207d7b9f901df966359a8e  # just
+      with:
+        tool: just
+
+    # ── Devcontainer CLI + docker-compose wrapper ───────────────────────
+    # Requires Node.js (automatically installed above when this flag is set)
+    - name: Install devcontainer CLI
+      if: inputs.install-devcontainer-cli == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Create docker-compose wrapper (devcontainer CLI needs standalone docker-compose;
+        # the runner only has 'docker compose' v2 plugin, not the standalone binary)
+        printf '#!/bin/sh\nexec docker compose "$@"\n' | sudo tee /usr/local/bin/docker-compose > /dev/null
+        sudo chmod +x /usr/local/bin/docker-compose
+        echo "docker-compose wrapper: $(docker-compose version --short)"
+
+        # Install devcontainer CLI (version from package.json)
+        DEVCONTAINER_VERSION=$(node -p "require('./package.json').dependencies['@devcontainers/cli']")
+        echo "Installing @devcontainers/cli@${DEVCONTAINER_VERSION}..."
+        npm install -g "@devcontainers/cli@${DEVCONTAINER_VERSION}"
+        echo "devcontainer $(devcontainer --version)"
+
+    # ── BATS (shell testing) ─────────────────────────────────────────
+    # Installs BATS core and helper libraries via the official action.
+    # Versions match package.json to keep local and CI environments in sync.
+    - name: Setup BATS and libraries
+      id: bats
+      if: inputs.install-bats == 'true'
+      uses: bats-core/bats-action@77d6fb60505b4d0d1d73e48bd035b55074bbfb43  # v4.0.0
+      with:
+        support-version: '0.3.0'
+        assert-version: '2.1.0'
+        file-version: '0.4.0'
+        detik-install: 'false'
+
+    - name: Export BATS_LIB_PATH
+      if: inputs.install-bats == 'true'
+      shell: bash
+      run: |
+        # The bats-core/bats-action installs libraries to standard system paths
+        # Set BATS_LIB_PATH so bats_load_library can find them
+        BATS_LIB_PATH="/usr/lib/bats-support:/usr/lib/bats-assert:/usr/lib/bats-file"
+        echo "BATS_LIB_PATH=$BATS_LIB_PATH" >> "$GITHUB_ENV"
+        echo "Exported BATS_LIB_PATH=$BATS_LIB_PATH"

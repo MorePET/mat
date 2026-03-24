@@ -1,0 +1,93 @@
+---
+name: Chore
+description: General task, CI/build change, or maintenance work item
+title: '[CHORE] '
+labels: ['chore']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for general tasks, CI/build changes, dependency
+        updates, or any maintenance work that doesn't fit bug/feature/refactor/docs.
+  - type: dropdown
+    id: chore-type
+    attributes:
+      label: Chore Type
+      description: What kind of chore is this?
+      options:
+        - General task
+        - CI / Build change
+        - Dependency update
+        - Configuration change
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the work
+      placeholder: Describe what needs to be done...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: |
+        Define what needs to be completed for this to be considered done
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+  - type: textarea
+    id: implementation-notes
+    attributes:
+      label: Implementation Notes
+      description: |
+        Any technical notes, target files/workflows, or approach suggestions
+      placeholder: |
+        Technical details, target files, approach, dependencies, etc.
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: Related Issues
+      description: Link to any related issues or pull requests
+      placeholder: 'Related to #123, Blocks #456, etc.'
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the priority level
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true
+  - type: dropdown
+    id: changelog-category
+    attributes:
+      label: Changelog Category
+      description: |
+        Under which CHANGELOG.md section should this appear?
+      options:
+        - Added
+        - Changed
+        - Fixed
+        - Removed
+        - Security
+        - No changelog needed
+      default: 5
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: Additional notes, error logs, workflow run links, etc.

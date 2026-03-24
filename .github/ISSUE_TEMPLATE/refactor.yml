@@ -1,0 +1,82 @@
+---
+name: Refactor
+description: Propose a code refactoring (no behavior change)
+title: '[REFACTOR] '
+labels: ['refactor']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for code refactoring tasks. Refactors must not
+        change observable behavior — all existing tests must continue to pass.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        A clear description of what should be refactored and why
+      placeholder: Describe the refactoring goal...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Files / Modules in Scope
+      description: |
+        List the files, directories, or modules that should be modified
+      placeholder: |
+        - scripts/install.sh
+        - tests/test_install.py
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: |
+        List files, modules, or behaviors that must NOT be changed
+      placeholder: |
+        - Do not modify the public API of install.sh
+        - Do not touch CI workflows
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Invariants / Constraints
+      description: |
+        What must remain true after the refactoring? (e.g., tests pass,
+        no behavior change, backward compatibility)
+      placeholder: |
+        - All existing tests must pass without modification
+        - No changes to user-facing CLI flags
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Define what "done" looks like for this refactoring
+      placeholder: |
+        - [ ] Code is restructured as described
+        - [ ] All existing tests pass
+        - [ ] No new warnings or linter errors
+    validations:
+      required: true
+  - type: dropdown
+    id: changelog-category
+    attributes:
+      label: Changelog Category
+      description: |
+        Under which CHANGELOG.md section should this appear?
+      options:
+        - Changed
+        - No changelog needed
+      default: 1
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: Related issues, motivation, technical debt references...

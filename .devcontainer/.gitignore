@@ -1,0 +1,15 @@
+# Local configuration (machine-specific, not tracked)
+.local/
+
+# User-specific configuration (personal, not shared with team)
+.conf/
+.env
+.env.local
+docker-compose.local.yaml
+
+# VS Code workspace files (personal editor layout)
+*.code-workspace
+
+# Temporary files
+*.tmp
+*.log

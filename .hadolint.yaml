@@ -1,0 +1,24 @@
+---
+# Hadolint configuration file
+# This file configures the Containerfile linter
+
+# Ignore specific rules
+ignored:
+  - DL3008  # Pin versions in apt-get
+  #  - DL3009  # Delete the apt-get lists after installing something
+  - DL3013  # Pin versions in pip
+  - DL4006  # Set the SHELL option -o pipefail before RUN with pipes
+  - DL4001  # Either use Wget or Curl but not both
+
+# Set the output format
+# tty | json | checkstyle | codeclimate | gitlab_codeclimate |
+# gnu | codacy | sonarqube | sarif
+format: tty
+
+# Set the failure threshold (error | warning | info | style | ignore | none)
+failure-threshold: warning
+
+# Trusted registries (optional)
+trustedRegistries:
+  - docker.io
+  - ghcr.io

@@ -1,0 +1,235 @@
+# Sync main to dev
+#
+# Keeps dev up to date with main by opening a PR from a disposable sync branch.
+# Both main and dev are write-protected, so this workflow never pushes directly
+# to either; all changes land through a PR that satisfies branch-protection rules.
+#
+# Pipeline:
+#   check - (early exit if dev already contains all main commits)
+#   sync  - clean up stale sync branches
+#         - trial merge to detect conflicts
+#         - create chore/sync-main-to-dev-<run>-<attempt> branch via API
+#         - open PR (auto-merge enabled, or labelled "merge-conflict" with
+#           resolution instructions when conflicts exist)
+#
+# Auth: Two GitHub App tokens:
+# - COMMIT_APP_* for git/ref operations (least-privilege commit identity)
+# - RELEASE_APP_* for PR/label operations that require pull-request scopes
+#
+# With the new CHANGELOG flow, dev already has ## Unreleased (created during
+# prepare-release), so no CHANGELOG reset is needed here.
+#
+# Triggers: push to main · workflow_dispatch
+
+name: Sync main to dev
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-main-to-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check if dev is up to date
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      up_to_date: ${{ steps.check.outputs.up_to_date }}
+
+    steps:
+      - name: Checkout and fetch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Check if dev is up to date with main
+        id: check
+        run: |
+          set -euo pipefail
+          git fetch origin main dev
+          if ! git show-ref --verify --quiet refs/remotes/origin/main; then
+            echo "Error: remote branch 'origin/main' not found after fetch."
+            exit 1
+          fi
+          if ! git show-ref --verify --quiet refs/remotes/origin/dev; then
+            echo "Error: remote branch 'origin/dev' not found after fetch."
+            exit 1
+          fi
+          BEHIND=$(git rev-list --count origin/main ^origin/dev)
+          if [ "${BEHIND}" = "0" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "Dev is already up to date with main. Nothing to do."
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            echo "Dev is behind main by ${BEHIND} commit(s). Creating sync PR."
+          fi
+
+  sync:
+    name: Merge main into dev via PR
+    needs: check
+    if: needs.check.outputs.up_to_date != 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      SYNC_BRANCH: chore/sync-main-to-dev-${{ github.run_number }}-${{ github.run_attempt }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Generate Commit App Token
+        id: commit-app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf  # v2
+        with:
+          app-id: ${{ secrets.COMMIT_APP_ID }}
+          private-key: ${{ secrets.COMMIT_APP_PRIVATE_KEY }}
+
+      - name: Checkout dev
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ steps.commit-app-token.outputs.token }}
+
+      - name: Re-check if dev is still behind main
+        id: recheck
+        run: |
+          set -euo pipefail
+          git fetch origin main dev
+          BEHIND=$(git rev-list --count origin/main ^origin/dev)
+          if [ "${BEHIND}" = "0" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "Dev is now up to date with main. Skipping sync."
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            echo "Dev is still behind main by ${BEHIND} commit(s). Continuing."
+          fi
+
+      - name: Generate Release App Token
+        if: steps.recheck.outputs.up_to_date != 'true'
+        id: release-app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf  # v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Check for existing open sync PR
+        if: steps.recheck.outputs.up_to_date != 'true'
+        id: existing-pr
+        env:
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          OPEN=$(gh pr list --base dev --state open --limit 200 \
+            --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("chore/sync-main-to-dev-"))] | length')
+          echo "count=${OPEN}" >> "$GITHUB_OUTPUT"
+          if [ "${OPEN}" != "0" ]; then
+            echo "An open sync PR already exists — skipping."
+          fi
+
+      - name: Clean up stale sync branches
+        if: steps.recheck.outputs.up_to_date != 'true'
+        env:
+          GH_TOKEN: ${{ steps.commit-app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          REFS=$(gh api --paginate "repos/${{ github.repository }}/git/matching-refs/heads/chore/sync-main-to-dev-" \
+            --jq '.[].ref' | sed 's|refs/heads/||') || true
+          for branch in ${REFS}; do
+            HAS_PR=$(GH_TOKEN="${{ steps.release-app-token.outputs.token }}" gh pr list --base dev --head "${branch}" \
+              --state open --json number --jq 'length')
+            if [ "${HAS_PR}" = "0" ]; then
+              gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${branch}" 2>/dev/null || true
+              echo "Deleted stale sync branch: ${branch}"
+            fi
+          done
+
+      - name: Detect merge conflicts
+        if: steps.recheck.outputs.up_to_date != 'true' && steps.existing-pr.outputs.count == '0'
+        id: merge-check
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          if git merge --no-commit --no-ff origin/main 2>/dev/null; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+          git merge --abort 2>/dev/null || true
+
+      - name: Create sync branch from main
+        if: steps.existing-pr.outputs.count == '0' && steps.recheck.outputs.up_to_date != 'true'
+        env:
+          GH_TOKEN: ${{ steps.commit-app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          MAIN_SHA=$(git rev-parse origin/main)
+          gh api "repos/${{ github.repository }}/git/refs" \
+            -f ref="refs/heads/${SYNC_BRANCH}" \
+            -f sha="${MAIN_SHA}"
+          echo "Sync branch ${SYNC_BRANCH} created from main at ${MAIN_SHA}"
+
+      - name: Create PR
+        if: steps.existing-pr.outputs.count == '0' && steps.recheck.outputs.up_to_date != 'true'
+        id: create-pr
+        env:
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
+          CONFLICT: ${{ steps.merge-check.outputs.conflict }}
+        run: |
+          set -euo pipefail
+
+          if [ "${CONFLICT}" = "true" ]; then
+            TITLE="chore: sync dev with main (conflicts)"
+            BODY=$(cat <<BODY_EOF
+          Automated sync of \`main\` to \`dev\` found **merge conflicts** that require manual resolution.
+
+          ### How to resolve
+
+          \`\`\`bash
+          git fetch origin ${SYNC_BRANCH}:${SYNC_BRANCH}
+          git checkout ${SYNC_BRANCH}
+          git merge origin/dev
+          # resolve conflicts
+          git commit -S
+          git push origin ${SYNC_BRANCH}
+          \`\`\`
+
+          Once pushed, this PR will update and become mergeable.
+          BODY_EOF
+          )
+          else
+            TITLE="chore: sync dev with main"
+            BODY="Syncs \`dev\` with \`main\` (sync-main-to-dev workflow)."
+          fi
+
+          PR_URL=$(gh pr create --base dev --head "${SYNC_BRANCH}" \
+            --title "${TITLE}" --body "${BODY}")
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "Created PR: ${PR_URL}"
+
+          if [ "${CONFLICT}" = "true" ]; then
+            gh label create "merge-conflict" --color "B60205" --force 2>/dev/null || true
+            gh pr edit "${SYNC_BRANCH}" --add-label "merge-conflict" || \
+              echo "Warning: failed to add merge-conflict label."
+          fi
+
+      - name: Enable auto-merge
+        if: >-
+          steps.create-pr.outputs.pr_url != ''
+          && steps.merge-check.outputs.conflict != 'true'
+        env:
+          GH_TOKEN: ${{ steps.release-app-token.outputs.token }}
+          PR_URL: ${{ steps.create-pr.outputs.pr_url }}
+        run: |
+          set -euo pipefail
+          gh pr merge "${PR_URL}" --auto --merge || \
+            echo "Warning: could not enable auto-merge (may require branch protection settings)"

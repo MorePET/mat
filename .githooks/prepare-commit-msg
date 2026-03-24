@@ -1,0 +1,14 @@
+#!/bin/bash
+# Strip AI agent trailers from commit message before validation.
+# Refs: #163
+set -euo pipefail
+
+# Check if we're running inside the dev container
+if [ "${IN_CONTAINER:-}" != "true" ]; then
+	# Outside dev container
+	echo "Please commit your changes within the dev container."
+	exit 1
+fi
+
+# Run pre-commit prepare-commit-msg hooks
+pre-commit run --hook-stage prepare-commit-msg --commit-msg-filename "$1"

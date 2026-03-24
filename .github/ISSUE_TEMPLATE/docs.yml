@@ -1,0 +1,85 @@
+---
+name: Documentation
+description: Request a documentation update or addition
+title: '[DOCS] '
+labels: ['docs']
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for documentation changes. Important: editable
+        documentation lives in `docs/templates/`. Generated files like
+        `CONTRIBUTE.md` and `README.md` must not be edited directly —
+        run `just docs` to regenerate them after editing the template.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Describe the documentation change or addition needed
+      placeholder: Describe what needs to be documented...
+    validations:
+      required: true
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What kind of documentation change is this?
+      options:
+        - Update existing documentation
+        - Add new documentation
+        - Fix incorrect or outdated content
+        - Improve clarity or structure
+    validations:
+      required: true
+  - type: textarea
+    id: target-files
+    attributes:
+      label: Target Files
+      description: |
+        Which files need to be modified? Remember: edit templates in
+        `docs/templates/`, not generated files.
+      placeholder: |
+        - docs/templates/CONTRIBUTE.md.j2 (source template)
+        - docs/RELEASE_CYCLE.md
+    validations:
+      required: true
+  - type: textarea
+    id: related-code-changes
+    attributes:
+      label: Related Code Changes
+      description: |
+        If this docs update accompanies a code change, reference the
+        issue or PR
+      placeholder: 'Related to #123, follows up on PR #456'
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Define what "done" looks like for this documentation change
+      placeholder: |
+        - [ ] Template updated in docs/templates/
+        - [ ] Generated files regenerated with `just docs`
+        - [ ] Content is accurate and complete
+    validations:
+      required: true
+  - type: dropdown
+    id: changelog-category
+    attributes:
+      label: Changelog Category
+      description: |
+        Under which CHANGELOG.md section should this appear?
+      options:
+        - Changed
+        - Added
+        - No changelog needed
+      default: 2
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: Screenshots, examples, links to related documentation...

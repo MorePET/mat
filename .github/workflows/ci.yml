@@ -1,0 +1,212 @@
+# CI Workflow
+#
+# Runs automated code quality checks and tests on pull requests.
+# Default template for Python projects using the vigOS devcontainer.
+#
+# Jobs:
+#   1. lint              — Pre-commit hooks (Ruff, yamllint, pymarkdown, shellcheck, etc.)
+#   2. test              — Pytest with coverage
+#   3. security          — Python security scanning (Bandit)
+#   4. dependency-review — Dependency vulnerability check (PRs only)
+#   5. summary           — Aggregate results for branch protection
+#
+# Triggers:
+#   - Pull requests to dev, release/**, and main (runs all checks)
+#   - Manual workflow_dispatch (select specific suite to run)
+#
+
+name: CI
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    branches:
+      - dev
+      - 'release/**'
+      - main
+  workflow_dispatch:
+    inputs:
+      test-suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - lint
+          - test
+          - security
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.test-suite == 'all' ||
+      inputs.test-suite == 'lint'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+        with:
+          sync-dependencies: 'true'
+
+      - name: Run pre-commit hooks
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    name: Tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.test-suite == 'all' ||
+      inputs.test-suite == 'test'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+        with:
+          sync-dependencies: 'true'
+
+      - name: Run tests with coverage
+        run: uv run pytest --cov --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30
+          if-no-files-found: ignore
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.test-suite == 'all' ||
+      inputs.test-suite == 'security'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+        with:
+          sync-dependencies: 'true'
+
+      - name: Install safety
+        run: uv pip install safety==3.7.0
+
+      - name: Run Bandit (Python security linting)
+        id: bandit
+        run: |
+          uv run bandit -r src/ -ll -f json -o bandit-report.json || true
+          echo "Bandit scan completed"
+
+      - name: Run Safety (dependency vulnerability check)
+        id: safety
+        run: |
+          safety check --json > safety-report.json || true
+          echo "Safety scan completed"
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Report Bandit findings
+        if: always() && steps.bandit.outcome == 'success'
+        run: |
+          if [ -f bandit-report.json ]; then
+            echo "## Security: Bandit" >> $GITHUB_STEP_SUMMARY
+            python -m json.tool bandit-report.json | head -50 >> $GITHUB_STEP_SUMMARY || true
+          fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Review dependencies for vulnerabilities
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48  # v4
+        with:
+          fail-on-severity: high
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: [lint, test, security, dependency-review]
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          echo "CI Results Summary"
+          echo "==================="
+          echo ""
+          echo "Lint:              ${{ needs.lint.result }}"
+          echo "Test:              ${{ needs.test.result }}"
+          echo "Security:          ${{ needs.security.result }}"
+          echo "Dependency Review: ${{ needs.dependency-review.result }}"
+          echo ""
+
+          FAILED=false
+
+          if [ "${{ needs.lint.result }}" = "failure" ]; then
+            echo "ERROR: Lint checks failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "ERROR: Tests failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.security.result }}" = "failure" ]; then
+            echo "ERROR: Security scan failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.dependency-review.result }}" = "failure" ]; then
+            echo "ERROR: Dependency review failed"
+            FAILED=true
+          fi
+
+          if [ "$FAILED" = "true" ]; then
+            echo ""
+            echo "One or more checks failed"
+            exit 1
+          fi
+
+          echo ""
+          echo "All executed checks passed"

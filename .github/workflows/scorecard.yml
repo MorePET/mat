@@ -1,0 +1,50 @@
+# OpenSSF Scorecard
+#
+# Runs the OpenSSF Scorecard analysis on a weekly schedule and on pushes
+# to the default branch. Results are uploaded to the GitHub Security tab
+# as SARIF and optionally published to the OpenSSF API.
+#
+# Docs: https://securityscorecards.dev/
+# Action: https://github.com/ossf/scorecard-action
+
+name: Scorecard
+
+on:  # yamllint disable-line rule:truthy
+  # Weekly analysis
+  schedule:
+    - cron: '30 1 * * 1'  # Monday at 01:30 UTC
+  # On push to main (branch protection ensures only merged PRs)
+  push:
+    branches:
+      - main
+
+permissions: {}  # restrict default; job declares its own
+
+jobs:
+  analysis:
+    name: Scorecard Analysis
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      security-events: write   # upload SARIF results
+      id-token: write          # Scorecard API authentication
+      contents: read           # read repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a  # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98  # v4
+        with:
+          sarif_file: results.sarif
+          category: 'scorecard'

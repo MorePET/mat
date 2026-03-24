@@ -1,0 +1,29 @@
+# Canonical blocklist for AI agent identity fingerprints.
+# Referenced by: validate-commit-msg, pre-commit hooks, pr-title-check CI.
+# Refs: #163
+
+[patterns]
+# Trailer patterns (regex, matched against full lines)
+trailers = ["^Co-authored-by:.*$", "^Signed-off-by:.*cursor.*$"]
+
+# Agent names/identifiers (substring match, case-insensitive)
+names = [
+  "cursor",
+  "claude",
+  "codex",
+  "chatgpt",
+  "copilot",
+  "openai",
+  "anthropic",
+  "devin",
+]
+
+# Agent email patterns (substring match, case-insensitive)
+emails = ["cursoragent@cursor.com", "noreply@cursor.com", "github-actions[bot]"]
+
+# Patterns that legitimately contain blocked names (regex, stripped before checking)
+# These are removed from content before name/email matching runs.
+allow_patterns = [
+  "\\.[a-zA-Z][\\w-]*/[\\w./-]*", # dotfile paths: .cursor/skills/, .claude/commands/
+  "[A-Z]+\\.md",                  # doc files: CLAUDE.md
+]
