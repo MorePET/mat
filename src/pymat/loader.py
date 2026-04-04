@@ -10,9 +10,14 @@ Supports both legacy single-value format and new unit-aware (value, unit) format
 from __future__ import annotations
 
 import logging
-import tomllib
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 if TYPE_CHECKING:
     from .core import Material
