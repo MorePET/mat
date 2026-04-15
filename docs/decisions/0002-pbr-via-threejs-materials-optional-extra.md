@@ -54,7 +54,7 @@ Concretely:
 # pymat/pbr/_protocol.py
 @runtime_checkable
 class PbrSource(Protocol):
-    def to_three_js_dict(self) -> dict: ...
+    def to_dict(self) -> dict: ...
 
 # pymat/pbr/__init__.py
 try:
@@ -73,8 +73,8 @@ class _MaterialInternal:
     def to_three_js_material_dict(self) -> dict:
         """Pick the right backend and emit Three.js JSON."""
         if self.pbr_source is not None:
-            return self.pbr_source.to_three_js_dict()
-        return self.properties.pbr.to_three_js_dict()
+            return self.pbr_source.to_dict()
+        return self.properties.pbr.to_dict()
 ```
 
 Usage:
@@ -104,7 +104,7 @@ serialized fields onto the lite `properties.pbr` dataclass** via an
 internal `_backfill_pbr_from_source()` pass in `__post_init__`. This
 copies the overlapping fields (color, metalness, roughness, ior,
 emissive, transmission, clearcoat, normal/roughness/metalness/ao
-maps) from `pbr_source.to_three_js_dict()` into the lite dataclass
+maps) from `pbr_source.to_dict()` into the lite dataclass
 one-way at construction time.
 
 Why: existing downstream renderers that read
@@ -165,7 +165,7 @@ the backfill.
 
 - **Two parallel PBR code paths** on py-materials' side. The lite
   `PBRProperties` dataclass stays (for TOML-authored materials and
-  users without the extra) and grows a `to_three_js_dict()`
+  users without the extra) and grows a `to_dict()`
   method that implements the Protocol. The rich path is the
   optional extra. Some duplication of intent between the two
   serializers is unavoidable; their outputs may drift on edge

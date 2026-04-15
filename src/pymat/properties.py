@@ -329,7 +329,7 @@ class PBRProperties:
     metallic_map: Optional[str] = None
     ambient_occlusion_map: Optional[str] = None
 
-    def to_three_js_dict(self) -> dict:
+    def to_dict(self) -> dict:
         """
         Serialize to a Three.js ``MeshPhysicalMaterial`` dict.
 

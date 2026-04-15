@@ -1,7 +1,7 @@
 """
 Tests for `pymat.pbr` — PbrSource Protocol + native backend serializer.
 
-Covers the lite in-tree path (PBRProperties.to_three_js_dict) and the
+Covers the lite in-tree path (PBRProperties.to_dict) and the
 Material.to_three_js_material_dict dispatch. The rich threejs-materials
 backend is exercised via a duck-typed stub to avoid pulling the extra
 into the base test dependency set. See ADR-0002.
@@ -27,7 +27,7 @@ class TestPbrSourceProtocol:
         """Default PBRProperties emits only `color` (all other fields
         are at Three.js defaults and get omitted)."""
         pbr = PBRProperties()
-        out = pbr.to_three_js_dict()
+        out = pbr.to_dict()
         assert out == {"color": [0.8, 0.8, 0.8]}
 
     def test_native_full_serialization(self):
@@ -39,7 +39,7 @@ class TestPbrSourceProtocol:
             clearcoat=0.5,
             normal_map="/path/to/normal.png",
         )
-        out = pbr.to_three_js_dict()
+        out = pbr.to_dict()
         assert out["color"] == [0.7, 0.2, 0.2]
         assert out["metalness"] == 1.0
         assert out["roughness"] == 0.25
@@ -69,7 +69,7 @@ class TestMaterialToThreeJs:
         class FakeRichBackend:
             """Stub conforming to PbrSource Protocol."""
 
-            def to_three_js_dict(self) -> dict:
+            def to_dict(self) -> dict:
                 return {
                     "color": [0.91, 0.91, 0.88],
                     "metalness": 1.0,
@@ -89,10 +89,10 @@ class TestMaterialToThreeJs:
         assert out["normalMap"] == "textures/brushed_steel_normal.png"
 
     def test_pbr_source_stub_is_pbr_source(self):
-        """Any class with `to_three_js_dict()` satisfies the Protocol."""
+        """Any class with `to_dict()` satisfies the Protocol."""
 
         class Stub:
-            def to_three_js_dict(self):
+            def to_dict(self):
                 return {}
 
         assert isinstance(Stub(), PbrSource)
@@ -106,7 +106,7 @@ class TestMaterialToThreeJs:
 
 class TestPbrBackfill:
     """
-    When `pbr_source` is set, the rich backend's `to_three_js_dict()`
+    When `pbr_source` is set, the rich backend's `to_dict()`
     output is projected onto the lite `properties.pbr` dataclass. This
     lets existing ocp_vscode / downstream renderers that only read
     `material.properties.pbr.<field>` pick up the rich data without
@@ -116,7 +116,7 @@ class TestPbrBackfill:
 
     def _make_rich_backend(self):
         class RichBackend:
-            def to_three_js_dict(self) -> dict:
+            def to_dict(self) -> dict:
                 return {
                     "color": [0.91, 0.91, 0.88],
                     "metalness": 1.0,
@@ -213,4 +213,4 @@ class TestPbrBackfill:
         )
         out = steel.to_three_js_material_dict()
         # Same object as rich's output, not re-serialized from lite.
-        assert out == rich.to_three_js_dict()
+        assert out == rich.to_dict()

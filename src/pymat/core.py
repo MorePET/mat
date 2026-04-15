@@ -212,51 +212,77 @@ class _MaterialInternal:
     def _backfill_pbr_from_source(self) -> None:
         """
         Populate the lite `properties.pbr` dataclass from the rich
-        `pbr_source`'s `to_three_js_dict()` output.
+        `pbr_source`'s `to_dict()` output.
+
+        Supports two `to_dict()` shapes, detected at runtime:
+
+        - **Nested** (`threejs_materials.PbrProperties` format):
+          ``{id, name, source, url, license, values: {...}, textures: {...}}``
+          — scalars under ``values``, maps under ``textures``.
+        - **Flat** (`pymat`'s own lite `PBRProperties.to_dict()` format):
+          ``{color, metalness, roughness, normalMap, ...}`` — Three.js
+          MeshPhysicalMaterial camelCase keys at the top level.
 
         The lite dataclass is a strict subset of the Three.js
         MeshPhysicalMaterial spec — fields on the rich source that
         don't have a corresponding lite field (sheen, anisotropy,
         iridescence, dispersion, etc.) are dropped. Downstream
-        consumers that need the full fidelity can still read
-        `material.pbr_source` directly or call
-        `material.to_three_js_material_dict()` which delegates to
-        the rich source first.
+        consumers that need full fidelity should read
+        `material.pbr_source` directly.
         """
         if self.pbr_source is None:
             return
         try:
-            d = self.pbr_source.to_three_js_dict()
+            d = self.pbr_source.to_dict()
         except Exception:
-            # Rich backend can't serialize — leave lite alone.
             return
 
+        # Detect shape: nested has `values` key, flat has top-level scalars.
+        if isinstance(d.get("values"), dict):
+            values = d["values"]
+            maps = d.get("textures") if isinstance(d.get("textures"), dict) else {}
+        else:
+            values = d
+            maps = {}
+
         lite = self.properties.pbr
-        if "color" in d and isinstance(d["color"], (list, tuple)) and len(d["color"]) >= 3:
-            r, g, b = d["color"][:3]
-            # Preserve alpha from existing base_color if rich didn't specify.
-            alpha = d.get("opacity", lite.base_color[3] if len(lite.base_color) >= 4 else 1.0)
+
+        # Scalars
+        color = values.get("color")
+        if isinstance(color, (list, tuple)) and len(color) >= 3:
+            r, g, b = color[:3]
+            alpha = values.get(
+                "opacity",
+                lite.base_color[3] if len(lite.base_color) >= 4 else 1.0,
+            )
             lite.base_color = (r, g, b, alpha)
-        if "metalness" in d:
-            lite.metallic = d["metalness"]
-        if "roughness" in d:
-            lite.roughness = d["roughness"]
-        if "emissive" in d and isinstance(d["emissive"], (list, tuple)):
-            lite.emissive = tuple(d["emissive"])
-        if "ior" in d:
-            lite.ior = d["ior"]
-        if "transmission" in d:
-            lite.transmission = d["transmission"]
-        if "clearcoat" in d:
-            lite.clearcoat = d["clearcoat"]
-        if "normalMap" in d:
-            lite.normal_map = d["normalMap"]
-        if "roughnessMap" in d:
-            lite.roughness_map = d["roughnessMap"]
-        if "metalnessMap" in d:
-            lite.metallic_map = d["metalnessMap"]
-        if "aoMap" in d:
-            lite.ambient_occlusion_map = d["aoMap"]
+        if "metalness" in values:
+            lite.metallic = values["metalness"]
+        if "roughness" in values:
+            lite.roughness = values["roughness"]
+        emissive = values.get("emissive")
+        if isinstance(emissive, (list, tuple)):
+            lite.emissive = tuple(emissive)
+        if "ior" in values:
+            lite.ior = values["ior"]
+        if "transmission" in values:
+            lite.transmission = values["transmission"]
+        if "clearcoat" in values:
+            lite.clearcoat = values["clearcoat"]
+
+        # Texture maps (nested: `textures` dict keys are short names like
+        # `normal`, `roughness`, `metalness`, `ao`. Flat: `normalMap`,
+        # `roughnessMap`, `metalnessMap`, `aoMap` camelCase.)
+        lite.normal_map = maps.get("normal") or values.get("normalMap") or lite.normal_map
+        lite.roughness_map = (
+            maps.get("roughness") or values.get("roughnessMap") or lite.roughness_map
+        )
+        lite.metallic_map = (
+            maps.get("metalness") or values.get("metalnessMap") or lite.metallic_map
+        )
+        lite.ambient_occlusion_map = (
+            maps.get("ao") or values.get("aoMap") or lite.ambient_occlusion_map
+        )
 
     # =========================================================================
     # Chaining API
@@ -526,8 +552,8 @@ class _MaterialInternal:
         lite native in-tree backend). See ADR-0002.
         """
         if self.pbr_source is not None:
-            return self.pbr_source.to_three_js_dict()
-        return self.properties.pbr.to_three_js_dict()
+            return self.pbr_source.to_dict()
+        return self.properties.pbr.to_dict()
 
     def __repr__(self) -> str:
         """String representation showing path and density."""
