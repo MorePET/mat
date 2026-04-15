@@ -12,6 +12,8 @@ uranium are not listed — add as needed.
 
 from __future__ import annotations
 
+import re
+
 # Standard atomic weights in g/mol. Single source of truth for
 # composition-derived molar mass calculations on `Material`.
 ATOMIC_WEIGHT: dict[str, float] = {
@@ -109,8 +111,6 @@ ATOMIC_WEIGHT: dict[str, float] = {
     "U": 238.0,
 }
 
-
-import re
 
 _FORMULA_TOKEN = re.compile(r"([A-Z][a-z]?)(\d+\.?\d*)?")
 
