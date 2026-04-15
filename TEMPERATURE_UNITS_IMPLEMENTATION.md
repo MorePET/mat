@@ -3,11 +3,13 @@
 ## Problem Statement
 
 Many material properties are temperature-dependent, but currently stored as single values without:
+
 1. **Reference temperature** - At what temperature is this value valid?
 2. **Temperature coefficients** - How does it change with temperature?
 3. **Units** - Is melting_point in °C, °F, or K?
 
 ### Current State
+
 ```python
 melting_point = 1450  # What unit? What temperature?
 thermal_conductivity = 50  # W/(m·K) - but at what temperature?
@@ -15,6 +17,7 @@ density = 8.0  # g/cm³ - but at what temperature?
 ```
 
 ### Temperature-Dependent Properties
+
 - **Density**: Changes with temperature (thermal expansion)
 - **Thermal conductivity**: Varies significantly with temperature
 - **Young's modulus**: Decreases with temperature
@@ -27,14 +30,16 @@ density = 8.0  # g/cm³ - but at what temperature?
 **Decision**: Use `pint` library for unit-aware quantities.
 
 ### Why Pint?
-- ✅ **No scipy dependency** - Lightweight, pure Python
-- ✅ **Self-contained** - Has its own unit definitions and conversion rules
-- ✅ **Automatic conversions** - `(100 * ureg.degC).to(ureg.kelvin)`
-- ✅ **Dimensional checking** - Prevents unit mismatches
-- ✅ **Extensible** - Can add custom units/constants
-- ✅ **Array support** - Works with numpy (optional)
+
+- **No scipy dependency** - Lightweight, pure Python
+- **Self-contained** - Has its own unit definitions and conversion rules
+- **Automatic conversions** - `(100 * ureg.degC).to(ureg.kelvin)`
+- **Dimensional checking** - Prevents unit mismatches
+- **Extensible** - Can add custom units/constants
+- **Array support** - Works with numpy (optional)
 
 ### How Pint Works
+
 - Pint does **NOT** use `scipy.constants` internally
 - Has its own comprehensive unit registry
 - Uses conversion graph for unit transformations
@@ -43,6 +48,7 @@ density = 8.0  # g/cm³ - but at what temperature?
 ## Implementation Plan
 
 ### 1. Add Pint Dependency
+
 ```toml
 # pyproject.toml
 dependencies = [
@@ -54,6 +60,7 @@ dependencies = [
 ### 2. Update Property Classes
 
 **Option A: Store as Quantity objects directly**
+
 ```python
 from pint import UnitRegistry
 ureg = UnitRegistry()
@@ -67,6 +74,7 @@ class ThermalProperties:
 ```
 
 **Option B: Store as (value, unit) and reconstruct**
+
 ```python
 @dataclass
 class ThermalProperties:
@@ -82,6 +90,7 @@ class ThermalProperties:
 ### 3. Temperature-Dependent Property Pattern
 
 For properties that vary with temperature:
+
 ```python
 @dataclass
 class ThermalProperties:
@@ -118,6 +127,7 @@ thermal_conductivity_coeff = 0.001
 ```
 
 Then reconstruct in loader:
+
 ```python
 if "melting_point_value" in data:
     value = data["melting_point_value"]
@@ -212,7 +222,7 @@ k_at_100C = steel.properties.thermal.thermal_conductivity_at(100 * ureg.degC)
 
 ## References
 
-- Pint documentation: https://pint.readthedocs.io/
-- Pint GitHub: https://github.com/hgrecco/pint
+- Pint documentation: <https://pint.readthedocs.io/>
+- Pint GitHub: <https://github.com/hgrecco/pint>
 - Current pymat version: v1.0.0
 - Location: `/Users/larsgerchow/Projects/py-mat`

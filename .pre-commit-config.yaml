@@ -65,7 +65,7 @@ repos:
       - id: pymarkdown
         name: pymarkdown
         args: ["-c", ".pymarkdown", "fix"]
-        exclude: ^(README\.md|CONTRIBUTE\.md|TESTING\.md|RELEASE_PROCESS\.md|TEMPERATURE_UNITS_IMPLEMENTATION\.md)
+        exclude: ^(README\.md|CONTRIBUTE\.md|TESTING\.md)
 
   # Justfile formatting
   - repo: local

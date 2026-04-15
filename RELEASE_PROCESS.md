@@ -5,6 +5,7 @@
 When releasing a new version of mat:
 
 1. **Update version numbers:**
+
    ```bash
    cd /Users/larsgerchow/Projects/mat
 
@@ -14,6 +15,7 @@ When releasing a new version of mat:
    ```
 
 2. **Commit and tag:**
+
    ```bash
    git add -A
    git commit -m "Release vX.Y.Z - Description"
@@ -21,11 +23,13 @@ When releasing a new version of mat:
    ```
 
 3. **Update the 'latest' tag (force overwrite):**
+
    ```bash
    git tag -f -a latest -m "Latest release"
    ```
 
 4. **Push everything:**
+
    ```bash
    git push origin main --tags
    git push -f origin latest  # Force push to update 'latest' tag
@@ -41,24 +45,28 @@ pymat = { git = "https://github.com/MorePET/mat.git", tag = "latest" }
 ```
 
 This gives:
-- ✅ **Automatic updates**: `uv sync` fetches the latest release
-- ✅ **Stability**: Only updated on official releases (not random commits)
-- ✅ **Explicit control**: Pin to specific version anytime with `tag = "v0.1.1"`
-- ✅ **Reproducible**: Same commit hash until next release
+
+- Automatic updates: `uv sync` fetches the latest release
+- Stability: only updated on official releases (not random commits)
+- Explicit control: pin to a specific version anytime with `tag = "v0.1.1"`
+- Reproducible: same commit hash until next release
 
 ## Alternative Options
 
-### Pin to specific version:
+### Pin to specific version
+
 ```toml
 pymat = { git = "https://github.com/MorePET/mat.git", tag = "v0.1.1" }
 ```
 
-### Track main branch (bleeding edge):
+### Track main branch (bleeding edge)
+
 ```toml
 pymat = { git = "https://github.com/MorePET/mat.git", branch = "main" }
 ```
 
-### From PyPI (when published):
+### From PyPI (when published)
+
 ```toml
 [project]
 dependencies = ["pymat>=0.1.0"]
