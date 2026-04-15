@@ -161,11 +161,43 @@ jobs:
         with:
           fail-on-severity: high
 
+  rust:
+    name: Rust (mat-rs)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.test-suite == 'all' ||
+      inputs.test-suite == 'test'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mat-rs
+
+      - name: Check formatting
+        run: cargo fmt --manifest-path mat-rs/Cargo.toml --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --manifest-path mat-rs/Cargo.toml --all-targets -- -D warnings
+
+      - name: Run tests
+        run: cargo test --manifest-path mat-rs/Cargo.toml
+
   summary:
     name: CI Summary
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [lint, test, security, dependency-review]
+    needs: [lint, test, security, dependency-review, rust]
     if: always()
 
     steps:
@@ -178,6 +210,7 @@ jobs:
           echo "Test:              ${{ needs.test.result }}"
           echo "Security:          ${{ needs.security.result }}"
           echo "Dependency Review: ${{ needs.dependency-review.result }}"
+          echo "Rust (mat-rs):     ${{ needs.rust.result }}"
           echo ""
 
           FAILED=false
@@ -199,6 +232,11 @@ jobs:
 
           if [ "${{ needs.dependency-review.result }}" = "failure" ]; then
             echo "ERROR: Dependency review failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.rust.result }}" = "failure" ]; then
+            echo "ERROR: Rust checks failed"
             FAILED=true
           fi
 
