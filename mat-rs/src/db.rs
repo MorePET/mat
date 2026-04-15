@@ -54,8 +54,8 @@ impl MaterialDb {
     pub fn builtin() -> Self {
         let mut materials = HashMap::new();
         for &(_category, raw) in BUILTIN_TOML {
-            let table: toml::Table = toml::from_str(raw)
-                .expect("embedded TOML should always parse");
+            let table: toml::Table =
+                toml::from_str(raw).expect("embedded TOML should always parse");
             parse_top_level(&table, &mut materials);
         }
         Self { materials }
@@ -82,11 +82,10 @@ impl MaterialDb {
                 path: path.clone(),
                 source: e,
             })?;
-            let table: toml::Table =
-                toml::from_str(&raw).map_err(|e| MatError::TomlParse {
-                    path: path.clone(),
-                    source: e,
-                })?;
+            let table: toml::Table = toml::from_str(&raw).map_err(|e| MatError::TomlParse {
+                path: path.clone(),
+                source: e,
+            })?;
             parse_top_level(&table, &mut materials);
         }
 
@@ -206,13 +205,10 @@ fn build_material(
         })
         .map(|s| s.to_string());
 
-    let composition = extract_composition(table).or_else(|| {
-        parent_table.and_then(extract_composition)
-    });
+    let composition =
+        extract_composition(table).or_else(|| parent_table.and_then(extract_composition));
 
-    let density = extract_density(table).or_else(|| {
-        parent_table.and_then(extract_density)
-    });
+    let density = extract_density(table).or_else(|| parent_table.and_then(extract_density));
 
     let optical = extract_optical(table, parent_table);
 

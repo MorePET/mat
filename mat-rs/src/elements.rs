@@ -234,10 +234,7 @@ mod tests {
     fn test_tables_consistent() {
         // Every element in SYMBOL_TO_Z should have a weight
         for sym in SYMBOL_TO_Z.keys() {
-            assert!(
-                ATOMIC_WEIGHT.contains_key(sym),
-                "Missing weight for {sym}"
-            );
+            assert!(ATOMIC_WEIGHT.contains_key(sym), "Missing weight for {sym}");
         }
     }
 }

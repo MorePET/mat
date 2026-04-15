@@ -1,6 +1,9 @@
 //! Integration tests: load actual py-mat TOML data and verify material properties.
 
-use rs_materials::{MaterialDb, parse_formula, formula_to_mass_fractions, mass_to_atom_fractions, atom_to_mass_fractions};
+use rs_materials::{
+    MaterialDb, atom_to_mass_fractions, formula_to_mass_fractions, mass_to_atom_fractions,
+    parse_formula,
+};
 
 fn db() -> MaterialDb {
     MaterialDb::from_pymat_data().expect("failed to load py-mat data")
@@ -20,11 +23,22 @@ fn loads_all_categories() {
 fn builtin_matches_file_loaded() {
     let from_files = db();
     let builtin = MaterialDb::builtin();
-    assert_eq!(builtin.len(), from_files.len(),
-        "builtin and file-loaded should have same number of materials");
+    assert_eq!(
+        builtin.len(),
+        from_files.len(),
+        "builtin and file-loaded should have same number of materials"
+    );
 
     // Spot-check a few materials
-    for key in &["lyso", "stainless.s316L", "water", "air", "alumina", "fr4", "peek"] {
+    for key in &[
+        "lyso",
+        "stainless.s316L",
+        "water",
+        "air",
+        "alumina",
+        "fr4",
+        "peek",
+    ] {
         let b = builtin.get(key).unwrap();
         let f = from_files.get(key).unwrap();
         assert_eq!(b.density(), f.density(), "density mismatch for {key}");
@@ -335,7 +349,15 @@ fn parse_fractional_formula() {
 
 #[test]
 fn formula_mass_fractions_sum_to_one() {
-    for formula in &["H2O", "Al2O3", "Lu1.8Y0.2SiO5", "Bi4Ge3O12", "SiO2", "PbWO4", "NaI"] {
+    for formula in &[
+        "H2O",
+        "Al2O3",
+        "Lu1.8Y0.2SiO5",
+        "Bi4Ge3O12",
+        "SiO2",
+        "PbWO4",
+        "NaI",
+    ] {
         let fracs = formula_to_mass_fractions(formula).unwrap();
         let sum: f64 = fracs.iter().map(|(_, f)| f).sum();
         assert!(
@@ -350,10 +372,8 @@ fn mass_atom_roundtrip_all() {
     for formula in &["H2O", "Al2O3", "SiO2", "NaI", "Bi4Ge3O12"] {
         let counts = parse_formula(formula).unwrap();
         let total: f64 = counts.iter().map(|(_, c)| c).sum();
-        let atom_fracs: Vec<(String, f64)> = counts
-            .iter()
-            .map(|(s, c)| (s.clone(), c / total))
-            .collect();
+        let atom_fracs: Vec<(String, f64)> =
+            counts.iter().map(|(s, c)| (s.clone(), c / total)).collect();
 
         let mass_fracs = atom_to_mass_fractions(&atom_fracs).unwrap();
         let back = mass_to_atom_fractions(&mass_fracs).unwrap();
