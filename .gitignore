@@ -220,3 +220,6 @@ justfile.local
 
 # Pre-commit cache
 .pre-commit-cache/
+
+# Cursor local config
+.cursor/

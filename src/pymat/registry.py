@@ -3,12 +3,13 @@ Global material registry for direct access.
 
 Allows materials to be accessed directly by key:
     from pymat import s304, s316L, lyso, fr4
-    
+
 All materials are stored in _REGISTRY when created (if no name collision).
 """
 
 from __future__ import annotations
-from typing import Dict, Optional, TYPE_CHECKING
+
+from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:
     from .core import Material
@@ -21,11 +22,11 @@ _REGISTRY: Dict[str, Material] = {}
 def register(key: str, material: Material) -> None:
     """
     Register a material for direct access.
-    
+
     Args:
         key: Access key (e.g., "s304", "lyso", "fr4")
         material: Material instance to register
-        
+
     Note:
         Only registers if key doesn't already exist (prevents collisions).
     """
@@ -47,4 +48,3 @@ def clear() -> None:
     """Clear all registered materials (for testing)."""
     global _REGISTRY
     _REGISTRY.clear()
-

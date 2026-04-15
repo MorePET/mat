@@ -1,0 +1,26 @@
+# Typos checker config
+# https://github.com/crate-ci/typos
+
+[default]
+# Don't flag identifiers that match chemical element symbols or
+# common materials-science product names as typos.
+extend-ignore-identifiers-re = [
+    "^[A-Z][a-z]?$",  # single chemical element symbols like Nd, Ba, Eu, Fe
+]
+
+[default.extend-words]
+# Product/brand names commonly used in materials science
+Macor = "Macor"
+macor = "macor"
+# "Ba" is the chemical symbol for Barium; the default dictionary
+# suggests "By"/"Be".
+Ba = "Ba"
+# Chemical element symbols that otherwise look like typos.
+Nd = "Nd"
+
+[files]
+extend-exclude = [
+    "uv.lock",
+    "*.lock",
+    "Cargo.lock",
+]

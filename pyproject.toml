@@ -71,3 +71,7 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+]

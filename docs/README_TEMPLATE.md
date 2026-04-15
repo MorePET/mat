@@ -119,4 +119,3 @@ MIT
 
 - **GitHub**: https://github.com/MorePET/py-mat
 - **Issues**: https://github.com/MorePET/py-mat/issues
-

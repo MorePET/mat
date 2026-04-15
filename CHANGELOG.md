@@ -68,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All physical properties now have corresponding `*_qty` accessors returning Pint Quantities
   - Example: `material.properties.mechanical.density_qty` returns `Quantity(8.0, 'g/cm^3')`
   - Enables automatic unit conversion: `density_qty.to('kg/m^3')`
-  
+
 - **Temperature-dependent property calculations**
   - `thermal.thermal_conductivity_at(temp)` calculates k at given temperature
   - Uses reference temperature and linear coefficient for interpolation
@@ -81,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Automatic PBR property defaulting from optical properties (DRY principle)**
   - `pbr.ior` now defaults to `optical.refractive_index` if not explicitly set
   - `pbr.transmission` now defaults to `optical.transparency / 100.0` if not explicitly set
-  
+
 - **Enhanced build123d transparency support**
   - `apply_to()` now properly applies `pbr.transmission` to build123d shape color alpha channel
 
@@ -104,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `pbr.ior` now defaults to `optical.refractive_index` if not explicitly set
   - `pbr.transmission` now defaults to `optical.transparency / 100.0` if not explicitly set
   - Eliminates redundancy while preserving ability to override for visualization purposes
-  
+
 - **Enhanced build123d transparency support**
   - `apply_to()` now properly applies `pbr.transmission` to build123d shape color alpha channel
   - Converts transmission (0-1 scale) directly to RGBA alpha for correct visualization
@@ -244,6 +244,7 @@ This project uses [Semantic Versioning](https://semver.org/):
 - **PATCH** version for bug fixes (backward compatible)
 
 ### Installation
+
 ```bash
 # Install latest release
 uv add git+https://github.com/MorePET/py-mat.git@latest
@@ -263,4 +264,3 @@ uv add git+https://github.com/MorePET/py-mat.git@v2.0.1
 [0.1.2]: https://github.com/MorePet/py-mat/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/MorePet/py-mat/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MorePet/py-mat/releases/tag/v0.1.0
-

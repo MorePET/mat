@@ -7,7 +7,7 @@ When releasing a new version of mat:
 1. **Update version numbers:**
    ```bash
    cd /Users/larsgerchow/Projects/mat
-   
+
    # Edit version in:
    # - pyproject.toml
    # - src/pymat/__init__.py
@@ -63,4 +63,3 @@ pymat = { git = "https://github.com/MorePET/mat.git", branch = "main" }
 [project]
 dependencies = ["pymat>=0.1.0"]
 ```
-

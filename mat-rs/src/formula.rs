@@ -101,10 +101,7 @@ pub fn mass_to_atom_fractions(
         return Ok(Vec::new());
     }
 
-    Ok(moles
-        .into_iter()
-        .map(|(sym, m)| (sym, m / total))
-        .collect())
+    Ok(moles.into_iter().map(|(sym, m)| (sym, m / total)).collect())
 }
 
 /// Convert atom fractions → mass fractions.

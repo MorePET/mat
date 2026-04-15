@@ -8,67 +8,68 @@ Supports both legacy single-value format and new unit-aware (value, unit) format
 """
 
 from __future__ import annotations
-import tomllib
+
 import logging
+import tomllib
 from pathlib import Path
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from .core import Material
 
+from . import registry
 from .core import Material
 from .properties import (
-    AllProperties, MechanicalProperties, ThermalProperties,
-    ElectricalProperties, OpticalProperties, PBRProperties,
-    ManufacturingProperties, ComplianceProperties, SourcingProperties
+    AllProperties,
 )
 from .units import STANDARD_UNITS
-from . import registry
 
 logger = logging.getLogger(__name__)
 
 
-def _build_properties_from_dict(data: Dict[str, Any], parent_props: Optional[AllProperties] = None) -> AllProperties:
+def _build_properties_from_dict(
+    data: Dict[str, Any], parent_props: Optional[AllProperties] = None
+) -> AllProperties:
     """
     Build AllProperties from a dictionary, inheriting from parent if provided.
-    
+
     Supports both legacy format (single values) and new unit-aware format (*_value, *_unit pairs).
-    
+
     Args:
         data: Dictionary with property keys
         parent_props: Parent AllProperties to inherit from (optional)
-        
+
     Returns:
         Fully populated AllProperties
-        
+
     Legacy format (backward compatible):
         thermal.melting_point = 1450  -> auto-assigns degC unit
-        
+
     New unit-aware format:
         thermal.melting_point_value = 1450
         thermal.melting_point_unit = "degC"
     """
     from copy import deepcopy
-    
+
     # Start with parent properties or empty
     props = deepcopy(parent_props) if parent_props else AllProperties()
-    
+
     # Helper to safely get and update nested properties
     def update_properties(prop_obj, prop_dict, prop_name):
         """Update property object from dictionary, handling both legacy and new formats."""
         for key, value in prop_dict.items():
             if value is None:
                 continue
-            
+
             # Skip processed value/unit pairs
             if key.endswith("_unit"):
                 continue
-            
+
             # Check if this is a value in a value/unit pair
             if key.endswith("_value"):
                 base_key = key[:-6]  # Remove "_value" suffix
                 unit_key = f"{base_key}_unit"
-                
+
                 # Get the unit from the dictionary
                 unit = prop_dict.get(unit_key)
                 if unit is None:
@@ -83,13 +84,13 @@ def _build_properties_from_dict(data: Dict[str, Any], parent_props: Optional[All
                     else:
                         logger.warning(f"Could not determine unit for {full_key}")
                         unit = None
-                
+
                 # Set both value and unit
                 if hasattr(prop_obj, base_key):
                     setattr(prop_obj, base_key, value)
                 if unit and hasattr(prop_obj, unit_key):
                     setattr(prop_obj, unit_key, unit)
-            
+
             # Legacy format: single value (not a value/unit pair)
             elif not key.endswith("_unit"):
                 if hasattr(prop_obj, key):
@@ -101,9 +102,12 @@ def _build_properties_from_dict(data: Dict[str, Any], parent_props: Optional[All
                         if default_unit:
                             setattr(prop_obj, unit_key, default_unit)
                             logger.warning(
-                                f"No unit specified for {prop_name}.{key}, auto-assigning {default_unit}"
+                                "No unit specified for %s.%s, auto-assigning %s",
+                                prop_name,
+                                key,
+                                default_unit,
                             )
-    
+
     # Parse each property group
     if "mechanical" in data:
         update_properties(props.mechanical, data["mechanical"], "mechanical")
@@ -127,11 +131,11 @@ def _build_properties_from_dict(data: Dict[str, Any], parent_props: Optional[All
         update_properties(props.compliance, data["compliance"], "compliance")
     if "sourcing" in data:
         update_properties(props.sourcing, data["sourcing"], "sourcing")
-    
+
     # Custom properties
     if "custom" in data:
         props.custom.update(data["custom"])
-    
+
     return props
 
 
@@ -143,13 +147,13 @@ def _resolve_material_node(
 ) -> Material:
     """
     Recursively build a Material node from TOML data.
-    
+
     Args:
         key: Material key (e.g., "s304")
         data: Dictionary with material data
         parent_material: Parent Material (for hierarchy)
         parent_props: Parent properties (for inheritance)
-        
+
     Returns:
         Material instance
     """
@@ -161,15 +165,28 @@ def _resolve_material_node(
     temper = data.get("temper")
     treatment = data.get("treatment")
     vendor = data.get("vendor")
-    
+
     # Build properties from all property groups
     properties = _build_properties_from_dict(
-        {k: v for k, v in data.items() 
-         if k in ("mechanical", "thermal", "electrical", "optical", "pbr", 
-                  "manufacturing", "compliance", "sourcing", "custom")},
-        parent_props
+        {
+            k: v
+            for k, v in data.items()
+            if k
+            in (
+                "mechanical",
+                "thermal",
+                "electrical",
+                "optical",
+                "pbr",
+                "manufacturing",
+                "compliance",
+                "sourcing",
+                "custom",
+            )
+        },
+        parent_props,
     )
-    
+
     # Create material
     material = Material(
         name=name,
@@ -183,18 +200,32 @@ def _resolve_material_node(
         parent=parent_material,
         _key=key,
     )
-    
+
     # Register for direct access
     registry.register(key, material)
-    
+
     # Process children (nested dictionaries that represent child materials)
     for child_key, child_data in data.items():
         if isinstance(child_data, dict) and not child_key.startswith("_"):
             # Skip property group keys
-            if child_key not in ("mechanical", "thermal", "electrical", "optical", "pbr",
-                                "manufacturing", "compliance", "sourcing", "custom",
-                                "name", "formula", "composition", "grade", "temper",
-                                "treatment", "vendor"):
+            if child_key not in (
+                "mechanical",
+                "thermal",
+                "electrical",
+                "optical",
+                "pbr",
+                "manufacturing",
+                "compliance",
+                "sourcing",
+                "custom",
+                "name",
+                "formula",
+                "composition",
+                "grade",
+                "temper",
+                "treatment",
+                "vendor",
+            ):
                 child_material = _resolve_material_node(
                     child_key,
                     child_data,
@@ -202,26 +233,26 @@ def _resolve_material_node(
                     parent_props=properties,
                 )
                 material._children[child_key] = child_material
-    
+
     return material
 
 
 def load_toml(file_path: Path | str) -> Dict[str, Material]:
     """
     Load materials from a TOML file.
-    
+
     Args:
         file_path: Path to TOML file
-        
+
     Returns:
         Dictionary of {key -> Material} for top-level materials
-        
+
     Example TOML:
         [stainless]
         name = "Stainless Steel"
         [stainless.mechanical]
         density = 8.0
-        
+
         [stainless.s304]
         grade = "304"
         [stainless.s304.mechanical]
@@ -230,31 +261,30 @@ def load_toml(file_path: Path | str) -> Dict[str, Material]:
     file_path = Path(file_path)
     with open(file_path, "rb") as f:
         data = tomllib.load(f)
-    
+
     materials = {}
     for key, mat_data in data.items():
         if isinstance(mat_data, dict) and not key.startswith("_"):
             material = _resolve_material_node(key, mat_data)
             materials[key] = material
-    
+
     return materials
 
 
 def load_category(category_name: str) -> Dict[str, Material]:
     """
     Load a material category from data/ directory.
-    
+
     Args:
         category_name: Category name (e.g., "metals", "scintillators")
-        
+
     Returns:
         Dictionary of {key -> Material}
     """
     data_dir = Path(__file__).parent / "data"
     file_path = data_dir / f"{category_name}.toml"
-    
+
     if not file_path.exists():
         raise FileNotFoundError(f"Material category not found: {file_path}")
-    
-    return load_toml(file_path)
 
+    return load_toml(file_path)

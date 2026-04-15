@@ -72,7 +72,7 @@ class ThermalProperties:
 class ThermalProperties:
     melting_point_value: Optional[float] = None
     melting_point_unit: str = "degC"
-    
+
     def melting_point(self) -> Optional[ureg.Quantity]:
         if self.melting_point_value is None:
             return None
@@ -89,7 +89,7 @@ class ThermalProperties:
     thermal_conductivity: Optional[ureg.Quantity] = None  # W/(m·K) at T_ref
     thermal_conductivity_ref_temp: Optional[ureg.Quantity] = None  # Default: 20°C
     thermal_conductivity_coeff: Optional[float] = None  # Linear coefficient (1/K)
-    
+
     def thermal_conductivity_at(self, temp: ureg.Quantity) -> Optional[ureg.Quantity]:
         """Calculate thermal conductivity at given temperature."""
         if self.thermal_conductivity is None:
@@ -216,4 +216,3 @@ k_at_100C = steel.properties.thermal.thermal_conductivity_at(100 * ureg.degC)
 - Pint GitHub: https://github.com/hgrecco/pint
 - Current pymat version: v1.0.0
 - Location: `/Users/larsgerchow/Projects/py-mat`
-

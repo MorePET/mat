@@ -284,4 +284,3 @@ vendor = "eljen"
 [plastic_scint.EJ200.optical]
 light_yield = 12000
 decay_time = 2.1
-
