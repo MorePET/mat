@@ -11,23 +11,20 @@ Run:
 Outputs:
     - Physics properties to stdout
     - Three.js MeshPhysicalMaterial dict to stdout
-    - Writes the JSON to `examples/output/steel_material.json` for
-      downstream viewer consumption
+    - Writes the JSON to `examples/output/` for downstream viewer
+      consumption
 
-To verify visually in ocp_vscode (manual, requires VS Code + the
-OCP CAD Viewer extension):
-    1. `pip install py-materials[pbr] build123d ocp-vscode`
-    2. Run this script with `--visual` to render a shader_ball in the
-       viewer (see the block at the bottom of this file)
-    3. Take a screenshot from the viewer's camera panel for snapshot
-       verification (automated headless snapshotting of ocp_vscode is
-       not currently feasible — tracked as a follow-up)
+This example deliberately avoids pulling in `build123d` or
+`ocp_vscode` — it's the minimal py-materials-only demo. For the full
+integration with build123d's `Shape.material` and live rendering in
+`ocp_vscode`, see the matching example on the build123d fork:
+`gerchowl/build123d@feature/pymat-material-integration:examples/pbr_material_pymat.py`,
+which composes all three libraries.
 """
 
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 from pymat import Material
@@ -130,44 +127,7 @@ def main() -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Optional: ocp_vscode visual rendering block.
-# ---------------------------------------------------------------------------
-# This block is skipped by default. To run it interactively:
-#
-#     pip install py-materials[pbr] build123d ocp-vscode
-#     python examples/pbr_integration.py --visual
-#
-# It requires VS Code with the OCP CAD Viewer extension running, and
-# opens a `shader_ball` with the material applied. Manual screenshot
-# capture is currently the only way to snapshot — automated headless
-# snapshotting of ocp_vscode is tracked as a separate follow-up.
-
-
-def visual_demo() -> int:  # pragma: no cover
-    """Render a shader_ball with the rich steel material in ocp_vscode."""
-    try:
-        from build123d import Box
-        from ocp_vscode import show  # type: ignore[import-not-found]
-    except ImportError as e:
-        print(f"Visual demo requires [pbr] + build123d + ocp_vscode: {e}")
-        return 1
-
-    # A build123d shader ball would be ideal but the helper lives in
-    # `ocp_vscode.utils.create_shader_ball` and requires its own
-    # tesselation; we use a simple Box to keep the example minimal.
-    shape = Box(50, 50, 50)
-    steel = build_steel_with_rich_pbr()
-    assert steel is not None
-    # Until build123d ships `Shape.material` as a first-class attribute
-    # (tracked in issue #3 + pending build123d PR), we set it as an
-    # ad-hoc attribute — matches the current ocp_vscode convention.
-    shape.material = steel  # type: ignore[attr-defined]
-    show(shape)
-    return 0
-
-
 if __name__ == "__main__":
-    if "--visual" in sys.argv:
-        sys.exit(visual_demo())
+    import sys
+
     sys.exit(main())
