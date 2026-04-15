@@ -76,6 +76,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Minimum supported Python. `tomllib` is shimmed via
+          # `tomli` on 3.10 (see src/pymat/loader.py + the env
+          # marker in pyproject.toml).
+          - label: "py3.10, all"
+            python-version: "3.10"
+            uv-sync-args: "--all-extras"
+          - label: "py3.11, all"
+            python-version: "3.11"
+            uv-sync-args: "--all-extras"
           # Full integration. On 3.12, `--all-extras` installs
           # periodictable, matproj, build123d, and dev (pytest). On
           # 3.13+, the env marker on build123d drops it silently,
