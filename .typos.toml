@@ -17,6 +17,10 @@ macor = "macor"
 Ba = "Ba"
 # Chemical element symbols that otherwise look like typos.
 Nd = "Nd"
+# Three.js MeshPhysicalMaterial parameter name. typos flags this
+# as a typo for "metallicity", which isn't a word. See ADR-0002.
+metalness = "metalness"
+metalnessMap = "metalnessMap"
 
 [files]
 extend-exclude = [
