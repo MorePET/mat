@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-15
+
+### Added
+
+- `Material.molar_mass` computed `@property`, parsed from `self.formula` via a new local `pymat.elements.ATOMIC_WEIGHT` table that mirrors `rs-materials` for Python ↔ Rust parity. Supports fractional stoichiometry (`Lu1.8Y0.2SiO5`) and strips dopant suffixes (`LYSO:Ce` → `LYSO`).
+- `Material.molar_mass_qty` — Pint-wrapped companion accessor following the existing `*_qty` pattern on other properties.
+- `pymat.elements` module with `ATOMIC_WEIGHT`, `parse_formula()`, and `compute_molar_mass()`.
+- Python 3.10 support via `tomli` shim in `src/pymat/loader.py`. Contributed by @bernhard-42 in [#6](https://github.com/MorePET/mat/pull/6), our first outside contribution.
+- `Python :: 3.13` classifier.
+- `docs/decisions/` — ADR infrastructure (Architectural Decision Records). First entry: `0001-derived-chemistry-properties-live-on-material.md` documents why derived chemistry properties live on `Material` as computed `@property` accessors rather than inside a new property group.
+
+### Changed
+
+- `requires-python` relaxed from `>=3.11` to `>=3.10`.
+- `build123d` / `dev` / `all` extras now carry environment marker `python_version<'3.13'` so `pip install py-materials[build123d]` on Python 3.13+ silently drops `build123d` instead of erroring on missing `cadquery-ocp` / `vtk` wheels. The core library works on 3.13+; only the optional visualisation path is gated.
+- `enrich_from_periodictable` docstring rewritten: now explicitly states that compound density is **not** derivable from periodictable (only pure elements have it). The code path is unchanged — it was already a no-op for compounds — but the previous docstring promised behavior that never worked. Use `enrich_from_matproj` for compound density instead.
+- `enrich_from_periodictable` uses `logger.warning` for invalid formulas instead of `print`.
+- `ImportError` in enrichers is now properly chained via `raise ... from e`.
+
+### Fixed
+
+- `src/pymat/__init__.py` `__version__` synced to `2.1.0` (was stuck at `2.0.4` after the 2.0.5 release — the file had never been updated alongside `pyproject.toml`).
+- `uv.lock` regenerated for the `py-mat` → `py-materials` package rename from `cf4db36`. CI had been silently broken on `uv sync --frozen` since the rename because the lockfile still referenced the old package name; this PR makes `--frozen` usable again.
+- Three latently-broken tests in `tests/test_enrichers.py` rewritten to check the behavior that actually works (composition extraction + computed molar mass via `Material.molar_mass`). Previously they were marked `xfail(strict=True)` as a stopgap; they are now proper passes.
+
+### Infrastructure (not user-facing)
+
+- Adopted the vigOS `dev` / `main` branching convention with GitHub rulesets. `main` and `dev` both require PRs with passing CI; force-push and deletion blocked; `commit-action-bot` and `vig-os-release-app` plus org/repo admins are in the bypass list.
+- CI matrix expanded to Python 3.10 / 3.11 / 3.12 / 3.13, all with `--all-extras`. `build123d` installs on 3.10–3.12 and silently drops on 3.13+ via the environment marker.
+- New `Rust (mat-rs)` PR-CI gate running `cargo fmt --check`, `cargo clippy -D warnings`, and `cargo test`. Previously the crate only ran in `release-rs-materials.yml` on tag push, so broken Rust changes could land undetected.
+- `.typos.toml` added: ignores single/double-letter chemical element symbols and the `Macor` product name. Without this, the `typos` pre-commit hook would auto-"correct" `Nd` (Neodymium) → `And` in `mat-rs/src/elements.rs`, `Macor` (Corning brand) → `Macro` in the README + CHANGELOG + ceramics.toml, and similar damage across the repo.
+- `sync-main-to-dev.yml` conflict detection switched from `git merge --no-commit --no-ff` to `git merge-tree --write-tree`. The old approach reported false-positive conflicts on degenerate merges (one side an ancestor of the other — which happens after every `dev → main` PR).
+- Template refresh: bumped `github/codeql-action` pins in `codeql.yml` + `scorecard.yml`, bumped `actions/create-github-app-token` v2 → v3 in `sync-issues.yml`, bumped `vig-os/commit-action` v0.1.5 → v0.2.0 with `MAX_ATTEMPTS: "3"`.
+- Dependabot security updates applied: `requests` 2.32.5 → 2.33.0 (CVE-2026-25645), `pillow` 12.1.1 → 12.2.0, `pygments` 2.19.2 → 2.20.0, `pytest` 9.0.2 → 9.0.3.
+- `RELEASE_PROCESS.md` and `TEMPERATURE_UNITS_IMPLEMENTATION.md` rewritten to satisfy `pymarkdown` MD031 (upstream has a known fixer bug with fenced code blocks nested in list items — tracked in jackdewinter/pymarkdown#1568, fix merged but unreleased).
+
 ## [rs-materials 0.2.0] - 2026-03-25
 
 ### Added
