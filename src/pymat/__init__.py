@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from .core import Material
 
 # Exports
-from . import factories, registry
+from . import factories, registry, vis
 from .core import Material
 from .enrichers import enrich_all, enrich_from_matproj, enrich_from_periodictable
 from .loader import load_category, load_toml
@@ -76,6 +76,7 @@ __all__ = [
     "enrich_from_matproj",
     "enrich_all",
     "factories",
+    "vis",
 ]
 
 # ============================================================================
