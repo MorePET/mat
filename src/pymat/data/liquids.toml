@@ -30,7 +30,7 @@ dielectric_constant = 80.1
 resistivity_value = 182000
 resistivity_unit = "ohm*m"
 
-[water.pbr]
+[water.vis]
 base_color = [0.7, 0.85, 0.95, 0.3]
 metallic = 0.0
 roughness = 0.0
@@ -52,7 +52,7 @@ thermal_conductivity_unit = "W/(m*K)"
 specific_heat_value = 2090
 specific_heat_unit = "J/(kg*K)"
 
-[water.ice.pbr]
+[water.ice.vis]
 base_color = [0.9, 0.95, 1.0, 0.7]
 roughness = 0.1
 transmission = 0.8
@@ -81,7 +81,7 @@ specific_heat_unit = "J/(kg*K)"
 [heavy_water.optical]
 refractive_index = 1.328
 
-[heavy_water.pbr]
+[heavy_water.vis]
 base_color = [0.7, 0.85, 0.95, 0.3]
 metallic = 0.0
 roughness = 0.0
@@ -114,7 +114,7 @@ dielectric_constant = 2.2
 breakdown_voltage_value = 30
 breakdown_voltage_unit = "kV/mm"
 
-[mineral_oil.pbr]
+[mineral_oil.vis]
 base_color = [0.95, 0.9, 0.7, 0.4]
 metallic = 0.0
 roughness = 0.0
@@ -145,7 +145,7 @@ specific_heat_unit = "J/(kg*K)"
 [glycerol.optical]
 refractive_index = 1.473
 
-[glycerol.pbr]
+[glycerol.vis]
 base_color = [0.95, 0.95, 0.9, 0.5]
 metallic = 0.0
 roughness = 0.0
@@ -182,7 +182,7 @@ dielectric_constant = 2.7
 breakdown_voltage_value = 15
 breakdown_voltage_unit = "kV/mm"
 
-[silicone_oil.pbr]
+[silicone_oil.vis]
 base_color = [0.9, 0.9, 0.9, 0.4]
 metallic = 0.0
 roughness = 0.0

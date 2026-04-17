@@ -34,7 +34,7 @@ dielectric_constant = 3.2
 volume_resistivity_value = 1e16
 volume_resistivity_unit = "ohm*cm"
 
-[peek.pbr]
+[peek.vis]
 base_color = [0.82, 0.7, 0.55, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -126,7 +126,7 @@ dielectric_constant = 3.7
 volume_resistivity_value = 1e17
 volume_resistivity_unit = "ohm*cm"
 
-[delrin.pbr]
+[delrin.vis]
 base_color = [0.9, 0.9, 0.85, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -168,7 +168,7 @@ thermal_conductivity_unit = "W/(m*K)"
 [ultem.electrical]
 dielectric_constant = 3.15
 
-[ultem.pbr]
+[ultem.vis]
 base_color = [0.85, 0.65, 0.2, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -209,7 +209,7 @@ dielectric_constant = 2.1
 volume_resistivity_value = 1e18
 volume_resistivity_unit = "ohm*cm"
 
-[ptfe.pbr]
+[ptfe.vis]
 base_color = [0.95, 0.95, 0.95, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -227,7 +227,7 @@ treatment = "reflector"
 transparency = 0
 reflectivity = 98
 
-[ptfe.reflector.pbr]
+[ptfe.reflector.vis]
 base_color = [0.98, 0.98, 0.98, 1.0]
 transmission = 0.0
 roughness = 0.2
@@ -255,7 +255,7 @@ max_service_temp_unit = "degC"
 transparency = 0
 reflectivity = 98.5
 
-[esr.pbr]
+[esr.vis]
 base_color = [0.99, 0.99, 0.99, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -287,7 +287,7 @@ glass_transition_unit = "degC"
 melting_point_value = 215
 melting_point_unit = "degC"
 
-[nylon.pbr]
+[nylon.vis]
 base_color = [0.85, 0.85, 0.8, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -323,7 +323,7 @@ glass_transition_unit = "degC"
 melting_point_value = 160
 melting_point_unit = "degC"
 
-[pla.pbr]
+[pla.vis]
 base_color = [0.8, 0.8, 0.8, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -355,7 +355,7 @@ glass_transition_unit = "degC"
 melting_point_value = 225
 melting_point_unit = "degC"
 
-[abs.pbr]
+[abs.vis]
 base_color = [0.3, 0.3, 0.3, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -384,7 +384,7 @@ glass_transition_unit = "degC"
 melting_point_value = 225
 melting_point_unit = "degC"
 
-[petg.pbr]
+[petg.vis]
 base_color = [0.85, 0.85, 0.8, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -405,7 +405,7 @@ name = "TPU (Thermoplastic Polyurethane)"
 density_value = 1.21
 density_unit = "g/cm^3"
 
-[tpu.pbr]
+[tpu.vis]
 base_color = [0.6, 0.6, 0.6, 0.8]
 transmission = 0.0
 metallic = 0.0
@@ -436,7 +436,7 @@ yield_strength_unit = "MPa"
 melting_point_value = 400
 melting_point_unit = "degC"
 
-[vespel.pbr]
+[vespel.vis]
 base_color = [0.4, 0.2, 0.1, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -458,7 +458,7 @@ yield_strength_unit = "MPa"
 melting_point_value = 330
 melting_point_unit = "degC"
 
-[torlon.pbr]
+[torlon.vis]
 base_color = [0.85, 0.6, 0.3, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -478,7 +478,7 @@ yield_strength_unit = "MPa"
 melting_point_value = 217
 melting_point_unit = "degC"
 
-[pctfe.pbr]
+[pctfe.vis]
 base_color = [0.9, 0.9, 0.95, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -522,7 +522,7 @@ dielectric_constant = 3.0
 volume_resistivity_value = 1e14
 volume_resistivity_unit = "ohm*cm"
 
-[pmma.pbr]
+[pmma.vis]
 base_color = [0.95, 0.95, 0.95, 0.9]
 metallic = 0.0
 roughness = 0.1
@@ -568,7 +568,7 @@ dielectric_constant = 2.3
 volume_resistivity_value = 1e16
 volume_resistivity_unit = "ohm*cm"
 
-[pe.pbr]
+[pe.vis]
 base_color = [0.9, 0.9, 0.88, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -679,7 +679,7 @@ dielectric_constant = 2.9
 volume_resistivity_value = 1e14
 volume_resistivity_unit = "ohm*cm"
 
-[pc.pbr]
+[pc.vis]
 base_color = [0.92, 0.92, 0.92, 0.85]
 metallic = 0.0
 roughness = 0.15

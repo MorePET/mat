@@ -30,7 +30,7 @@ dielectric_constant = 9.0
 breakdown_voltage_value = 12
 breakdown_voltage_unit = "kV/mm"
 
-[alumina.pbr]
+[alumina.vis]
 base_color = [0.95, 0.95, 0.93, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -83,7 +83,7 @@ thermal_conductivity_unit = "W/(m*K)"
 [zirconia.electrical]
 dielectric_constant = 25
 
-[zirconia.pbr]
+[zirconia.vis]
 base_color = [0.9, 0.88, 0.85, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -115,7 +115,7 @@ thermal_conductivity_unit = "W/(m*K)"
 [sic.electrical]
 dielectric_constant = 10
 
-[sic.pbr]
+[sic.vis]
 base_color = [0.5, 0.5, 0.5, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -148,7 +148,7 @@ dielectric_constant = 5.8
 volume_resistivity_value = 1e11
 volume_resistivity_unit = "ohm*cm"
 
-[macor.pbr]
+[macor.vis]
 base_color = [0.98, 0.98, 0.96, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -177,7 +177,7 @@ melting_point_unit = "degC"
 thermal_conductivity_value = 17
 thermal_conductivity_unit = "W/(m*K)"
 
-[shapal.pbr]
+[shapal.vis]
 base_color = [0.85, 0.82, 0.8, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -215,7 +215,7 @@ dielectric_constant = 6.0
 breakdown_voltage_value = 15
 breakdown_voltage_unit = "kV/mm"
 
-[glass.pbr]
+[glass.vis]
 base_color = [0.9, 0.93, 0.95, 0.85]
 metallic = 0.0
 roughness = 0.1
@@ -259,7 +259,7 @@ grade = "BK7"
 [glass.BK7.optical]
 refractive_index = 1.517
 
-[glass.BK7.pbr]
+[glass.BK7.vis]
 transmission = 0.95
 
 
@@ -286,7 +286,7 @@ thermal_conductivity_unit = "W/(m*K)"
 [beryllia.electrical]
 dielectric_constant = 7.35
 
-[beryllia.pbr]
+[beryllia.vis]
 base_color = [0.9, 0.9, 0.9, 1.0]
 transmission = 0.0
 metallic = 0.0
@@ -319,7 +319,7 @@ thermal_conductivity_unit = "W/(m*K)"
 [yttria.electrical]
 dielectric_constant = 10
 
-[yttria.pbr]
+[yttria.vis]
 base_color = [0.95, 0.93, 0.9, 1.0]
 transmission = 0.0
 metallic = 0.0
