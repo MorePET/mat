@@ -25,11 +25,12 @@ for any consumer that just wants textures without physics data.
 Material.vis wires into this module for its lazy texture loading.
 """
 
-from pymat.vis._client import fetch, get_manifest, rowmap_entry, search
+from pymat.vis._client import fetch, get_manifest, prefetch, rowmap_entry, search
 
 __all__ = [
     "search",
     "fetch",
+    "prefetch",
     "rowmap_entry",
     "get_manifest",
 ]

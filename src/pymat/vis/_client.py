@@ -248,6 +248,53 @@ def fetch(
     return textures
 
 
+def prefetch(
+    source: str,
+    *,
+    tier: str = "1k",
+    tag: str | None = None,
+    cache_dir: Path | None = None,
+) -> int:
+    """Download all materials for a source × tier into the local cache.
+
+    Use for CI pipelines, air-gapped environments, or any scenario
+    where you want zero network traffic after setup.
+
+    Args:
+        source: Source name ("ambientcg", "polyhaven", ...).
+        tier: Resolution tier ("1k", "2k", "4k", "8k").
+        tag: Release tag. Uses default if None.
+        cache_dir: Override cache directory.
+
+    Returns:
+        Number of materials prefetched.
+    """
+    tag = tag or _DEFAULT_TAG
+    cdir = Path(cache_dir) if cache_dir else _cache_dir()
+    rowmap = _get_rowmap(source, tier, tag, cdir)
+    materials = rowmap.get("materials", {})
+
+    fetched = 0
+    total = len(materials)
+    for i, material_id in enumerate(materials, 1):
+        # Skip if already cached
+        mat_cache = cdir / source / tier / material_id
+        if mat_cache.exists() and any(mat_cache.glob("*.png")):
+            fetched += 1
+            continue
+
+        try:
+            fetch(source, material_id, tier=tier, tag=tag, cache_dir=cdir)
+            fetched += 1
+            if i % 10 == 0 or i == total:
+                log.info("prefetch %s/%s: %d/%d", source, tier, i, total)
+        except (ConnectionError, ValueError, KeyError):
+            log.warning("prefetch: failed to fetch %s/%s", source, material_id)
+
+    log.info("prefetch complete: %s %s — %d/%d cached", source, tier, fetched, total)
+    return fetched
+
+
 def rowmap_entry(
     source: str,
     material_id: str,
