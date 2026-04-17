@@ -1,162 +1,233 @@
-"""Visual regression tests — headless Three.js rendering via ocp_vscode standalone.
+"""Visual regression tests — headless Three.js rendering via ocp_vscode + Playwright.
 
-Renders materials on shapes in headless Chrome (Playwright), captures
-screenshots, compares to baseline images.
+Proves the full pipeline:
+    pymat.Material → .vis.textures (mat-vis) → to_threejs adapter
+    → build123d shape → ocp_vscode standalone → three-cad-viewer → screenshot
 
 Requirements:
     pip install playwright ocp_vscode build123d
     python -m playwright install chromium
 
-Skip with: MAT_VIS_SKIP_VISUAL=1
-Run:   pytest tests/test_visual_regression.py -v --timeout=60
-
-These tests validate the full pipeline:
-    pymat.Material → .vis.textures (mat-vis HTTP) → to_threejs adapter
-    → ocp_vscode standalone → three-cad-viewer → WebGL → screenshot
+Skip with: MAT_VIS_SKIP_VISUAL=1 (default)
+Run:   MAT_VIS_SKIP_VISUAL=0 pytest tests/test_visual_regression.py -v
 """
 
 from __future__ import annotations
 
 import json
 import os
-import time
 import threading
+import time
 from pathlib import Path
 
 import pytest
 
 SKIP_VISUAL = os.environ.get("MAT_VIS_SKIP_VISUAL", "1") == "1"
-BASELINE_DIR = Path(__file__).parent / "visual_baselines"
+SKIP_HEADLESS = os.environ.get("MAT_VIS_SKIP_HEADLESS", "1") == "1"
 OUTPUT_DIR = Path(__file__).parent / "visual_output"
 
 
-def _start_standalone_server(port: int = 3999) -> threading.Thread:
-    """Start ocp_vscode standalone server in a background thread."""
-    from ocp_vscode.standalone import OcpVscodeStandalone
+@pytest.fixture(scope="module")
+def standalone_server():
+    """Start ocp_vscode standalone viewer in a background thread."""
+    try:
+        from ocp_vscode.standalone import Viewer
+    except ImportError:
+        pytest.skip("ocp_vscode not installed")
 
-    server = OcpVscodeStandalone(port=port)
+    port = 3998  # avoid conflict with default 3939
+    viewer = Viewer({"port": port, "debug": False})
 
-    thread = threading.Thread(target=server.run, daemon=True)
+    thread = threading.Thread(target=viewer.start, daemon=True)
     thread.start()
-    time.sleep(2)  # wait for server to start
-    return thread
+    time.sleep(2)
+
+    yield f"http://127.0.0.1:{port}"
 
 
-def _take_screenshot(url: str, output_path: Path, wait_ms: int = 3000) -> Path:
-    """Take a screenshot of a URL using headless Chrome."""
-    from playwright.sync_api import sync_playwright
+@pytest.fixture(scope="module")
+def browser():
+    """Launch headless Chromium."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        pytest.skip("playwright not installed")
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 800, "height": 600})
-        page.goto(url)
-        page.wait_for_timeout(wait_ms)  # wait for WebGL render
-        page.screenshot(path=str(output_path))
-        browser.close()
-
-    return output_path
+    pw = sync_playwright().start()
+    b = pw.chromium.launch(headless=True)
+    yield b
+    b.close()
+    pw.stop()
 
 
-@pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestVisualRegression:
-    """Headless Three.js rendering tests."""
+def _screenshot(browser, url: str, name: str, wait_ms: int = 4000) -> Path:
+    """Navigate to URL, wait for render, take screenshot."""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    out = OUTPUT_DIR / f"{name}.png"
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """Ensure output dir exists."""
-        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    page = browser.new_page(viewport={"width": 800, "height": 600})
+    page.goto(url)
+    page.wait_for_timeout(wait_ms)
+    page.screenshot(path=str(out))
+    page.close()
 
-    def test_steel_cube_renders(self):
-        """Render a steel cube with PBR material and capture screenshot."""
-        try:
-            from build123d import Box
-            from pymat import Material
-            from ocp_vscode import show
-        except ImportError as e:
-            pytest.skip(f"Missing dependency: {e}")
+    return out
 
-        # Create shape with material
+
+@pytest.mark.skipif(SKIP_HEADLESS, reason="MAT_VIS_SKIP_HEADLESS=1 — needs ocp_vscode with built JS assets")
+class TestFullPipeline:
+    """End-to-end: Material → build123d shape → ocp_vscode → screenshot."""
+
+    def test_steel_cube(self, standalone_server, browser):
+        """Render a steel cube with PBR scalars (no textures)."""
+        from build123d import Box
+        from pymat import Material
+        from ocp_vscode import show, set_port
+
+        port = int(standalone_server.split(":")[-1])
+        set_port(port)
+
         shape = Box(10, 10, 10)
-        shape.material = Material(name="Test Steel")
-        shape.material.vis.metallic = 1.0
-        shape.material.vis.roughness = 0.3
-        shape.material.vis.base_color = (0.8, 0.8, 0.8, 1.0)
+        m = Material(name="Test Steel")
+        m.vis.metallic = 1.0
+        m.vis.roughness = 0.3
+        m.vis.base_color = (0.8, 0.8, 0.8, 1.0)
+        shape.material = m
 
-        # This is a proof-of-concept — the actual headless rendering
-        # requires the standalone server + playwright wiring.
-        # For now, verify the adapter produces valid output.
-        from pymat.vis.adapters import to_threejs
+        # Open browser FIRST so websocket connects, THEN show shape
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        out = OUTPUT_DIR / "steel_cube.png"
 
-        d = to_threejs(shape.material)
-        assert d["metalness"] == 1.0
-        assert d["roughness"] == 0.3
+        page = browser.new_page(viewport={"width": 800, "height": 600})
+        page.goto(standalone_server)
+        page.wait_for_timeout(2000)  # wait for websocket connect
 
-        # Save the Three.js material dict for manual inspection
-        output = OUTPUT_DIR / "steel_cube_material.json"
-        output.write_text(json.dumps(d, indent=2, default=str))
-        assert output.exists()
+        show(shape)
+        page.wait_for_timeout(5000)  # wait for tessellation + render
 
-    def test_wood_with_textures_renders(self):
-        """Render a wood material with mat-vis textures."""
-        try:
-            from pymat import Material, vis
-        except ImportError as e:
-            pytest.skip(f"Missing dependency: {e}")
+        page.screenshot(path=str(out))
+        page.close()
+
+        assert out.exists()
+        assert out.stat().st_size > 1000, "Screenshot too small — likely blank"
+        print(f"Screenshot saved: {out} ({out.stat().st_size} bytes)")
+
+    def test_wood_with_textures(self, standalone_server, browser):
+        """Render a shape with mat-vis textures (color, normal maps)."""
+        from build123d import Box
+        from pymat import Material, vis
+        from ocp_vscode import show, set_port
+
+        port = int(standalone_server.split(":")[-1])
+        set_port(port)
 
         results = vis.search(category="wood", limit=1)
         if not results:
             pytest.skip("No wood materials in mat-vis")
 
+        shape = Box(20, 20, 5)
         m = Material(name="Test Wood")
         m.vis.roughness = 0.6
         m.vis.metallic = 0.0
         m.vis.base_color = (0.6, 0.4, 0.2, 1.0)
         m.vis.source_id = f"{results[0]['source']}/{results[0]['id']}"
+        shape.material = m
 
-        from pymat.vis.adapters import to_threejs
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        out = OUTPUT_DIR / "wood_plank.png"
 
-        d = to_threejs(m)
+        page = browser.new_page(viewport={"width": 800, "height": 600})
+        page.goto(standalone_server)
+        page.wait_for_timeout(2000)
 
-        # Should have texture maps from mat-vis
-        has_textures = any(k in d for k in ("map", "normalMap", "roughnessMap"))
+        show(shape)
+        page.wait_for_timeout(8000)  # longer for texture fetch + render
 
-        output = OUTPUT_DIR / "wood_material.json"
-        output.write_text(json.dumps(
-            {k: v[:50] + "..." if isinstance(v, str) and len(v) > 50 else v
-             for k, v in d.items()},
-            indent=2, default=str,
-        ))
+        page.screenshot(path=str(out))
+        page.close()
 
-        assert output.exists()
-        # Texture presence depends on mat-vis data availability
-        if has_textures:
-            assert d["map"].startswith("data:image/png;base64,")
+        assert out.exists()
+        assert out.stat().st_size > 1000
+        print(f"Screenshot saved: {out} ({out.stat().st_size} bytes)")
+
+    def test_glass_sphere_transmission(self, standalone_server, browser):
+        """Render a transparent glass sphere."""
+        from build123d import Sphere
+        from pymat import Material
+        from ocp_vscode import show, set_port
+
+        port = int(standalone_server.split(":")[-1])
+        set_port(port)
+
+        shape = Sphere(10)
+        m = Material(name="Test Glass")
+        m.vis.roughness = 0.0
+        m.vis.metallic = 0.0
+        m.vis.base_color = (0.9, 0.95, 1.0, 0.3)
+        m.vis.ior = 1.52
+        m.vis.transmission = 0.9
+        shape.material = m
+
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        out = OUTPUT_DIR / "glass_sphere.png"
+
+        page = browser.new_page(viewport={"width": 800, "height": 600})
+        page.goto(standalone_server)
+        page.wait_for_timeout(2000)
+
+        show(shape)
+        page.wait_for_timeout(5000)
+
+        page.screenshot(path=str(out))
+        page.close()
+
+        assert out.exists()
+        assert out.stat().st_size > 1000
+        print(f"Screenshot saved: {out} ({out.stat().st_size} bytes)")
 
 
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestHeadlessScreenshot:
-    """Full headless rendering via ocp_vscode standalone + Playwright.
+class TestAdapterOutput:
+    """Verify adapter dict output without rendering (lighter, faster)."""
 
-    These tests require all dependencies (build123d, ocp_vscode, playwright)
-    and a working WebGL environment (headless Chrome provides this).
-    """
+    def test_to_threejs_steel(self):
+        """to_threejs produces valid MeshPhysicalMaterial dict."""
+        from pymat import Material
+        from pymat.vis.adapters import to_threejs
 
-    def test_screenshot_pipeline(self):
-        """Proof-of-concept: standalone server → Playwright → screenshot."""
-        try:
-            from build123d import Box
-            from ocp_vscode import show, set_port
-            from playwright.sync_api import sync_playwright
-        except ImportError as e:
-            pytest.skip(f"Missing dependency: {e}")
+        m = Material(name="Steel")
+        m.vis.metallic = 1.0
+        m.vis.roughness = 0.3
+        m.vis.base_color = (0.8, 0.8, 0.8, 1.0)
 
-        # This is the target architecture:
-        # 1. Start standalone server
-        # 2. show(shape) sends material data to server
-        # 3. Playwright captures screenshot
-        # 4. Compare to baseline
+        d = to_threejs(m)
+        assert d["metalness"] == 1.0
+        assert d["roughness"] == 0.3
 
-        # For now, just verify the imports and pipeline setup work
-        assert True  # placeholder for full headless wiring
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        (OUTPUT_DIR / "steel_threejs.json").write_text(json.dumps(d, indent=2, default=str))
+
+    def test_to_threejs_with_textures(self):
+        """to_threejs includes base64 data URIs when textures available."""
+        from pymat import Material, vis
+        from pymat.vis.adapters import to_threejs
+
+        results = vis.search(category="metal", limit=1)
+        if not results:
+            pytest.skip("No metals in mat-vis")
+
+        m = Material(name="Textured Metal")
+        m.vis.metallic = 1.0
+        m.vis.roughness = 0.3
+        m.vis.source_id = f"{results[0]['source']}/{results[0]['id']}"
+
+        d = to_threejs(m)
+
+        has_map = any(k in d for k in ("map", "normalMap", "roughnessMap", "metalnessMap"))
+
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        summary = {k: (v[:60] + "..." if isinstance(v, str) and len(v) > 60 else v) for k, v in d.items()}
+        (OUTPUT_DIR / "metal_textured_threejs.json").write_text(json.dumps(summary, indent=2, default=str))
+
+        if has_map:
+            assert d[next(k for k in ("map", "normalMap") if k in d)].startswith("data:image/png;base64,")

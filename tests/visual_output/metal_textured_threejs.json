@@ -1,0 +1,12 @@
+{
+  "type": "MeshPhysicalMaterial",
+  "metalness": 1.0,
+  "roughness": 0.3,
+  "ior": 1.5,
+  "transmission": 0.0,
+  "map": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQAEAIAAA...",
+  "normalMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAAAAA...",
+  "roughnessMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAAAAA...",
+  "metalnessMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAAAAA...",
+  "aoMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQAEAAAAA..."
+}
