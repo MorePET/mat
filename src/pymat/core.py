@@ -158,6 +158,14 @@ class _MaterialInternal:
 
         # Apply pbr={} kwarg → vis (3.0: vis owns PBR scalars)
         if self.pbr:
+            import warnings
+
+            warnings.warn(
+                "Material(pbr={...}) is deprecated — use vis={...} or set material.vis.* directly. "
+                "PBR scalars belong on material.vis, not material.properties.pbr.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             for key, value in self.pbr.items():
                 if key in self.vis._PBR_SCALAR_FIELDS:
                     setattr(self.vis, key, value)

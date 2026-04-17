@@ -176,12 +176,21 @@ def _build_properties_from_dict(
     if "optical" in data:
         update_properties(props.optical, data["optical"], "optical")
     if "pbr" in data:
+        import warnings
+
+        warnings.warn(
+            "TOML [pbr] section is deprecated — use [vis] instead. "
+            "PBR scalars belong under [material.vis]. "
+            "See migration guide: https://github.com/MorePET/mat/issues/40",
+            DeprecationWarning,
+            stacklevel=4,
+        )
         pbr_data = data["pbr"]
-        # Special handling for tuples
         if "base_color" in pbr_data:
             pbr_data["base_color"] = tuple(pbr_data["base_color"])
         if "emissive" in pbr_data:
             pbr_data["emissive"] = tuple(pbr_data["emissive"])
+        # Route to properties.pbr for backward compat
         update_properties(props.pbr, pbr_data, "pbr")
     if "manufacturing" in data:
         update_properties(props.manufacturing, data["manufacturing"], "manufacturing")
@@ -265,25 +274,7 @@ def _resolve_material_node(
         from pymat.vis._model import Vis
 
         material._vis = Vis.from_toml(vis_data)
-
-        # Sync vis scalars → properties.pbr for backward compat.
-        # vis values win over [pbr] values when both are present.
-        vis = material._vis
-        pbr = material.properties.pbr
-        if vis.roughness is not None:
-            pbr.roughness = vis.roughness
-        if vis.metallic is not None:
-            pbr.metallic = vis.metallic
-        if vis.base_color is not None:
-            pbr.base_color = vis.base_color
-        if vis.ior is not None:
-            pbr.ior = vis.ior
-        if vis.transmission is not None:
-            pbr.transmission = vis.transmission
-        if vis.clearcoat is not None:
-            pbr.clearcoat = vis.clearcoat
-        if vis.emissive is not None:
-            pbr.emissive = vis.emissive
+        material._sync_vis_to_pbr()  # backward compat for ocp_vscode
 
     # Register for direct access
     registry.register(key, material)
