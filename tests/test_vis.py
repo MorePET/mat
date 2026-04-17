@@ -108,10 +108,22 @@ class TestTextures:
         v = Vis()
         assert v.textures == {}
 
-    def test_with_source_id_attempts_fetch(self):
+    def test_with_source_id_attempts_fetch(self, monkeypatch):
+        """Verify that accessing textures triggers the fetch layer."""
+        called = {}
+
+        def mock_fetch(source, material_id, *, tier="1k", **kw):
+            called["source"] = source
+            called["material_id"] = material_id
+            return {"color": b"\x89PNG_mock"}
+
+        monkeypatch.setattr("pymat.vis._client.fetch", mock_fetch)
+
         v = Vis(source_id="ambientcg/Metal032")
-        with pytest.raises(NotImplementedError):
-            _ = v.textures
+        textures = v.textures
+        assert called["source"] == "ambientcg"
+        assert called["material_id"] == "Metal032"
+        assert textures["color"] == b"\x89PNG_mock"
 
 
 # ── ResolvedChannel ──────────────────────────────────────────
@@ -203,17 +215,41 @@ class TestVisModuleApi:
         assert hasattr(vis, "rowmap_entry")
         assert hasattr(vis, "get_manifest")
 
-    def test_stubs_raise_not_implemented(self):
+    def test_get_manifest_returns_dict(self):
         from pymat import vis
 
-        with pytest.raises(NotImplementedError):
-            vis.search(category="metal")
+        manifest = vis.get_manifest(release_tag="v0.1.0")
+        assert "release_tag" in manifest
+        assert manifest["release_tag"] == "v0.1.0"
 
-        with pytest.raises(NotImplementedError):
-            vis.fetch("ambientcg", "Metal032")
+    def test_search_with_mock(self, monkeypatch):
+        """Search against a mock index (no network)."""
+        from pymat import vis
+        from pymat.vis import _client
 
-        with pytest.raises(NotImplementedError):
-            vis.rowmap_entry("ambientcg", "Metal032")
+        mock_index = [
+            {"id": "Metal001", "source": "ambientcg", "category": "metal", "roughness": 0.3, "metalness": 1.0},
+            {"id": "Wood001", "source": "ambientcg", "category": "wood", "roughness": 0.6},
+        ]
 
-        with pytest.raises(NotImplementedError):
-            vis.get_manifest()
+        def mock_fetch_json(url, cache_path=None):
+            if "ambientcg" in url:
+                return mock_index
+            raise ConnectionError("not available")
+
+        monkeypatch.setattr(_client, "_fetch_json", mock_fetch_json)
+
+        results = vis.search(category="metal")
+        assert len(results) == 1
+        assert results[0]["id"] == "Metal001"
+
+    def test_rowmap_entry_missing_material_raises(self, monkeypatch):
+        from pymat import vis
+        from pymat.vis import _client
+
+        mock_rowmap = {"version": 1, "materials": {"Existing001": {"color": {"offset": 0, "length": 100}}}}
+
+        monkeypatch.setattr(_client, "_fetch_json", lambda url, cache_path=None: mock_rowmap)
+
+        with pytest.raises(KeyError, match="NotExist"):
+            vis.rowmap_entry("ambientcg", "NotExist")
