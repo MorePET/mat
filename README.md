@@ -19,18 +19,13 @@ A hierarchical material library for CAD applications and Monte Carlo particle tr
 ## Installation
 
 ```bash
-# From PyPI (recommended)
 pip install py-materials
 # or: uv add py-materials
-
-# From the main branch (development)
-pip install git+https://github.com/MorePET/mat.git@main
-
-# With optional extras
-pip install "py-materials[periodictable]"    # auto-fill from chemical formulas
-pip install "py-materials[build123d]"        # build123d Shape integration (Python <= 3.12)
-pip install "py-materials[all]"              # everything above
 ```
+
+Core install includes `pint` + `periodictable`. No extras needed —
+PBR textures are fetched on demand from [mat-vis][mat-vis] via
+pure-Python HTTP range reads (zero binary deps).
 
 ## Quick Start
 
@@ -559,6 +554,21 @@ assert alumina.density is None          # use enrich_from_matproj for compounds
 
 These can differ intentionally! A material might be physically transparent (95% optical transmission) but rendered opaque (0% pbr transmission) for CAD clarity.
 
+## Material Catalog
+
+Browse all materials with properties and thumbnails:
+[**docs/catalog/**](docs/catalog/)
+
+Generated from TOML data + [mat-vis][mat-vis] textures via
+`python scripts/generate_catalog.py`.
+
+## Contributing
+
+[**CONTRIBUTING.md**](CONTRIBUTING.md) — how to request, add, or
+correct materials. Issue templates for
+[material requests](https://github.com/MorePET/mat/issues/new?template=material-request.yml)
+and [data corrections](https://github.com/MorePET/mat/issues/new?template=material-correction.yml).
+
 ## License
 
 MIT
@@ -578,3 +588,6 @@ and the conditions under which the decision should be revisited.
 - **Issues**: https://github.com/MorePET/mat/issues
 - **PyPI**: https://pypi.org/project/py-materials/
 - **Rust crate** (`rs-materials`): https://crates.io/crates/rs-materials
+- **PBR textures** (`mat-vis`): https://github.com/MorePET/mat-vis
+
+[mat-vis]: https://github.com/MorePET/mat-vis
