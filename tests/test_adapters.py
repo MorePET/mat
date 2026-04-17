@@ -16,19 +16,15 @@ from pymat.vis.adapters import (
 
 
 def _make_material(with_vis=False):
-    """Create a test material with optional vis textures."""
-    m = Material(
-        name="Test Steel",
-        pbr={
-            "metallic": 1.0,
-            "roughness": 0.3,
-            "base_color": (0.8, 0.8, 0.8, 1.0),
-            "ior": 2.5,
-            "transmission": 0.0,
-            "clearcoat": 0.0,
-            "emissive": (0, 0, 0),
-        },
-    )
+    """Create a test material with vis scalars."""
+    m = Material(name="Test Steel")
+    m.vis.metallic = 1.0
+    m.vis.roughness = 0.3
+    m.vis.base_color = (0.8, 0.8, 0.8, 1.0)
+    m.vis.ior = 2.5
+    m.vis.transmission = 0.0
+    m.vis.clearcoat = 0.0
+    m.vis.emissive = (0, 0, 0)
     if with_vis:
         m.vis._textures = {
             "color": b"\x89PNG_color",

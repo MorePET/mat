@@ -63,6 +63,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v"
+filterwarnings = [
+    "ignore:Material\\(pbr=:DeprecationWarning",
+    "ignore:TOML \\[pbr\\] section:DeprecationWarning",
+    "ignore:AffineScalarFunc:FutureWarning",
+]
 
 [tool.ruff]
 line-length = 100
