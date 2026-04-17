@@ -93,8 +93,27 @@ def search(
     return results[:limit]
 
 
+def client() -> MatVisClient:
+    """Get the shared MatVisClient instance (lazy-initialized).
+
+    Future-proof access point — any new methods mat-vis-client adds
+    are available immediately without pymat code changes:
+
+        c = vis.client()
+        c.tiers()           # discover available tiers
+        c.sources("1k")     # discover sources for a tier
+        c.search("metal")   # search by category
+        c.fetch_all_textures("ambientcg", "Metal032", tier="1k")
+    """
+    from mat_vis_client import _get_client
+
+    return _get_client()
+
+
 __all__ = [
-    # Client functions
+    # Factory — future-proof, exposes full mat-vis-client API
+    "client",
+    # Convenience functions (delegates to client singleton)
     "search",
     "fetch",
     "prefetch",
@@ -102,7 +121,6 @@ __all__ = [
     "get_manifest",
     "seed_indexes",
     "MatVisClient",
-    # Adapters module — pass-through from mat-vis-client
-    # New adapters (to_ktx2, etc.) are available automatically
+    # Adapters module — new adapters auto-available
     "adapters",
 ]
