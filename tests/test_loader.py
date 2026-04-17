@@ -201,7 +201,9 @@ class TestCompositionData:
         for name, mat in materials.items():
             if mat.composition:
                 total = sum(mat.composition.values())
-                assert abs(total - 1.0) < 0.02, (
+                # Handle ufloat values (uncertainties package)
+                nominal = getattr(total, "nominal_value", total)
+                assert abs(nominal - 1.0) < 0.02, (
                     f"{name}: composition sums to {total}, expected ~1.0"
                 )
 

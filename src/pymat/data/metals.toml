@@ -179,6 +179,32 @@ base_color = [0.2, 0.2, 0.2, 1.0]
 roughness = 0.5
 transmission = 0.0
 
+# Aluminum 6063 (extrusion alloy — composition with spec ranges)
+[aluminum.a6063]
+name = "Aluminum 6063"
+grade = "6063"
+
+# Composition with grade-spec ranges (per AZoM / ASM).
+# Nominal values are typical mid-range; ranges are the spec window.
+[aluminum.a6063.composition]
+Si = {nominal = 0.004, min = 0.002, max = 0.006}
+Mg = {nominal = 0.007, min = 0.0045, max = 0.009}
+Fe = {nominal = 0.002, max = 0.0035}
+Cu = 0.001
+Mn = 0.001
+Zn = 0.001
+Ti = 0.001
+Cr = 0.001
+Al = 0.982
+
+[aluminum.a6063.mechanical]
+density_value = 2.69
+density_unit = "g/cm^3"
+yield_strength_value = 48
+yield_strength_unit = "MPa"
+tensile_strength_value = 130
+tensile_strength_unit = "MPa"
+
 # Aluminum 7075-T6 (aerospace)
 [aluminum.a7075]
 name = "Aluminum 7075"
