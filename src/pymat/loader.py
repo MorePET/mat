@@ -206,6 +206,13 @@ def _resolve_material_node(
         _key=key,
     )
 
+    # Populate vis from [vis] section if present
+    vis_data = data.get("vis")
+    if vis_data and isinstance(vis_data, dict):
+        from pymat.vis._model import Vis
+
+        material._vis = Vis.from_toml(vis_data)
+
     # Register for direct access
     registry.register(key, material)
 
@@ -230,6 +237,7 @@ def _resolve_material_node(
                 "temper",
                 "treatment",
                 "vendor",
+                "vis",
             ):
                 child_material = _resolve_material_node(
                     child_key,

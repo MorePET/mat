@@ -29,6 +29,13 @@ metallic = 1.0
 roughness = 0.3
 transmission = 0.0
 
+[stainless.vis]
+default = "brushed"
+
+[stainless.vis.finishes]
+brushed = "ambientcg/Metal032"
+polished = "ambientcg/Metal012"
+
 # Stainless Steel 304
 [stainless.s304]
 name = "Stainless Steel 304"

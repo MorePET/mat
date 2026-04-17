@@ -114,6 +114,9 @@ class _MaterialInternal:
     # Properties (all domains)
     properties: AllProperties = field(default_factory=AllProperties)
 
+    # Visual representation (mat-vis textures, lazy-fetched)
+    _vis: Optional[Any] = field(default=None, repr=False)
+
     # Hierarchy (not shown in repr)
     parent: Optional[_MaterialInternal] = field(default=None, repr=False)
     _children: Dict[str, _MaterialInternal] = field(default_factory=dict, repr=False)
@@ -191,6 +194,34 @@ class _MaterialInternal:
             and self.properties.optical.transparency is not None
         ):
             self.properties.pbr.transmission = self.properties.optical.transparency / 100.0
+
+    # =========================================================================
+    # Visual representation (mat-vis)
+    # =========================================================================
+
+    @property
+    def vis(self):
+        """Visual representation — textures, finishes, source reference.
+
+        Always returns a Vis instance (never None). Starts with
+        source_id=None for materials without mat-vis data. Populated
+        from TOML [vis] section for registered materials.
+
+        Usage:
+            steel.vis.source_id       # "ambientcg/Metal_Brushed_001"
+            steel.vis.textures["color"]  # PNG bytes (lazy-fetched)
+            steel.vis.finishes        # {"brushed": "...", ...}
+            steel.vis.finish = "polished"  # switch appearance
+        """
+        if self._vis is None:
+            from pymat.vis._model import Vis
+
+            self._vis = Vis()
+        return self._vis
+
+    @vis.setter
+    def vis(self, value):
+        self._vis = value
 
     # =========================================================================
     # Chaining API
