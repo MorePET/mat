@@ -15,14 +15,20 @@ Powered by mat-vis-client (installed separately or from git).
 Material.vis wires into this module for lazy texture loading.
 """
 
+import mat_vis_client
 from mat_vis_client import (
-    MatVisClient as _MatVisClient,
+    MatVisClient,
     fetch,
     get_manifest,
     prefetch,
     rowmap_entry,
+    seed_indexes,
     search as _upstream_search,
 )
+
+# Re-export the full adapters module so new adapters (e.g. to_ktx2)
+# are available as soon as mat-vis-client ships them
+from mat_vis_client import adapters  # noqa: F401
 
 from typing import Any
 
@@ -88,9 +94,15 @@ def search(
 
 
 __all__ = [
+    # Client functions
     "search",
     "fetch",
     "prefetch",
     "rowmap_entry",
     "get_manifest",
+    "seed_indexes",
+    "MatVisClient",
+    # Adapters module — pass-through from mat-vis-client
+    # New adapters (to_ktx2, etc.) are available automatically
+    "adapters",
 ]
