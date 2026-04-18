@@ -37,7 +37,7 @@ def _make_material(
     thermal: Optional[Dict[str, Any]] = None,
     electrical: Optional[Dict[str, Any]] = None,
     optical: Optional[Dict[str, Any]] = None,
-    pbr: Optional[Dict[str, Any]] = None,
+    vis: Optional[Dict[str, Any]] = None,
     manufacturing: Optional[Dict[str, Any]] = None,
     compliance: Optional[Dict[str, Any]] = None,
     sourcing: Optional[Dict[str, Any]] = None,
@@ -60,7 +60,6 @@ def _make_material(
         thermal=thermal,
         electrical=electrical,
         optical=optical,
-        pbr=pbr,
         manufacturing=manufacturing,
         compliance=compliance,
         sourcing=sourcing,
@@ -68,6 +67,12 @@ def _make_material(
         parent=parent,
         _key=_key,
     )
+
+    # vis={} kwarg — apply after internal init so we write through the
+    # public .vis accessor (which sets _vis lazily).
+    if vis:
+        for key, value in vis.items():
+            setattr(mat.vis, key, value)
 
     # Apply density convenience param
     if density is not None:
@@ -106,13 +111,15 @@ class _MaterialInternal:
     thermal: Optional[Dict[str, Any]] = None
     electrical: Optional[Dict[str, Any]] = None
     optical: Optional[Dict[str, Any]] = None  # Physics properties, NOT visualization
-    pbr: Optional[Dict[str, Any]] = None  # Visualization properties, NOT physics
     manufacturing: Optional[Dict[str, Any]] = None
     compliance: Optional[Dict[str, Any]] = None
     sourcing: Optional[Dict[str, Any]] = None
 
     # Properties (all domains)
     properties: AllProperties = field(default_factory=AllProperties)
+
+    # Visual representation (mat-vis textures, lazy-fetched)
+    _vis: Optional[Any] = field(default=None, repr=False)
 
     # Hierarchy (not shown in repr)
     parent: Optional[_MaterialInternal] = field(default=None, repr=False)
@@ -121,20 +128,18 @@ class _MaterialInternal:
 
     def __post_init__(self):
         """Apply convenience parameters and property groups to properties object."""
-        # Apply color if provided
+        # Apply color → vis.base_color (3.0: vis is the canonical home)
         if self.color is not None:
             if len(self.color) == 3:
-                # RGB provided, add full opacity
-                self.properties.pbr.base_color = (*self.color, 1.0)
+                self.vis.base_color = (*self.color, 1.0)
             elif len(self.color) == 4:
-                # RGBA provided
-                self.properties.pbr.base_color = self.color
+                self.vis.base_color = self.color
             else:
                 raise ValueError(
                     f"color must be RGB (3 values) or RGBA (4 values), got {len(self.color)}"
                 )
 
-        # Apply property groups
+        # Apply property groups (non-PBR)
         if self.mechanical:
             for key, value in self.mechanical.items():
                 if hasattr(self.properties.mechanical, key):
@@ -155,11 +160,6 @@ class _MaterialInternal:
                 if hasattr(self.properties.optical, key):
                     setattr(self.properties.optical, key, value)
 
-        if self.pbr:
-            for key, value in self.pbr.items():
-                if hasattr(self.properties.pbr, key):
-                    setattr(self.properties.pbr, key, value)
-
         if self.manufacturing:
             for key, value in self.manufacturing.items():
                 if hasattr(self.properties.manufacturing, key):
@@ -175,22 +175,40 @@ class _MaterialInternal:
                 if hasattr(self.properties.sourcing, key):
                     setattr(self.properties.sourcing, key, value)
 
-        # Apply PBR defaults from optical properties (DRY principle)
-        # Allow physics properties to drive rendering defaults, but preserve explicit overrides
+        # Optical → vis derivations — vis is the single source of truth in 3.0
+        if self.vis.ior is None and self.properties.optical.refractive_index is not None:
+            self.vis.ior = self.properties.optical.refractive_index
 
-        # If ior wasn't explicitly set (still at default 1.5) and optical.refractive_index exists,
-        # use optical.refractive_index as the PBR ior
-        if self.properties.pbr.ior == 1.5 and self.properties.optical.refractive_index is not None:
-            self.properties.pbr.ior = self.properties.optical.refractive_index
+        if self.vis.transmission is None and self.properties.optical.transparency is not None:
+            self.vis.transmission = self.properties.optical.transparency / 100.0
 
-        # If transmission wasn't explicitly set (still at default 0.0) and
-        # optical.transparency exists, convert transparency (0-100%) to
-        # transmission (0-1)
-        if (
-            self.properties.pbr.transmission == 0.0
-            and self.properties.optical.transparency is not None
-        ):
-            self.properties.pbr.transmission = self.properties.optical.transparency / 100.0
+    # =========================================================================
+    # Visual representation (mat-vis)
+    # =========================================================================
+
+    @property
+    def vis(self):
+        """Visual representation — textures, finishes, source reference.
+
+        Always returns a Vis instance (never None). Starts with
+        source_id=None for materials without mat-vis data. Populated
+        from TOML [vis] section for registered materials.
+
+        Usage:
+            steel.vis.source_id       # "ambientcg/Metal_Brushed_001"
+            steel.vis.textures["color"]  # PNG bytes (lazy-fetched)
+            steel.vis.finishes        # {"brushed": "...", ...}
+            steel.vis.finish = "polished"  # switch appearance
+        """
+        if self._vis is None:
+            from pymat.vis._model import Vis
+
+            self._vis = Vis()
+        return self._vis
+
+    @vis.setter
+    def vis(self, value):
+        self._vis = value
 
     # =========================================================================
     # Chaining API
@@ -248,7 +266,6 @@ class _MaterialInternal:
             ("thermal", inherited_props.thermal),
             ("electrical", inherited_props.electrical),
             ("optical", inherited_props.optical),
-            ("pbr", inherited_props.pbr),
             ("manufacturing", inherited_props.manufacturing),
             ("compliance", inherited_props.compliance),
             ("sourcing", inherited_props.sourcing),
@@ -357,10 +374,11 @@ class _MaterialInternal:
         # Check for build123d Shape characteristics: has volume and color attributes
         try:
             if hasattr(obj, "volume") and hasattr(obj, "color"):
-                # Set color from PBR with alpha derived from transmission
-                # Alpha = 1 - transmission (transmission=1 → fully transparent, alpha=0)
-                color = self.properties.pbr.base_color
-                transmission = self.properties.pbr.transmission
+                # Set color from vis scalars with alpha from transmission.
+                # Fall back to the grey default when vis.base_color is None
+                # (child nodes that haven't had a color set).
+                color = self.vis.base_color or (0.8, 0.8, 0.8, 1.0)
+                transmission = self.vis.transmission or 0.0
                 alpha = 1.0 - transmission
                 obj.color = (*color[:3], alpha)
 
@@ -501,7 +519,7 @@ class Material(_MaterialInternal):
     - thermal: Dict of thermal properties (melting_point, conductivity, etc.)
     - electrical: Dict of electrical properties (resistivity, dielectric_constant, etc.)
     - optical: Dict of optical properties (refractive_index, transparency, etc.) - PHYSICS
-    - pbr: Dict of PBR visualization properties (base_color, metallic, roughness) - RENDERING
+    - vis: Dict of visualization scalars (base_color, metallic, roughness, ior, transmission)
     - manufacturing: Dict of manufacturing properties (machinability, weldability, etc.)
     - compliance: Dict of compliance properties (rohs_compliant, food_safe, etc.)
     - sourcing: Dict of sourcing properties (cost_per_kg, availability, etc.)
@@ -510,6 +528,7 @@ class Material(_MaterialInternal):
         Material(name="Steel", density=7.8, color=(0.7, 0.7, 0.7))
         Material(name="Steel", mechanical={"density": 7.8, "youngs_modulus": 200})
         Material(name="LYSO", optical={"transparency": 92, "refractive_index": 1.82})
+        Material(name="Polished Steel", vis={"metallic": 1.0, "roughness": 0.15})
     """
 
     def __init__(
@@ -528,7 +547,7 @@ class Material(_MaterialInternal):
         thermal: Optional[Dict[str, Any]] = None,
         electrical: Optional[Dict[str, Any]] = None,
         optical: Optional[Dict[str, Any]] = None,
-        pbr: Optional[Dict[str, Any]] = None,
+        vis: Optional[Dict[str, Any]] = None,
         manufacturing: Optional[Dict[str, Any]] = None,
         compliance: Optional[Dict[str, Any]] = None,
         sourcing: Optional[Dict[str, Any]] = None,
@@ -550,7 +569,6 @@ class Material(_MaterialInternal):
             thermal=thermal,
             electrical=electrical,
             optical=optical,
-            pbr=pbr,
             manufacturing=manufacturing,
             compliance=compliance,
             sourcing=sourcing,
@@ -562,3 +580,8 @@ class Material(_MaterialInternal):
         # Apply density convenience param after parent init
         if density is not None:
             self.properties.mechanical.density = density
+
+        # Apply vis={} kwarg — writes through the public .vis accessor
+        if vis:
+            for key, value in vis.items():
+                setattr(self.vis, key, value)

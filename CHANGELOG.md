@@ -5,8 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.1](https://github.com/MorePET/mat/compare/v2.1.0...v2.1.1) (2026-04-18)
+## Unreleased
 
+### Breaking
+
+* **Removed `material.properties.pbr` / `PBRProperties`.** All PBR scalars (`base_color`, `metallic`, `roughness`, `ior`, `transmission`, `clearcoat`, `emissive`) live on `material.vis` now. See [docs/migration/v2-to-v3.md](docs/migration/v2-to-v3.md) for the full rename table.
+* **Removed `Material(pbr={...})` kwarg.** Use `Material(vis={...})` instead — same shape.
+* **Removed `[<material>.pbr]` TOML section.** The loader raises `ValueError` on it. Bundled TOMLs already use `[<material>.vis]`; external TOMLs need to rename the block.
+* **Removed legacy texture-path fields** (`normal_map`, `roughness_map`, `metallic_map`, `ambient_occlusion_map`) from what was `PBRProperties`. Use `material.vis.textures["color"|"normal"|"roughness"|…]` — lazy-fetched bytes from mat-vis.
+* **Removed `PBRProperties` from `pymat` top-level imports**.
+* **`mat-vis-client` floor raised to `>=0.4.0`.** Users with a warm `mat-vis-client` 0.2.x cache need to run `mat-vis-client cache clear` once — the 0.3.x manifest format requires `schema_version`. See the [v2-to-v3 migration guide](docs/migration/v2-to-v3.md#mat-vis-client-upgrade) for details.
+* Internal: `Material._sync_vis_to_pbr()` deleted (the back-compat shim that kept `.vis` and `.properties.pbr` in sync). `AllProperties` no longer has a `pbr` field or property.
+* No 2.3 deprecation-cycle release was shipped. The rationale is in [issue #40](https://github.com/MorePET/mat/issues/40).
+
+### Added
+
+* `pymat.vis.search()` now accepts a `tags=[...]` parameter that filters the index by tag-subset. Tag matches (`brushed`, `silver`, `oak`, `concrete`) produce far tighter vis assignments than category-alone — the previous category-only heuristic was effectively random.
+* `pymat.vis.client()` factory exposes the lazy-initialized `MatVisClient` singleton. Future-proofs against new methods added upstream — any new `MatVisClient` capability is usable via `vis.client().new_method(...)` without a py-mat release.
+* Curated `[vis.finishes]` mappings for 33 materials covering metals (stainless, aluminum, copper, titanium, brass, tungsten, lead), plastics (peek, delrin, ultem, ptfe, nylon, pla, abs, petg, tpu, vespel, torlon, pctfe, pmma, pe, pc), ceramics (alumina, zirconia, sic, macor, shapal, beryllia, yttria), electronics (copper_pcb, solder), and scintillators (plastic_scint). PLA and ABS carry full color variants (white/black/red/blue/green) matching 3D-printed reality.
+* `_CATEGORY_BASES["ceramics"]` extended with `sic`, `shapal`, `beryllia`, `yttria` — they existed in `ceramics.toml` but never appeared in the catalog index.
+* `scripts/enrich_from_wikidata.py` — cross-checks `density` + `melting_point` of base metals and plastics against Wikidata (CC0, no auth, SPARQL). Normalizes units (g/cm³ ↔ kg/m³, K ↔ °C) and flags relative divergence >5%. First run surfaced a Wikidata data-quality issue (tungsten listed as 7.2 g/cm³).
+* `scripts/requirements-curation.txt` — isolates curation-time deps (`requests`) from runtime deps.
+* `.github/workflows/visual-regression.yml` — runs the headless Three.js render tests on PRs touching `src/pymat/vis/**` or the adapter/test/HTML files. Installs Chromium via `playwright install --with-deps` and uploads rendered `.png` files + adapter JSON as artifacts.
+* New tests covering the previously-untested vis.search paths: tag-subset filter, roughness/metalness range filters, scoring by scalar distance, source-iteration error swallowing, and the `vis.client()` factory. Brings `src/pymat/vis/__init__.py` from 75% to 100% line coverage.
+* Catalog regenerated with 33 material thumbnails (128px, pre-baked from mat-vis's thumbnail tier).
+
+### Changed
+
+* `scripts/enrich_vis.py` walks the `Material._children` hierarchy top-down instead of the flat `load_all()` dict. Emits correct dotted TOML paths (`solder.Sn63Pb37` not bare `Sn63Pb37`) and skips descendants of already-mapped bases. Proposal count dropped from 40 (noisy) to 6 (all legitimate gaps).
+* `CONTRIBUTING.md` — added a Curation tools table (enrich_vis, enrich_from_wikidata, generate_catalog), a step-by-step curation workflow, and an inline-comment provenance convention (`# density: Wikidata Q663, CC0`) so source attribution survives TOML reformatting.
+* `tests/test_e2e_vis.py::test_toml_material_with_vis_mapping` loosened — no longer pins the polished finish to a specific ambientcg id; just verifies the id changes and stays within ambientcg/Metal*.
+
+## [2.1.1](https://github.com/MorePET/mat/compare/v2.1.0...v2.1.1) (2026-04-18)
 
 ### Fixed
 

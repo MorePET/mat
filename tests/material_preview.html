@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// Params
+const params = new URLSearchParams(window.location.search);
+const shape = params.get('shape') || 'sphere';
+const theme = params.get('theme') || 'light';
+const materialUrl = params.get('material') || 'material.json';
+
+// Theme palette — paired with GitHub's canvas-default tokens so the
+// rendered plate blends into the catalog page on each theme.
+const THEMES = {
+  light: { bg: 0xf6f8fa, exposure: 1.0 },
+  dark:  { bg: 0x0d1117, exposure: 0.9 },
+};
+const t = THEMES[theme] || THEMES.light;
+
+// Scene
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(t.bg);
+
+const W = 512, H = 512;  // square catalog previews
+const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
+camera.position.set(3.5, 2.5, 3.5);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = t.exposure;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+// RoomEnvironment is a physically-plausible studio-room cubemap baked by
+// Three — gives realistic PBR reflections without shipping an HDRI file.
+// Identical across themes so the material looks consistent; the theme
+// only affects the page-color plate + tone-mapping exposure.
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// Fill light (subtle — env map does most of the work)
+const key = new THREE.DirectionalLight(0xffffff, 0.6);
+key.position.set(5, 8, 5);
+scene.add(key);
+
+// Geometry
+let geometry;
+if (shape === 'cube') {
+  geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+} else {
+  geometry = new THREE.SphereGeometry(1.0, 64, 32);
+}
+
+// Convert data-URI string to a Three.js Texture. Returns [texture, promise]
+// where the promise resolves when the image finishes decoding — the
+// caller must await all promises before rendering or the first frame
+// can ship to the screenshot with missing textures.
+function texFromDataURI(uri) {
+  const img = new Image();
+  const tex = new THREE.Texture(img);
+  const done = new Promise((resolve) => {
+    img.onload = () => { tex.needsUpdate = true; resolve(); };
+    img.onerror = () => resolve();  // don't block on a broken texture
+  });
+  img.src = uri;
+  return [tex, done];
+}
+
+function buildMaterial(d) {
+  const mat = new THREE.MeshPhysicalMaterial();
+
+  // to_threejs emits color as a Three.js-style hex integer, not an RGB array
+  if (typeof d.color === 'number') mat.color.set(d.color);
+  if (typeof d.metalness === 'number') mat.metalness = d.metalness;
+  if (typeof d.roughness === 'number') mat.roughness = d.roughness;
+  if (typeof d.ior === 'number') mat.ior = d.ior;
+  if (typeof d.transmission === 'number') mat.transmission = d.transmission;
+  if (typeof d.opacity === 'number' && d.opacity < 1) {
+    mat.transparent = true;
+    mat.opacity = d.opacity;
+  }
+  if (typeof d.emissive === 'number') mat.emissive.set(d.emissive);
+
+  const textureLoads = [];
+  const mapKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap'];
+  for (const k of mapKeys) {
+    if (d[k]) {
+      const [tex, done] = texFromDataURI(d[k]);
+      mat[k] = tex;
+      if (k === 'map') tex.colorSpace = THREE.SRGBColorSpace;
+      textureLoads.push(done);
+    }
+  }
+  return { mat, textureLoads };
+}
+
+fetch(materialUrl)
+  .then(r => r.json())
+  .then(async d => {
+    const { mat, textureLoads } = buildMaterial(d);
+    const mesh = new THREE.Mesh(geometry, mat);
+    scene.add(mesh);
+
+    // Block on texture decodes — some normalMaps are 5+ MB and won't
+    // finish before the first render frame ships otherwise.
+    await Promise.all(textureLoads);
+
+    // Three render passes: first compiles shaders, second settles PBR
+    // convergence, third captures the stable frame for the screenshot.
+    for (let i = 0; i < 3; i++) renderer.render(scene, camera);
+    window.__renderComplete = true;
+  })
+  .catch(err => {
+    console.error('material load failed:', err);
+    window.__renderComplete = true;
+  });
+</script>
+</body>
+</html>

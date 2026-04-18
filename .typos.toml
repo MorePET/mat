@@ -17,6 +17,18 @@ macor = "macor"
 Ba = "Ba"
 # Chemical element symbols that otherwise look like typos.
 Nd = "Nd"
+# Three.js `MeshPhysicalMaterial` uses `metalness` as its PBR field
+# name; the default dictionary replaces it with "metallicity".
+metalness = "metalness"
+# "PNGs" (plural of the PNG file format) — typos rewrites to "ONGs".
+PNGs = "PNGs"
+pngs = "pngs"
+# Deliberate misspelling appearing in a test docstring as an example
+# of the kind of TOML key typo the integrity test catches. The actual
+# TOML-side enforcement lives in tests/test_toml_integrity.py — this
+# entry just stops the source-text typo checker from rewriting the
+# example out of existence.
+mechnical = "mechnical"
 
 [files]
 extend-exclude = [

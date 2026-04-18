@@ -1,0 +1,20 @@
+# Rogers RF Laminate
+
+## Identity
+
+| Field | Value |
+|---|---|
+
+## Mechanical Properties
+
+| Property | Value |
+|---|---|
+| Density | 1.9 g/cm³ |
+
+## PBR (Rendering)
+
+| Property | Value |
+|---|---|
+| Base Color | `(0.2, 0.2, 0.2, 1.0)` |
+| Metallic | 0.0 |
+| Roughness | 0.6 |

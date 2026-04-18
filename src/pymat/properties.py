@@ -6,7 +6,8 @@ Organized by physical/engineering domain:
 - ThermalProperties: temperature-related properties
 - ElectricalProperties: electrical conductivity and dielectric behavior
 - OpticalProperties: light interaction and scintillator-specific properties
-- PBRProperties: physically-based rendering for visualization
+- (PBR scalars — roughness, metallic, base_color, textures — live on
+  Material.vis, not here. See docs/migration/v2-to-v3.md.)
 - ManufacturingProperties: machinability, printability, weldability
 - ComplianceProperties: regulatory and material suitability
 """
@@ -278,7 +279,7 @@ class OpticalProperties:
     Physical optical properties (measured values, physics calculations).
 
     These are PHYSICS properties, not visualization/rendering properties.
-    For visualization, see PBRProperties.
+    For visualization, see ``Material.vis``.
     """
 
     # Basic optical properties
@@ -299,35 +300,6 @@ class OpticalProperties:
     interaction_length: Optional[float] = None  # cm (λ for hadrons)
     moliere_radius: Optional[float] = None  # cm
     energy_resolution: Optional[float] = None  # % at 1 MeV (for detectors)
-
-
-@dataclass
-class PBRProperties:
-    """
-    Physically-based rendering properties for visualization (NOT physics).
-
-    These control how the material LOOKS in 3D viewers and renders.
-    They may differ from physical optical properties intentionally.
-
-    For physics/measured optical properties, see OpticalProperties.
-    """
-
-    # Surface appearance
-    base_color: tuple = (0.8, 0.8, 0.8, 1.0)  # RGBA (0-1) - Alpha is VISUAL opacity
-    metallic: float = 0.0  # 0=dielectric, 1=metal
-    roughness: float = 0.5  # 0=glossy, 1=rough
-    emissive: tuple = (0, 0, 0)  # RGB emitted light
-
-    # Transparency (RENDERING property, not physical measurement)
-    ior: float = 1.5  # index of refraction (for rendering)
-    transmission: float = 0.0  # 0=opaque, 1=transparent (volumetric)
-    clearcoat: float = 0.0  # secondary glossy layer
-
-    # Texture maps (paths or URIs)
-    normal_map: Optional[str] = None
-    roughness_map: Optional[str] = None
-    metallic_map: Optional[str] = None
-    ambient_occlusion_map: Optional[str] = None
 
 
 @dataclass
@@ -458,7 +430,6 @@ class AllProperties:
     thermal: ThermalProperties = field(default_factory=ThermalProperties)
     electrical: ElectricalProperties = field(default_factory=ElectricalProperties)
     optical: OpticalProperties = field(default_factory=OpticalProperties)
-    pbr: PBRProperties = field(default_factory=PBRProperties)
     manufacturing: ManufacturingProperties = field(default_factory=ManufacturingProperties)
     compliance: ComplianceProperties = field(default_factory=ComplianceProperties)
     sourcing: SourcingProperties = field(default_factory=SourcingProperties)

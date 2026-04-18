@@ -1,0 +1,98 @@
+# Catalog PBR Previews
+#
+# Renders per-material sphere/cube PBR previews (light + dark themes)
+# via headless Three.js, for embedding in docs/catalog/ with GitHub's
+# native <picture> theme-swap.
+#
+# Triggers:
+#   - pull_request touching TOML data or curation tooling → diff-render
+#     (renders only materials whose category's TOML changed)
+#   - workflow_dispatch → full regen on demand
+#   - release:published → full regen + commit to the release branch
+#
+# Artifacts upload in all modes; the release-time run also commits the
+# refreshed docs/catalog/ back so the published tag carries the renders.
+
+name: Catalog Previews
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    paths:
+      - 'src/pymat/data/**/*.toml'
+      - 'src/pymat/vis/**'
+      - 'tests/material_preview.html'
+      - 'scripts/generate_previews.py'
+      - 'scripts/generate_catalog.py'
+      - '.github/workflows/catalog-previews.yml'
+  workflow_dispatch:
+    inputs:
+      materials:
+        description: 'Comma-separated material keys (empty = all)'
+        required: false
+        default: ''
+  release:
+    types: [published, prereleased]
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    name: Render PBR previews
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          # Need full history for `git diff origin/main...HEAD` to work
+          fetch-depth: 0
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+        with:
+          python-version: '3.12'
+          sync-dependencies: 'true'
+          uv-sync-args: '--all-extras'
+
+      - name: Install curation dependencies
+        run: |
+          uv pip install -r scripts/requirements-curation.txt
+          uv run playwright install --with-deps chromium
+
+      - name: Determine scope
+        id: scope
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "mode=changed-only" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.materials }}" ]; then
+            echo "mode=only" >> "$GITHUB_OUTPUT"
+            echo "only=${{ inputs.materials }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Render previews (diff-only)
+        if: steps.scope.outputs.mode == 'changed-only'
+        run: uv run python scripts/generate_previews.py --changed-only -v
+
+      - name: Render previews (selection)
+        if: steps.scope.outputs.mode == 'only'
+        run: uv run python scripts/generate_previews.py --only "${{ steps.scope.outputs.only }}" -v
+
+      - name: Render previews (full regen)
+        if: steps.scope.outputs.mode == 'full'
+        run: uv run python scripts/generate_previews.py -v
+
+      - name: Regenerate catalog pages
+        run: uv run python scripts/generate_catalog.py
+
+      - name: Upload preview artifacts
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: catalog-previews
+          path: docs/catalog/
+          retention-days: 14
+          if-no-files-found: warn

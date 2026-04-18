@@ -7,7 +7,7 @@ Features:
 - Property inheritance: children inherit parent properties
 - Lazy loading: categories load on first access
 - periodictable integration: auto-fill density from formula
-- PBR support: rendering properties for glTF/3MF export
+- Visual PBR via Material.vis: roughness, metallic, textures, finishes
 - Unit-aware properties with Pint for dimensional analysis
 
 Usage:
@@ -21,7 +21,7 @@ Usage:
     bracket = s304.apply_to(Box(30, 20, 5))
 
     # Check properties
-    print(housing.material.properties.pbr.roughness)
+    print(housing.material.vis.roughness)
     print(crystal.material.properties.optical.light_yield)
 
     # Unit-aware calculations
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from .core import Material
 
 # Exports
-from . import factories, registry
+from . import factories, registry, vis
 from .core import Material
 from .enrichers import enrich_all, enrich_from_matproj, enrich_from_periodictable
 from .loader import load_category, load_toml
@@ -51,13 +51,12 @@ from .properties import (
     ManufacturingProperties,
     MechanicalProperties,
     OpticalProperties,
-    PBRProperties,
     SourcingProperties,
     ThermalProperties,
 )
 from .units import ureg
 
-__version__ = "2.1.1"  # x-release-please-version
+__version__ = "3.0.0"  # x-release-please-version
 __all__ = [
     "Material",
     "AllProperties",
@@ -65,7 +64,6 @@ __all__ = [
     "ThermalProperties",
     "ElectricalProperties",
     "OpticalProperties",
-    "PBRProperties",
     "ManufacturingProperties",
     "ComplianceProperties",
     "SourcingProperties",
@@ -76,6 +74,7 @@ __all__ = [
     "enrich_from_matproj",
     "enrich_all",
     "factories",
+    "vis",
 ]
 
 # ============================================================================
@@ -107,7 +106,7 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "pe",
         "pc",
     ],
-    "ceramics": ["alumina", "macor", "zirconia", "glass"],
+    "ceramics": ["alumina", "zirconia", "sic", "macor", "shapal", "glass", "beryllia", "yttria"],
     "electronics": ["fr4", "rogers", "kapton", "copper_pcb", "solder"],
     "liquids": ["water", "heavy_water", "mineral_oil", "glycerol", "silicone_oil"],
     "gases": [
@@ -194,7 +193,6 @@ def __dir__() -> list[str]:
         "ThermalProperties",
         "ElectricalProperties",
         "OpticalProperties",
-        "PBRProperties",
         "ManufacturingProperties",
         "ComplianceProperties",
         "SourcingProperties",

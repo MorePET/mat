@@ -1,0 +1,23 @@
+# Air
+
+## Identity
+
+| Field | Value |
+|---|---|
+| Formula | `N2O2` |
+
+## Mechanical Properties
+
+| Property | Value |
+|---|---|
+| Density | 0.001204 g/cm³ |
+
+## PBR (Rendering)
+
+| Property | Value |
+|---|---|
+| Base Color | `(0.9, 0.95, 1.0, 0.01)` |
+| Metallic | 0.0 |
+| Roughness | 0.0 |
+| IOR | 1.000293 |
+| Transmission | 0.99 |

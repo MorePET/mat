@@ -1,0 +1,76 @@
+# Visual Regression Tests
+#
+# Headless Three.js rendering via Playwright proves the full pipeline:
+#   pymat.Material → .vis → to_threejs → build123d export_gltf
+#   → Three.js (WebGL via SwiftShader) → screenshot PNG
+#
+# Skipped by default (MAT_VIS_SKIP_VISUAL=1); this workflow flips the
+# flag and installs Chromium so the tests actually run. Screenshots are
+# uploaded as artifacts for manual inspection.
+#
+# Triggers:
+#   - Pull requests that touch rendering-relevant paths (vis, adapters,
+#     the renderer HTML, the test itself)
+#   - Manual workflow_dispatch
+#
+# Issue: #41
+
+name: Visual Regression
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    paths:
+      - 'src/pymat/vis/**'
+      - 'src/pymat/adapters.py'
+      - 'tests/test_visual_regression.py'
+      - 'tests/visual_render.html'
+      - '.github/workflows/visual-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    name: Headless Three.js render
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up environment
+        uses: ./.github/actions/setup-env
+        with:
+          python-version: '3.12'
+          sync-dependencies: 'true'
+          uv-sync-args: '--all-extras'
+
+      - name: Install Playwright + Chromium
+        run: |
+          uv pip install 'playwright>=1.40'
+          uv run playwright install --with-deps chromium
+
+      - name: Run visual regression tests
+        env:
+          MAT_VIS_SKIP_VISUAL: '0'
+        run: uv run pytest tests/test_visual_regression.py -v -s
+
+      - name: Upload rendered screenshots
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: visual-regression-screenshots
+          path: tests/visual_output/*.png
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload adapter JSON fixtures
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: visual-regression-json
+          path: tests/visual_output/*.json
+          retention-days: 14
+          if-no-files-found: ignore

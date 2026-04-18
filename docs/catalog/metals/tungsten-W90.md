@@ -1,0 +1,38 @@
+# Tungsten Heavy Alloy (90% W)
+
+## Identity
+
+| Field | Value |
+|---|---|
+| Grade | W90 |
+
+## Mechanical Properties
+
+| Property | Value |
+|---|---|
+| Density | 17.0 g/cm³ |
+| Young's Modulus | 411 GPa |
+
+## Thermal Properties
+
+| Property | Value |
+|---|---|
+| Melting Point | 3422 °C |
+| Thermal Conductivity | 173 W/(m·K) |
+| Specific Heat | 133 J/(kg·K) |
+
+## PBR (Rendering)
+
+| Property | Value |
+|---|---|
+| Base Color | `(0.2, 0.2, 0.22, 1.0)` |
+| Metallic | 1.0 |
+| Roughness | 0.4 |
+
+## Composition
+
+| Element | Fraction |
+|---|---|
+| W | 0.9 |
+| Ni | 0.07 |
+| Fe | 0.03 |

@@ -32,7 +32,7 @@ volume_resistivity_unit = "ohm*cm"
 breakdown_voltage_value = 15
 breakdown_voltage_unit = "kV/mm"
 
-[fr4.pbr]
+[fr4.vis]
 base_color = [0.15, 0.15, 0.15, 1.0]
 metallic = 0.0
 roughness = 0.7
@@ -60,7 +60,7 @@ density_unit = "g/cm^3"
 [rogers.electrical]
 dielectric_constant = 3.5
 
-[rogers.pbr]
+[rogers.vis]
 base_color = [0.2, 0.2, 0.2, 1.0]
 metallic = 0.0
 roughness = 0.6
@@ -106,7 +106,7 @@ dielectric_constant = 3.5
 breakdown_voltage_value = 600
 breakdown_voltage_unit = "kV/mm"
 
-[kapton.pbr]
+[kapton.vis]
 base_color = [0.95, 0.85, 0.4, 1.0]
 metallic = 0.0
 roughness = 0.5
@@ -133,11 +133,15 @@ resistivity_unit = "ohm*m"
 conductivity_value = 5.96e7
 conductivity_unit = "S/m"
 
-[copper_pcb.pbr]
+[copper_pcb.vis]
 base_color = [0.72, 0.45, 0.2, 1.0]
 metallic = 1.0
 roughness = 0.35
 transmission = 0.0
+
+[copper_pcb.vis.finishes]
+clean = "ambientcg/Metal043A"
+oxidized = "ambientcg/Metal043B"
 
 # 1 oz Copper (35 µm)
 [copper_pcb.oz1]
@@ -154,7 +158,7 @@ grade = "2oz"
 name = "Gold Plated Copper (ENIG)"
 treatment = "gold_plated"
 
-[copper_pcb.gold_plated.pbr]
+[copper_pcb.gold_plated.vis]
 base_color = [1.0, 0.84, 0.0, 1.0]
 metallic = 1.0
 roughness = 0.2
@@ -176,11 +180,15 @@ density_unit = "g/cm^3"
 resistivity_value = 1.5e-7
 resistivity_unit = "ohm*m"
 
-[solder.pbr]
+[solder.vis]
 base_color = [0.7, 0.7, 0.7, 1.0]
 metallic = 1.0
 roughness = 0.4
 transmission = 0.0
+
+[solder.vis.finishes]
+matte = "ambientcg/Metal030"
+reflowed = "ambientcg/Metal031"
 
 # Sn63Pb37 (traditional, leaded)
 [solder.Sn63Pb37]
@@ -235,7 +243,7 @@ dielectric_constant = 3.8
 volume_resistivity_value = 1e15
 volume_resistivity_unit = "ohm*cm"
 
-[epoxy_potting.pbr]
+[epoxy_potting.vis]
 base_color = [0.5, 0.4, 0.3, 1.0]
 metallic = 0.0
 roughness = 0.6
@@ -261,7 +269,7 @@ thermal_conductivity_unit = "W/(m*K)"
 [silicone_potting.electrical]
 dielectric_constant = 3.0
 
-[silicone_potting.pbr]
+[silicone_potting.vis]
 base_color = [0.8, 0.6, 0.4, 1.0]
 metallic = 0.0
 roughness = 0.7
@@ -286,7 +294,7 @@ density_unit = "g/cm^3"
 permeability = 100
 dielectric_constant = 10
 
-[ferrite.pbr]
+[ferrite.vis]
 base_color = [0.1, 0.1, 0.1, 1.0]
 metallic = 0.0
 roughness = 0.8
@@ -309,7 +317,7 @@ dielectric_constant = 1000
 breakdown_voltage_value = 100
 breakdown_voltage_unit = "kV/mm"
 
-[ceramic_capacitor.pbr]
+[ceramic_capacitor.vis]
 base_color = [0.95, 0.8, 0.1, 1.0]
 metallic = 0.0
 roughness = 0.5
@@ -342,7 +350,7 @@ thermal_conductivity_unit = "W/(m*K)"
 thermal_expansion_value = 5.8e-6
 thermal_expansion_unit = "1/K"
 
-[alumina_pcb.pbr]
+[alumina_pcb.vis]
 base_color = [0.9, 0.88, 0.85, 1.0]
 metallic = 0.0
 roughness = 0.4

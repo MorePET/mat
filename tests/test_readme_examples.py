@@ -29,7 +29,7 @@ class TestBasicUsage:
 
         # With visualization color
         aluminum = Material(name="Aluminum", density=2.7, color=(0.88, 0.88, 0.88))
-        assert aluminum.properties.pbr.base_color[:3] == (0.88, 0.88, 0.88)
+        assert aluminum.vis.base_color[:3] == (0.88, 0.88, 0.88)
 
         # With formula
         lyso = Material(name="LYSO", formula="Lu1.8Y0.2SiO5", density=7.1)
@@ -48,13 +48,13 @@ class TestBasicUsage:
             name="Stainless Steel 304",
             mechanical={"density": 8.0, "youngs_modulus": 193, "yield_strength": 170},
             thermal={"melting_point": 1450, "thermal_conductivity": 15.1},
-            pbr={"base_color": (0.75, 0.75, 0.77, 1.0), "metallic": 1.0},
+            vis={"base_color": (0.75, 0.75, 0.77, 1.0), "metallic": 1.0},
         )
 
         assert steel.properties.mechanical.density == 8.0
         assert steel.properties.mechanical.youngs_modulus == 193
         assert steel.properties.thermal.melting_point == 1450
-        assert steel.properties.pbr.metallic == 1.0
+        assert steel.vis.metallic == 1.0
 
     def test_applying_to_shapes(self):
         """
@@ -77,6 +77,78 @@ class TestBasicUsage:
         assert box.material.name == "Steel"
         assert box.mass > 0
         assert box.color is not None
+
+    def test_molar_mass_from_formula(self):
+        """
+        ## Computing Molar Mass
+
+        `Material.molar_mass` is a computed property that parses the
+        chemical formula and looks up each element's atomic weight.
+        It supports fractional stoichiometry and strips dopant
+        notation like `LYSO:Ce` so doped-crystal aliases work
+        unchanged.
+
+        Nothing is stored — it recomputes on each access. That's
+        intentional: molar mass is definitionally derived from
+        `formula` and should never drift. Missing or unknown-element
+        formulas return `None`. See
+        `docs/decisions/0001-derived-chemistry-properties-live-on-material.md`.
+        """
+        from pymat import Material
+
+        # Pure element
+        iron = Material(name="Iron", formula="Fe")
+        assert iron.molar_mass == 55.85
+
+        # Simple compound
+        alumina = Material(name="Alumina", formula="Al2O3")
+        assert abs(alumina.molar_mass - 101.96) < 0.01
+
+        # Fractional stoichiometry (a PET-scanner scintillator)
+        lyso = Material(name="LYSO", formula="Lu1.8Y0.2SiO5")
+        assert abs(lyso.molar_mass - 440.87) < 0.1
+
+        # Dopant suffix is stripped
+        lyso_ce = Material(name="LYSO:Ce", formula="Lu1.8Y0.2SiO5:Ce")
+        assert lyso_ce.molar_mass == lyso.molar_mass
+
+        # Unit-aware companion accessor (Pint Quantity)
+        qty = iron.molar_mass_qty
+        assert qty.to("kg/mol").magnitude == pytest.approx(0.05585, abs=1e-4)
+
+        # Gracefully returns None when no formula is set
+        unknown = Material(name="Unknown Alloy")
+        assert unknown.molar_mass is None
+
+    def test_elements_low_level_api(self):
+        """
+        ## Low-level: `pymat.elements`
+
+        For callers that don't need a full `Material` object —
+        e.g. quick stoichiometry calculations inside a Monte Carlo
+        transport loop — the low-level `pymat.elements` module
+        exposes the same machinery directly.
+
+        The `ATOMIC_WEIGHT` table is a line-for-line mirror of the
+        Rust `rs-materials` crate, so Python and Rust Monte Carlo
+        engines get identical molar masses byte-for-byte.
+        """
+        from pymat.elements import (
+            ATOMIC_WEIGHT,
+            compute_molar_mass,
+            parse_formula,
+        )
+
+        # Atomic weight lookup
+        assert ATOMIC_WEIGHT["Fe"] == 55.85
+        assert ATOMIC_WEIGHT["Lu"] == 175.0
+
+        # Formula parser: fractional stoichiometry + repeat handling
+        counts = parse_formula("Lu1.8Y0.2SiO5")
+        assert counts == {"Lu": 1.8, "Y": 0.2, "Si": 1.0, "O": 5.0}
+
+        # Molar mass directly from a formula string
+        assert abs(compute_molar_mass("Al2O3") - 101.96) < 0.01
 
 
 class TestHierarchicalMaterials:
@@ -141,7 +213,7 @@ class TestOpticalVsVisualization:
             name="Optical Glass",
             color=(0.9, 0.9, 0.9, 0.8),  # Visual: 80% opaque white
             optical={"transparency": 95, "refractive_index": 1.517},  # Physics: 95% transmission
-            pbr={"transmission": 0.8},  # Rendering: how transparent it looks
+            vis={"transmission": 0.8},  # Rendering: how transparent it looks
         )
 
         # Physics properties (measured)
@@ -149,8 +221,8 @@ class TestOpticalVsVisualization:
         assert glass.properties.optical.refractive_index == 1.517
 
         # Visualization properties (rendering)
-        assert glass.properties.pbr.base_color[3] == 0.8  # Alpha
-        assert glass.properties.pbr.transmission == 0.8
+        assert glass.vis.base_color[3] == 0.8  # Alpha
+        assert glass.vis.transmission == 0.8
 
     def test_scintillator_properties(self):
         """
@@ -170,12 +242,12 @@ class TestOpticalVsVisualization:
                 "decay_time": 41,  # ns
                 "emission_peak": 420,  # nm
             },
-            pbr={"base_color": (0.0, 1.0, 1.0, 0.85), "transmission": 0.85},
+            vis={"base_color": (0.0, 1.0, 1.0, 0.85), "transmission": 0.85},
         )
 
         assert lyso_crystal.properties.optical.light_yield == 32000
         assert lyso_crystal.properties.optical.decay_time == 41
-        assert lyso_crystal.properties.pbr.transmission == 0.85
+        assert lyso_crystal.vis.transmission == 0.85
 
 
 class TestFactoryFunctions:
