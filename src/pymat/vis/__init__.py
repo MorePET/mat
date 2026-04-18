@@ -1,24 +1,35 @@
 """
 Visual material data from mat-vis.
 
-Public API — all functions importable from `pymat.vis` directly:
+Public API — all functions importable from ``pymat.vis`` directly::
 
     from pymat import vis
 
-    vis.search(category="metal", roughness=0.3)
+    # Discovery
+    vis.search(category="metal", tags=["brushed", "silver"])
+
+    # Raw fetch (usually you want material.vis.textures instead)
     vis.fetch("ambientcg", "Metal032", tier="1k")
     vis.prefetch("ambientcg", tier="1k")
     vis.get_manifest()
     vis.rowmap_entry("ambientcg", "Metal032", tier="1k")
 
-Powered by mat-vis-client (installed separately or from git).
-Material.vis wires into this module for lazy texture loading.
+    # Adapters — Material → external format
+    vis.to_threejs(material)    # MeshPhysicalMaterial init dict
+    vis.to_gltf(material)       # glTF 2.0 material
+    vis.export_mtlx(material, "./out")
+
+    # Escape hatch — the shared MatVisClient
+    vis.client().tiers()
+
+Powered by ``mat-vis-client`` (separate PyPI package). ``Material.vis``
+wires into this module for lazy texture loading; see ADR-0002.
 """
 
 from typing import Any
 
-# Re-export the full adapters module so new adapters (e.g. to_ktx2)
-# are available as soon as mat-vis-client ships them
+# Re-export the adapters module so new formats (e.g. a future to_ktx2)
+# are available as soon as mat-vis-client ships them.
 from mat_vis_client import (
     MatVisClient,
     adapters,  # noqa: F401
@@ -27,6 +38,13 @@ from mat_vis_client import (
     rowmap_entry,
     seed_indexes,
 )
+
+# Adapters — Material → Three.js / glTF / MaterialX. Re-exported at
+# top level so `from pymat.vis import to_threejs` works and tab
+# completion on `pymat.vis.` surfaces the main cross-tool handoff.
+# (The pymat.vis.adapters wrappers take a Material; the mat-vis-client
+# adapters imported above take (scalars, textures) primitives.)
+from pymat.vis.adapters import export_mtlx, to_gltf, to_threejs
 
 
 def fetch(
@@ -146,6 +164,10 @@ __all__ = [
     "get_manifest",
     "seed_indexes",
     "MatVisClient",
+    # Material → external-format adapters (the main cross-tool handoff)
+    "to_threejs",
+    "to_gltf",
+    "export_mtlx",
     # Adapters module — new adapters auto-available
     "adapters",
 ]

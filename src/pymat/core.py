@@ -188,17 +188,23 @@ class _MaterialInternal:
 
     @property
     def vis(self):
-        """Visual representation — textures, finishes, source reference.
+        """Visual representation — identity, PBR scalars, textures, finishes.
 
         Always returns a Vis instance (never None). Starts with
-        source_id=None for materials without mat-vis data. Populated
-        from TOML [vis] section for registered materials.
+        ``source=None`` for materials without mat-vis data. Populated
+        from TOML ``[vis]`` section for registered materials.
 
-        Usage:
-            steel.vis.source_id       # "ambientcg/Metal_Brushed_001"
-            steel.vis.textures["color"]  # PNG bytes (lazy-fetched)
-            steel.vis.finishes        # {"brushed": "...", ...}
-            steel.vis.finish = "polished"  # switch appearance
+        Usage::
+
+            steel.vis.source              # "ambientcg"
+            steel.vis.material_id         # "Metal012"
+            steel.vis.textures["color"]   # PNG bytes (lazy-fetched)
+            steel.vis.finishes            # {"brushed": {"source": ..., "id": ...}}
+            steel.vis.finish = "polished" # switch appearance
+            steel.vis.mtlx.xml            # MaterialX document (3.1+)
+
+        See ADR-0002 and ``pymat.vis._model.Vis`` for the full surface.
+        External renderers consume via ``pymat.vis.to_threejs(material)``.
         """
         if self._vis is None:
             from pymat.vis._model import Vis

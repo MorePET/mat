@@ -5,19 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-04-19
+
+### Fixed
+
+* **Identity mutation now invalidates the lazy texture cache.** Assigning `vis.source`, `vis.material_id`, or `vis.tier` after a fetch populated `_textures` silently left the old bytes in place — only `.finish = ...` cleared the cache. Now any identity-field assignment triggers cache invalidation via `Vis.__setattr__`. Guarded against the dataclass `__init__` so construction doesn't trip the clear.
+* **`Vis` equality no longer depends on cache state or `_finish` label.** Two `Vis` objects with the same identity + scalars now compare equal regardless of whether one has been lazy-fetched. Fixed by adding `field(compare=False, repr=False)` to `_textures`, `_fetched`, and `_finish`.
+* `pymat.vis.adapters._extract_textures` — use `.has_mapping` instead of the deprecated `source_id is None` sniff.
+* Stale docstrings: `Vis` class docstring no longer claims `.source` is a MtlxSource (it's `.mtlx`); `_MaterialInternal.vis` docstring updated for the 3.1 two-field identity; `CONTRIBUTING.md` TOML template no longer shows the 3.0 `[pbr]` section or slashed-string finishes (new contributors copying it would produce TOMLs that raise on load).
+
+### Added
+
+* **`pymat.vis.to_threejs` / `to_gltf` / `export_mtlx` re-exported at top level.** Consumer `from pymat.vis import to_threejs` now works — previously they had to reach for `pymat.vis.adapters.to_threejs`, which was a dead-end in tab completion. `Vis.__doc__` now points at `pymat.vis.to_threejs(material)` as the main cross-tool handoff.
+* **`FinishEntry` TypedDict** — types `Vis.finishes` as `dict[str, FinishEntry]` for `mypy`-friendly consumer code.
+* `ResolvedChannel.has_texture` is now a derived `@property` (from `texture is not None`), removing the chance of representing the nonsense state `has_texture=True, texture=None`.
+* Docstrings on `.textures`, `.channels`, `.mtlx` call out that first access performs network IO (blocking). Class-level note on thread-safety: `Vis` is not thread-safe per-instance; the shared `MatVisClient` is read-safe.
+* New test classes `TestIdentityInvalidation` (5 cases) and `TestVisEquality` (2 cases) pin the bug-fix invariants with red/green coverage.
+
+### Changed
+
+* `Vis.base_color` typed as `tuple[float, float, float, float] | None` (was bare `tuple`); `Vis.emissive` typed as `tuple[float, float, float] | None`. No runtime change — just honest type hints for consumers.
+* `Vis` class docstring expanded with a Thread safety section and a pointer to `pymat.vis.to_threejs`.
+
+### Upstream
+
+* Filed [mat-vis#84](https://github.com/MorePET/mat-vis/issues/84) asking for `mat_vis_client._get_client` → `get_client` rename. py-mat reaches into the underscore symbol from six property bodies; a public rename tightens the ADR-0002 "client exposed, not wrapped" contract.
+
 ## [3.1.0] - 2026-04-18
 
 ### Breaking
 
 * **`Vis.source_id: str` split into `Vis.source: str` + `Vis.material_id: str`.** Matches `mat-vis-client`'s `(source, material_id, tier)` positional-arg shape end-to-end — no more `.split("/")` at every delegation site. `source_id` remains as a **read-only** convenience property returning `f"{source}/{material_id}"`; **assignment raises `AttributeError`**. Codified in [ADR-0002](docs/decisions/0002-vis-owns-identity-client-exposed.md).
 * **TOML `[<material>.vis.finishes]` values are now inline tables.** The 3.0 slashed-string form (`brushed = "ambientcg/Metal012"`) raises `ValueError` on load. The 3.1 form:
-  
+
   ```toml
     [stainless.vis.finishes]
     brushed = { source = "ambientcg", id = "Metal012" }
     polished = { source = "ambientcg", id = "Metal049A" }
     ```
-  
+
   One-shot migrator ships at `scripts/migrate_toml_finishes.py`. Bundled TOMLs have been migrated. No deprecation cycle — consistent with the 3.0 PBR→vis stance.
 * `Vis.finishes` value type changed from `dict[str, str]` (slashed) to `dict[str, dict[str, str]]` (`{"source": ..., "id": ...}`).
 

@@ -31,24 +31,24 @@ youngs_modulus_unit = "GPa"
 melting_point_value = 1597           # optional
 melting_point_unit = "degC"
 
-[my_material.pbr]
+# Visual appearance — PBR scalars + optional mat-vis texture mapping.
+# Since 3.0 all visual state lives under [vis], NOT [pbr].
+[my_material.vis]
 base_color = [0.1, 0.1, 0.1, 1.0]   # RGBA, 0-1
 metallic = 0.8                        # 0 = dielectric, 1 = metal
 roughness = 0.5                       # 0 = glossy, 1 = rough
+default = "natural"                  # which finish to use by default
 
-# Visual appearance mapping (optional — mat-vis must have matching textures)
-[my_material.vis]
-default = "natural"
-
+# Since 3.1 finishes are inline tables (source + id), NOT slashed strings.
 [my_material.vis.finishes]
-natural = "ambientcg/Metal_SomeID"    # mat-vis source ID
+natural = { source = "ambientcg", id = "Metal_SomeID" }
 ```
 
 #### What's required
 
 - `name` — human-readable
 - `density` — in `g/cm³` (needed for `compute_mass()`)
-- `base_color`, `metallic`, `roughness` — for rendering
+- `[vis]` with `base_color`, `metallic`, `roughness` — for rendering
 
 Everything else is optional. More data is better, but partial
 entries are welcome — we can enrich later.
@@ -114,18 +114,26 @@ Prefer searching by **tags** (brushed, silver, oak, concrete, etc.)
 over category alone — tags encode the actual appearance and give
 far better matches than category, which only narrows the pool.
 
-Add the match to a `[<material>.vis.finishes]` block in the TOML:
+Add the match to a `[<material>.vis.finishes]` block in the TOML.
+Since 3.1 each finish is an inline table with explicit `source` + `id`
+fields (matching mat-vis-client's two-positional-arg signature):
 
 ```toml
 [stainless.vis.finishes]
-brushed = "ambientcg/Metal012"     # first finish becomes the default
-polished = "ambientcg/Metal049A"
-dirty = "ambientcg/Metal049B"
+brushed  = { source = "ambientcg", id = "Metal012" }   # first finish is the default
+polished = { source = "ambientcg", id = "Metal049A" }
+dirty    = { source = "ambientcg", id = "Metal049B" }
 ```
 
 If you're unsure which texture to pick, `scripts/enrich_vis.py`
 walks every material, tag-matches against the live mat-vis index,
 and prints TOML blocks you can paste directly.
+
+Holding a TOML with the old 3.0 slashed-string form
+(`brushed = "ambientcg/Metal012"`)? Run
+`python scripts/migrate_toml_finishes.py` to auto-rewrite. The loader
+raises `ValueError` on the old form since 3.1 — see
+[docs/migration/v2-to-v3.md](docs/migration/v2-to-v3.md).
 
 ## Curation tools
 

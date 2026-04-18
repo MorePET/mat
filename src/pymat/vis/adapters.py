@@ -53,7 +53,7 @@ def _extract_scalars(material: Material) -> dict[str, Any]:
 
 def _extract_textures(material: Material) -> dict[str, bytes]:
     """Extract texture bytes from Material.vis."""
-    if material.vis.source_id is None:
+    if not material.vis.has_mapping:
         return {}
     return material.vis.textures
 

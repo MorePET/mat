@@ -115,6 +115,107 @@ class TestFinishSwitching:
             v.finish = "mirror"
 
 
+# ── Cache invalidation on identity mutation ──────────────────
+
+
+class TestIdentityInvalidation:
+    """When any identity field (source / material_id / tier) changes after
+    a fetch has populated _textures, the cache MUST be cleared. Otherwise
+    the next `.textures` access returns stale bytes that belong to the
+    previous (source, material_id, tier) tuple."""
+
+    def _prefetched(self) -> Vis:
+        v = Vis(source="src1", material_id="id1", tier="1k")
+        v._textures = {"color": b"cached_for_src1_id1_1k"}
+        v._fetched = True
+        return v
+
+    def test_source_change_clears_cache(self):
+        v = self._prefetched()
+        v.source = "src2"
+        assert v._textures == {}
+        assert v._fetched is False
+
+    def test_material_id_change_clears_cache(self):
+        v = self._prefetched()
+        v.material_id = "id2"
+        assert v._textures == {}
+        assert v._fetched is False
+
+    def test_tier_change_clears_cache(self):
+        v = self._prefetched()
+        v.tier = "2k"
+        assert v._textures == {}
+        assert v._fetched is False
+
+    def test_non_identity_field_does_not_clear_cache(self):
+        """Changing PBR scalars or finishes does NOT invalidate the
+        texture cache — those live on Vis but are not part of
+        (source, material_id, tier) identity."""
+        v = self._prefetched()
+        v.roughness = 0.5
+        v.metallic = 1.0
+        v.base_color = (0.5, 0.5, 0.5, 1.0)
+        assert v._textures == {"color": b"cached_for_src1_id1_1k"}
+        assert v._fetched is True
+
+    def test_init_does_not_trip_invalidation(self):
+        """Constructing a Vis should NOT attempt to clear a cache that
+        doesn't exist yet — __setattr__ guard must tolerate partial
+        __init__ state."""
+        # If the guard is wrong, the dataclass __init__ for `source=`
+        # would try to clear `_textures`/`_fetched` before they exist
+        # and crash with AttributeError.
+        v = Vis(source="x", material_id="y", tier="3k")
+        assert v.source == "x"
+        assert v._textures == {}  # default factory
+        assert v._fetched is False
+
+
+# ── Equality hygiene (cache state must not affect ==) ────────
+
+
+class TestVisEquality:
+    """Two Vis objects with the same identity + scalars are the same Vis,
+    regardless of whether one has been lazy-fetched and the other hasn't.
+    The default @dataclass __eq__ includes all fields — we need
+    field(compare=False) on the internal cache fields to get this right.
+    """
+
+    def test_equality_ignores_fetched_textures(self):
+        a = Vis(source="ambientcg", material_id="Metal012", roughness=0.3)
+        b = Vis(source="ambientcg", material_id="Metal012", roughness=0.3)
+        # a is lazy-fetched, b isn't
+        a._textures = {"color": b"\x89PNG..."}
+        a._fetched = True
+        assert a == b, "fetch state must not affect equality"
+
+    def test_equality_ignores_finish_internal_state(self):
+        """The _finish tracking is internal bookkeeping. If two Vis have
+        the same identity and finishes, they should compare equal even
+        if one has had a .finish = ... setter called (and the other
+        reached the same identity via direct assignment)."""
+        finishes = {
+            "brushed": {"source": "ambientcg", "id": "Metal012"},
+            "polished": {"source": "ambientcg", "id": "Metal049A"},
+        }
+        a = Vis(
+            source="ambientcg",
+            material_id="Metal049A",
+            finishes=finishes,
+        )
+        b = Vis(
+            source="ambientcg",
+            material_id="Metal012",
+            finishes=finishes,
+        )
+        b.finish = "polished"  # ends at (ambientcg, Metal049A) but sets _finish="polished"
+        # Both now point at ambientcg/Metal049A; _finish differs
+        assert a.source == b.source == "ambientcg"
+        assert a.material_id == b.material_id == "Metal049A"
+        assert a == b, "internal _finish tracking must not affect equality"
+
+
 # ── Textures access ──────────────────────────────────────────
 
 

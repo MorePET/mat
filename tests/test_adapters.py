@@ -27,14 +27,17 @@ def _make_material(with_vis=False):
     m.vis.clearcoat = 0.0
     m.vis.emissive = (0, 0, 0)
     if with_vis:
+        # Identity must be set BEFORE the cache — assigning source /
+        # material_id invalidates _textures + _fetched via Vis.__setattr__
+        # (3.1.1 cache-invalidation behavior).
+        m.vis.source = "ambientcg"
+        m.vis.material_id = "Metal032"
         m.vis._textures = {
             "color": b"\x89PNG_color",
             "normal": b"\x89PNG_normal",
             "roughness": b"\x89PNG_roughness",
         }
         m.vis._fetched = True
-        m.vis.source = "ambientcg"
-        m.vis.material_id = "Metal032"
     return m
 
 
