@@ -149,7 +149,7 @@ def generate(only: set[str] | None = None) -> int:
         log.info("No materials to render (empty `only` filter or nothing with vis.source_id)")
         return 0
 
-    log.info("Rendering %d materials × %d themes = %d PNGs",
+    log.info("Rendering %d materials x %d themes = %d images",
              len(targets), len(_THEMES), len(targets) * len(_THEMES))
 
     with tempfile.TemporaryDirectory() as tmp:

@@ -140,7 +140,8 @@ pip install -r scripts/requirements-curation.txt
 |---|---|
 | `scripts/enrich_vis.py` | Propose `[vis.finishes]` blocks for unmapped materials via tag-matching against the mat-vis index |
 | `scripts/enrich_from_wikidata.py` | Cross-check density + melting point of base metals against Wikidata (CC0, no auth) |
-| `scripts/generate_catalog.py` | Regenerate `docs/catalog/` with per-material pages and 128px thumbnails |
+| `scripts/generate_previews.py` | Render per-material sphere/cube PBR previews (light + dark themes) via headless Three.js |
+| `scripts/generate_catalog.py` | Regenerate `docs/catalog/` markdown pages; prefers rendered previews, falls back to flat thumbnails |
 
 ### Curation workflow
 
@@ -152,9 +153,23 @@ pip install -r scripts/requirements-curation.txt
 3. For metals, run `python scripts/enrich_from_wikidata.py` to
    cross-check density and melting point. Resolve any DIFF rows
    with a literature source before merging.
-4. Run `python scripts/generate_catalog.py` to regenerate the
-   catalog (the CI also does this on push to `dev`).
+4. Render previews (one-time Playwright install required — see
+   `scripts/requirements-curation.txt`):
+
+   ```bash
+   python scripts/generate_previews.py --changed-only
+   python scripts/generate_catalog.py
+   ```
+
+   `--changed-only` parses the git diff against `origin/main` and
+   re-renders only the materials whose TOML category changed. Drop
+   the flag for a full regen (~3 min for 66 images at 512px).
 5. Run `pytest tests/` and commit.
+
+CI re-runs previews automatically on any PR touching `src/pymat/data/`,
+`src/pymat/vis/`, the render HTML, or the curation scripts. The
+`Catalog Previews` workflow uploads the rendered pages as a
+downloadable artifact for review.
 
 ### Provenance
 

@@ -9,6 +9,7 @@ from pymat import Material
 from pymat.vis.adapters import (
     _extract_scalars,
     _extract_textures,
+    _rgba_to_hex,
     export_mtlx,
     to_gltf,
     to_threejs,
@@ -56,6 +57,37 @@ class TestExtractScalars:
         s = _extract_scalars(m)
         assert "metalness" in s
         assert "metallic" not in s
+
+    def test_base_color_emitted_as_color_hex(self):
+        """mat-vis-client only formats color from color_hex — the extractor
+        must convert our RGBA list to '#RRGGBB' or the final Three.js dict
+        has no color at all (every material renders as default grey)."""
+        m = _make_material()
+        m.vis.base_color = (1.0, 0.0, 0.0, 1.0)
+        s = _extract_scalars(m)
+        assert s["color_hex"] == "#ff0000"
+        assert "base_color" not in s  # RGBA form must not leak through
+
+
+class TestRgbaToHex:
+    def test_pure_red(self):
+        assert _rgba_to_hex([1.0, 0.0, 0.0, 1.0]) == "#ff0000"
+
+    def test_pure_green(self):
+        assert _rgba_to_hex([0.0, 1.0, 0.0]) == "#00ff00"  # alpha optional
+
+    def test_mid_grey(self):
+        assert _rgba_to_hex([0.5, 0.5, 0.5]) == "#808080"
+
+    def test_none_passthrough(self):
+        assert _rgba_to_hex(None) is None
+
+    def test_clamps_out_of_range(self):
+        # PBR values can over/undershoot; don't raise, just clamp
+        assert _rgba_to_hex([-0.1, 1.5, 0.5]) == "#00ff80"
+
+    def test_alpha_ignored(self):
+        assert _rgba_to_hex([1.0, 1.0, 1.0, 0.3]) == "#ffffff"  # alpha stripped
 
 
 class TestExtractTextures:
@@ -110,7 +142,7 @@ class TestExportMtlx:
             mtlx_path = export_mtlx(m, Path(tmp))
             assert mtlx_path.exists()
             assert mtlx_path.suffix == ".mtlx"
-            # Check PNGs were written
+            # Check textures were written as PNG files
             pngs = list(Path(tmp).glob("*.png"))
             assert len(pngs) == 3  # color, normal, roughness
 
