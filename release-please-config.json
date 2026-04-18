@@ -22,7 +22,7 @@
       "include-component-in-tag": false,
       "extra-files": [
         {
-          "type": "python",
+          "type": "generic",
           "path": "src/pymat/__init__.py"
         }
       ]
