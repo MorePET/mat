@@ -83,6 +83,15 @@ repos:
     hooks:
       - id: typos
 
+  # Conventional-commit message validation. Runs at commit-msg stage so the
+  # message format (`type(scope)!: subject` + optional body + Refs) is
+  # checked before the commit lands. Spec lives in docs/COMMIT_MESSAGE_STANDARD.md.
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: 4fbeae7861663ecf4b4989211eba41c1a3fb1227  # v4.13.9
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
   # Generated README must match tests/test_readme_examples.py.
   # Drift blocks commit — regenerate with `python scripts/generate_readme.py`.
   # The script uses only stdlib (ast, re, textwrap), so `language: python`

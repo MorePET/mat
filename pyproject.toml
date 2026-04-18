@@ -76,6 +76,17 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
+# Commitizen — conventional-commit message validation at commit-msg stage
+# (configured via .pre-commit-config.yaml). Using the default
+# `cz_conventional_commits` rule set; the project's allowed types and the
+# scope taxonomy are documented in docs/COMMIT_MESSAGE_STANDARD.md and
+# enforced socially via review (commitizen permits any scope by default).
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "3.0.0"
+tag_format = "v$version"
+update_changelog_on_bump = false
+
 [dependency-groups]
 dev = [
     "ruff>=0.15.10",

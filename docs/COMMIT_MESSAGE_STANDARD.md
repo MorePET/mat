@@ -48,6 +48,24 @@ Only the following types are allowed:
 
 Any other type (e.g. `feature`, `bugfix`, or emoji-based prefixes) is **not** allowed.
 
+## Approved scopes
+
+The `(scope)` is **optional** but recommended in this multi-package monorepo. A correctly-attributed scope makes Release PR review faster, prevents cross-cutting commits from triggering false bumps in unrelated packages (see [#50](https://github.com/MorePET/mat/issues/50), [#55](https://github.com/MorePET/mat/issues/55)), and makes the CHANGELOG self-documenting.
+
+| Scope | Meaning | Example |
+|-------|---------|---------|
+| `(py)` | py-materials Python package code | `feat(py): add Material.melting_point_qty` |
+| `(rs)` | rs-materials Rust crate code | `feat(rs)!: rename MaterialDb to Catalog` |
+| `(data)` | TOML data files (shared between py + rs via symlinks) | `fix(data): correct stainless density to 8.0 g/cm³` |
+| `(vis)` | The vis subsystem (Python-side, mat-vis-client integration) | `feat(vis): expose .mtlx() façade` |
+| `(deps)` | Dependency bumps (typically from dependabot) | `build(deps): bump mat-vis-client to 0.5.0` |
+| `(ci)` | CI workflows, release pipeline, automation | `ci: gate crates.io publish on repo var` |
+| `(docs)` | Documentation only | `docs(migration): add v3-to-v4 stub` |
+
+**No scope** is acceptable for cross-cutting work that genuinely touches multiple packages — but **prefer splitting into per-scope commits** when possible. Squash-merging a multi-scope PR collapses these distinctions and can mislead release tooling (the rationale documented in [issue #50](https://github.com/MorePET/mat/issues/50)).
+
+Scopes are validated for *format* (alphanumeric + hyphens) by the commit-msg hook (commitizen), not for *membership* in the table above — the table is a strong convention enforced socially via review.
+
 ## Refs line and traceability
 
 The `Refs:` line provides mandatory traceability to issues, requirements, risks, or SOPs. Only one `Refs:` line is allowed; it must be the last non-empty line of the message.
