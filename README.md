@@ -558,8 +558,11 @@ assert alumina.density is None          # use enrich_from_matproj for compounds
   - `transmission`: how transparent it LOOKS in renders
   - `metallic`: surface finish appearance
   - `roughness`: surface roughness appearance
-  - `textures`: PBR texture maps (lazy-fetched from mat-vis when a `source_id` is set)
-  - `finishes`: named alternate looks (e.g. `brushed` / `polished` / `oxidized`)
+  - `source` + `material_id` + `tier`: mat-vis appearance identity (since 3.1; the three fields match mat-vis-client's positional-arg signature — see [ADR-0002](docs/decisions/0002-vis-owns-identity-client-exposed.md))
+  - `textures`: PBR texture maps (lazy-fetched from mat-vis once `source` + `material_id` are set)
+  - `finishes`: named alternate looks (e.g. `brushed` / `polished` / `oxidized`) — each entry is an inline `{source, id}` table
+  - `mtlx` (property): MaterialX document accessor (`.xml`, `.export(path)`, `.original`)
+  - `client` (property): escape hatch to the shared `MatVisClient` singleton — for any operation not material-keyed
 
 These can differ intentionally! A material might be physically transparent (95% optical transmission) but rendered opaque (0% vis.transmission) for CAD clarity.
 
