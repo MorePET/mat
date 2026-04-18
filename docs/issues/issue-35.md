@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-16T17:10:13Z
-updated: 2026-04-16T20:55:03Z
+updated: 2026-04-17T11:06:11Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/35
-comments: 3
+comments: 4
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-17T04:41:59.258Z
+synced: 2026-04-18T04:24:33.240Z
 ---
 
 # [Issue 35]: [Add Material.to_threejs() and Material.to_gltf() output adapters](https://github.com/MorePET/mat/issues/35)
@@ -214,4 +214,12 @@ vis.get_manifest(release_tag="v2026.04.0")
 ```
 
 "shim" is an implementation detail, not a user-facing name.
+
+---
+
+# [Comment #4]() by [gerchowl]()
+
+_Posted on April 17, 2026 at 11:06 AM_
+
+Done on `docs/refresh-readme-2.1.0`: `Material.vis`, `pymat.vis` module, adapters (to_threejs, to_gltf, export_mtlx) as standalone functions, vendored mat-vis client. Ships in 2.2.0. Follow-up: mat#37 for full migration once mat-vis ships the client as a proper importable.
 

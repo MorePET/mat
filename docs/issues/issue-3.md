@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-03-22T15:41:22Z
-updated: 2026-04-15T18:05:40Z
+updated: 2026-04-17T11:16:45Z
 author: gumyr
 author_url: https://github.com/gumyr
 url: https://github.com/MorePET/mat/issues/3
-comments: 7
+comments: 8
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-16T04:44:39.873Z
+synced: 2026-04-18T04:24:34.579Z
 ---
 
 # [Issue 3]: [Further build123d/ocp_vscode integration](https://github.com/MorePET/mat/issues/3)
@@ -422,4 +422,23 @@ Again, apologies for barreling in without reading everything first. Looking forw
 
 cc @gumyr @jdegenstein
 
+
+---
+
+# [Comment #8]() by [gerchowl]()
+
+_Posted on April 17, 2026 at 11:16 AM_
+
+Closing — the integration work on our side is done:
+
+- `Material.vis` wired up with textures from mat-vis
+- `to_threejs(material)` adapter produces MeshPhysicalMaterial dict
+- `Material.vis.discover()` for finding matching appearances
+- Vendored mat-vis client works end-to-end
+
+Remaining coordination is on their repos:
+- ocp_vscode: accept duck-typed `to_threejs()` instead of `isinstance(PbrProperties)`
+- build123d#598: material system roadmap — they can consume `mat` directly
+
+Tracked externally, not an action item for this repo.
 

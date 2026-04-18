@@ -2,18 +2,18 @@
 type: issue
 state: open
 created: 2026-04-16T14:43:19Z
-updated: 2026-04-16T14:43:19Z
+updated: 2026-04-17T11:06:31Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/33
-comments: 0
+comments: 1
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-17T04:41:59.923Z
+synced: 2026-04-18T04:24:34.106Z
 ---
 
 # [Issue 33]: [Elemental composition + scalar properties: support ranges / uncertainties (ufloat)](https://github.com/MorePET/mat/issues/33)
@@ -110,3 +110,11 @@ companion issue. This issue is just about the data layer.
   — @jwagenet's split-schema proposal, @gerchowl's 6063 range
   example.
 - `uncertainties` docs: https://pythonhosted.org/uncertainties/
+---
+
+# [Comment #1]() by [gerchowl]()
+
+_Posted on April 17, 2026 at 11:06 AM_
+
+Deferred from 2.2.0 to 2.3.0. The `[sci]` extra was removed (periodictable moved to core), but uncertainties itself hasn't been added to core deps yet. The data-layer work (range/ufloat support in TOML + loader) is the main effort.
+

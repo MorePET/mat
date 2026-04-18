@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-16T14:43:44Z
-updated: 2026-04-16T20:17:44Z
+updated: 2026-04-17T11:06:08Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/34
-comments: 1
+comments: 2
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-17T04:41:59.614Z
+synced: 2026-04-18T04:24:33.700Z
 ---
 
 # [Issue 34]: [Formalize optional-dependency extras: [cad], [sci], [viz], [matproj], [all]](https://github.com/MorePET/mat/issues/34)
@@ -62,4 +62,12 @@ The mat-vis design discussion has collapsed most of the extras this issue origin
 **Net result:** `pip install mat` gives you everything — physics, scalars, PBR textures, the works. ~2 MB wheel, no extras needed for any standard use case.
 
 **Recommendation:** This issue's scope has largely collapsed. Suggest either closing it or converting it to a single focused task: "make `uncertainties` + `periodictable` core deps and remove `[sci]` extra."
+
+---
+
+# [Comment #2]() by [gerchowl]()
+
+_Posted on April 17, 2026 at 11:06 AM_
+
+Done on `docs/refresh-readme-2.1.0`: periodictable to core, stale extras removed. Only `[dev]` remains. Ships in 2.2.0.
 
