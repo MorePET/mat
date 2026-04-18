@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-materials"
-version = "2.1.0"
+version = "2.1.1"
 description = "Hierarchical material library for CAD applications with build123d integration"
 readme = "README.md"
 license = "MIT"
