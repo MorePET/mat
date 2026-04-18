@@ -209,7 +209,7 @@ class _MaterialInternal:
             steel.vis.textures["color"]   # PNG bytes (lazy-fetched)
             steel.vis.finishes            # {"brushed": {"source": ..., "id": ...}}
             steel.vis.finish = "polished" # switch appearance
-            steel.vis.mtlx.xml            # MaterialX document (3.1+)
+            steel.vis.mtlx.xml()          # MaterialX document (method since mat-vis-client 0.5)
 
         See ADR-0002 and ``pymat.vis._model.Vis`` for the full surface.
         External renderers consume via ``pymat.vis.to_threejs(material)``.

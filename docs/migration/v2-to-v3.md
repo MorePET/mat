@@ -1,7 +1,64 @@
 # Migrating to 3.x
 
-- [3.0 → 3.1: Vis identity split](#30--31-vis-identity-split) (current)
+- [3.1 → 3.2: mat-vis-client 0.5 adoption](#31--32-mat-vis-client-05-adoption) (planned)
+- [3.0 → 3.1: Vis identity split](#30--31-vis-identity-split)
 - [2.x → 3.0: PBR → .vis consolidation](#2x--30-pbr--vis-consolidation)
+
+---
+
+## 3.1 → 3.2: mat-vis-client 0.5 adoption
+
+py-mat 3.2 bumps the `mat-vis-client` floor to `>=0.5.0`. The client
+release is tracked at [mat-vis#85](https://github.com/MorePET/mat-vis/issues/85);
+py-mat's migration is tracked at
+[issue #73](https://github.com/MorePET/mat/issues/73).
+
+### Rename cheat sheet (3.1 → 3.2)
+
+| 3.1 (against mat-vis-client 0.4.x) | 3.2 (against mat-vis-client 0.5+) |
+|---|---|
+| `material.vis.mtlx.xml` (property, network IO on attribute access) | `material.vis.mtlx.xml()` (**method call**) |
+| `from mat_vis_client import _get_client` | `from mat_vis_client import get_client` (public name) |
+| `except urllib.error.HTTPError as e: ...` | `except HTTPFetchError as e: ...` (plus `NetworkError`, `NotFoundError`, `MaterialNotFoundError`, …) — all `MatVisError` subclasses |
+
+The underlying behaviour is unchanged — `.xml()` still fetches lazily
+and caches internally. The parens are the only user-visible break.
+
+### Why `.xml` became a method
+
+The 0.5 design reasoning (from mat-vis#85 item 7): property access
+that silently triggers network IO is a footgun, and it doesn't port
+cleanly to the JavaScript / Rust reference clients. Making it a
+method forces the caller to acknowledge the network cost.
+
+### Internal-only: `_get_client` → `get_client`
+
+py-mat's `Vis.client` property and the module-level `pymat.vis.fetch`
+/ `search` / `client()` helpers now import the public `get_client`,
+with a fallback to the deprecated `_get_client` for `mat-vis-client
+<0.5`. The floor in `pyproject.toml` stays at `>=0.4.0` for now so
+downstream pinning doesn't flip overnight; it moves to `>=0.5.0`
+when we cut 3.2.
+
+### Typed HTTP errors
+
+0.5 wraps `urllib.error.HTTPError` in a typed hierarchy rooted at
+`MatVisError`:
+
+- `HTTPFetchError(url, code, reason)` — generic 4xx/5xx.
+- `NotFoundError` → `MaterialNotFoundError`, `SourceNotFoundError`,
+  `TierNotFoundError`, `ChannelNotFoundError` — 404 with the specific
+  thing that was missing.
+- `NetworkError(url, reason)` — connection-level failure (no
+  `.code`).
+- `RateLimitError` — 429, with `retry_after` seconds.
+
+Code that caught `urllib.error.HTTPError` still works against 0.4.x
+— py-mat's test flake-guard `_skip_on_upstream_outage` catches both
+shapes and picks based on which import succeeds. Once the floor
+moves to `>=0.5.0`, the urllib catch becomes dead code.
+
+---
 
 ---
 

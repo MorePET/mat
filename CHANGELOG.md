@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 3.2 prep (blocked on mat-vis-client 0.5 PyPI publish)
+
+Tracking [issue #73](https://github.com/MorePET/mat/issues/73). Upstream:
+[mat-vis#85](https://github.com/MorePET/mat-vis/issues/85).
+
+### Changed
+
+* **Migrated internal `_get_client` imports to the public `get_client`** ([mat-vis#84](https://github.com/MorePET/mat-vis/issues/84) landed in mat-vis-client 0.5). Falls back to `_get_client` on `mat-vis-client <0.5` so the floor stays at `>=0.4.0` for now. No user-visible surface change.
+* **Test flake-guard `_skip_on_upstream_outage` now catches typed `MatVisError` subclasses** (`HTTPFetchError`, `NetworkError`) alongside raw `urllib.error.HTTPError`. Two new tests cover the typed paths when `mat-vis-client >=0.5` is installed.
+* **Docstrings updated: `material.vis.mtlx.xml` → `material.vis.mtlx.xml()`** in `core.py`, `_model.py` (class doc + property doc). Py-mat code never called `.xml` — the change is user-facing only for consumers who copied from these docs.
+
+### Migration
+
+* Added `docs/migration/v2-to-v3.md` section "3.1 → 3.2: mat-vis-client 0.5 adoption" with rename cheat sheet + rationale for why `.xml` became a method.
+
+### Pending (blocks release)
+
+* `mat-vis-client` floor bump `>=0.4.0` → `>=0.5.0` in `pyproject.toml` — deferred until 0.5.0 is on PyPI.
+* `__version__` bump 3.1.2 → 3.2.0 — deferred to the PyPI-publish PR.
+
 ## [3.1.2] - 2026-04-19
 
 Post-3.1 audit follow-ups ([milestone 1](https://github.com/MorePET/mat/milestone/1)).

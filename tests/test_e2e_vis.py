@@ -1,14 +1,22 @@
 """End-to-end test: Material → vis → mat-vis live data → adapter output.
 
-Hits real mat-vis release assets. Skip with MAT_VIS_SKIP_LIVE=1.
+Hits real mat-vis release assets. Skip with ``MAT_VIS_SKIP_LIVE=1``.
 
 These tests depend on the ambientcg CDN (via mat-vis release assets).
 When the CDN returns 5xx — genuine outages, rate-limits, regional
 Akamai blips — the tests would otherwise go red and mask real
-regressions. `_skip_on_upstream_outage` is a context manager the
-tests wrap their network calls in: a 5xx turns into a `pytest.skip`
+regressions. ``_skip_on_upstream_outage`` is a context manager the
+tests wrap their network calls in: a 5xx turns into a ``pytest.skip``
 with the upstream HTTP code in the reason, keeping CI signal
 meaningful. Any other exception propagates normally.
+
+The guard catches both error shapes:
+
+- ``urllib.error.HTTPError`` — raw bubble-up from mat-vis-client 0.4.x
+- ``MatVisError`` subclasses (``HTTPFetchError``, ``NetworkError``) —
+  the typed hierarchy added in mat-vis-client 0.5.0. Prefer these
+  going forward; the urllib catch is kept as a one-release bridge
+  while 0.4.x installs still show up in CI.
 """
 
 from __future__ import annotations
@@ -22,15 +30,30 @@ import pytest
 SKIP_LIVE = os.environ.get("MAT_VIS_SKIP_LIVE", "0") == "1"
 
 
+# Optional typed-error imports — mat-vis-client 0.5.0+. On 0.4.x
+# these don't exist; the guard still works via the urllib catch.
+try:
+    from mat_vis_client import HTTPFetchError, NetworkError
+    _TYPED_FETCH_ERRORS: tuple[type[Exception], ...] = (HTTPFetchError, NetworkError)
+except ImportError:  # pragma: no cover — 0.4.x compatibility
+    _TYPED_FETCH_ERRORS = ()
+
+
 @contextmanager
 def _skip_on_upstream_outage():
-    """Skip the current test when mat-vis's CDN is flaky (5xx responses).
+    """Skip the current test when mat-vis's CDN is flaky.
 
-    Catches urllib.HTTPError 5xx and bare AssertionError messages that
-    match the "HTTP Error 5xx" pattern — mat-vis-client surfaces the
-    urllib error through a logged warning but still returns an empty
-    texture dict, so the test assertion ("no textures fetched") fires
-    downstream of the actual network failure.
+    Catches three shapes:
+
+    - ``urllib.error.HTTPError`` 5xx — 0.4.x raw passthrough.
+    - ``HTTPFetchError`` / ``NetworkError`` — 0.5.0 typed wrappers.
+      Skipped unconditionally (any network error = flaky upstream).
+    - ``AssertionError`` whose message matches "no textures returned"
+      — mat-vis-client 0.4.x logs the HTTP error and returns empty
+      dicts, so the *test* assertion fires downstream of the real
+      network failure. Retained as a bridge; in 0.5.0 the typed
+      exception surfaces first, so this branch becomes dead code
+      once the pin moves.
     """
     try:
         yield
@@ -38,11 +61,17 @@ def _skip_on_upstream_outage():
         if 500 <= exc.code < 600:
             pytest.skip(f"mat-vis CDN outage: {exc.code} {exc.reason}")
         raise
+    except _TYPED_FETCH_ERRORS as exc:
+        # Any typed network / HTTP failure is an upstream flake — skip.
+        # Use getattr for .code since NetworkError doesn't have one.
+        code = getattr(exc, "code", "?")
+        pytest.skip(f"mat-vis CDN outage (typed): {type(exc).__name__} code={code}")
     except AssertionError as exc:
         msg = str(exc)
-        # mat-vis-client logs "HTTP Error 5xx" and returns empty dicts;
-        # the test-side assertion is "no textures fetched for X" — if
-        # that's the shape we see, treat it as an upstream outage.
+        # mat-vis-client 0.4.x logs "HTTP Error 5xx" and returns empty
+        # dicts; the test-side assertion is "no textures fetched for
+        # X" — if that's the shape we see, treat it as an upstream
+        # outage. Dead path on 0.5.0+ (typed errors fire first).
         if (
             "No textures for" in msg
             or "No textures fetched" in msg
@@ -233,3 +262,24 @@ class TestSkipOnUpstreamOutage:
         """The guard is inert when nothing goes wrong."""
         with _skip_on_upstream_outage():
             pass  # no raise, no skip
+
+    def test_skips_on_typed_http_fetch_error(self):
+        """mat-vis-client 0.5.0+ raises typed HTTPFetchError — the
+        guard must skip on it too."""
+        if not _TYPED_FETCH_ERRORS:
+            pytest.skip("mat-vis-client <0.5.0 — no typed errors to test")
+        from mat_vis_client import HTTPFetchError
+
+        with pytest.raises(pytest.skip.Exception, match="typed.*HTTPFetchError"):
+            with _skip_on_upstream_outage():
+                raise HTTPFetchError("https://example/x", 503, "Service Unavailable")
+
+    def test_skips_on_typed_network_error(self):
+        """NetworkError (no .code) — connection-level failure."""
+        if not _TYPED_FETCH_ERRORS:
+            pytest.skip("mat-vis-client <0.5.0 — no typed errors to test")
+        from mat_vis_client import NetworkError
+
+        with pytest.raises(pytest.skip.Exception, match="typed.*NetworkError"):
+            with _skip_on_upstream_outage():
+                raise NetworkError("https://example/x", "connection refused")

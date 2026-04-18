@@ -104,7 +104,7 @@ class Vis:
 
         steel.vis.textures["color"]  # {channel: PNG bytes} — lazy-fetched
         steel.vis.channels           # list of channel names
-        steel.vis.mtlx.xml           # MaterialX XML document
+        steel.vis.mtlx.xml()         # MaterialX XML (method since 0.5)
         steel.vis.materialize(out)   # dump PNG files to disk
 
     External renderers consume the material via ``pymat.vis.to_threejs``::
@@ -335,9 +335,9 @@ class Vis:
         callers without a Material don't have to construct one to
         reach the client.
         """
-        from mat_vis_client import _get_client
+        from pymat.vis import _shared_client
 
-        return _get_client()
+        return _shared_client()
 
     @property
     def mtlx(self) -> MtlxSource | None:
@@ -345,9 +345,9 @@ class Vis:
 
         Returns ``None`` if this Vis has no mapping::
 
-            xml = material.vis.mtlx.xml
+            xml = material.vis.mtlx.xml()         # method call — triggers fetch
             material.vis.mtlx.export("./out")
-            material.vis.mtlx.original   # upstream-author variant, or None
+            material.vis.mtlx.original            # upstream-author variant, or None
 
         Thin delegate for ``client.mtlx(source, material_id, tier=tier)``.
 
