@@ -224,3 +224,9 @@ justfile.local
 # Cursor local config
 .cursor/
 tests/visual_output/
+
+# Claude Code session state (per-repo hooks, scheduled-tasks locks, plans)
+.claude/
+
+# Local script-output scratch (not shipped)
+examples/output/
