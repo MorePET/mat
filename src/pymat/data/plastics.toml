@@ -41,8 +41,8 @@ metallic = 0.0
 roughness = 0.5
 
 [peek.vis.finishes]
-natural = "ambientcg/Plastic004"
-dark = "ambientcg/Plastic003"
+natural = { source = "ambientcg", id = "Plastic004" }
+dark = { source = "ambientcg", id = "Plastic003" }
 
 [peek.manufacturing]
 printable_fdm = true
@@ -137,8 +137,8 @@ metallic = 0.0
 roughness = 0.6
 
 [delrin.vis.finishes]
-white = "ambientcg/Plastic010"
-black = "ambientcg/Plastic006"
+white = { source = "ambientcg", id = "Plastic010" }
+black = { source = "ambientcg", id = "Plastic006" }
 
 [delrin.manufacturing]
 machinability = 80
@@ -183,7 +183,7 @@ metallic = 0.0
 roughness = 0.5
 
 [ultem.vis.finishes]
-amber = "ambientcg/Plastic003"
+amber = { source = "ambientcg", id = "Plastic003" }
 
 [ultem.manufacturing]
 printable_fdm = true
@@ -227,7 +227,7 @@ metallic = 0.0
 roughness = 0.3
 
 [ptfe.vis.finishes]
-white = "ambientcg/Plastic010"
+white = { source = "ambientcg", id = "Plastic010" }
 
 [ptfe.compliance]
 food_safe = true
@@ -278,7 +278,7 @@ roughness = 0.1
 # ESR is a specular-reflector film — roughness stays low (scalars dominate).
 # The finish is mostly a semantic tag so it appears in the catalog.
 [esr.vis.finishes]
-reflective = "ambientcg/Plastic010"
+reflective = { source = "ambientcg", id = "Plastic010" }
 
 [esr.compliance]
 radiation_resistant = true
@@ -313,8 +313,8 @@ metallic = 0.0
 roughness = 0.6
 
 [nylon.vis.finishes]
-natural = "ambientcg/Plastic013A"
-white = "ambientcg/Plastic010"
+natural = { source = "ambientcg", id = "Plastic013A" }
+white = { source = "ambientcg", id = "Plastic010" }
 
 [nylon.manufacturing]
 printable_fdm = true
@@ -353,11 +353,11 @@ metallic = 0.0
 roughness = 0.6
 
 [pla.vis.finishes]
-white = "ambientcg/Plastic010"
-black = "ambientcg/Plastic006"
-red = "ambientcg/Plastic007"
-blue = "ambientcg/Plastic008"
-green = "ambientcg/Plastic009"
+white = { source = "ambientcg", id = "Plastic010" }
+black = { source = "ambientcg", id = "Plastic006" }
+red = { source = "ambientcg", id = "Plastic007" }
+blue = { source = "ambientcg", id = "Plastic008" }
+green = { source = "ambientcg", id = "Plastic009" }
 
 [pla.manufacturing]
 printable_fdm = true
@@ -392,9 +392,9 @@ metallic = 0.0
 roughness = 0.6
 
 [abs.vis.finishes]
-black = "ambientcg/Plastic006"
-white = "ambientcg/Plastic010"
-red = "ambientcg/Plastic007"
+black = { source = "ambientcg", id = "Plastic006" }
+white = { source = "ambientcg", id = "Plastic010" }
+red = { source = "ambientcg", id = "Plastic007" }
 
 [abs.manufacturing]
 printable_fdm = true
@@ -426,8 +426,8 @@ metallic = 0.0
 roughness = 0.5
 
 [petg.vis.finishes]
-clear = "ambientcg/Plastic005"
-black = "ambientcg/Plastic006"
+clear = { source = "ambientcg", id = "Plastic005" }
+black = { source = "ambientcg", id = "Plastic006" }
 
 [petg.manufacturing]
 printable_fdm = true
@@ -451,8 +451,8 @@ metallic = 0.0
 roughness = 0.7
 
 [tpu.vis.finishes]
-black = "ambientcg/Plastic006"
-white = "ambientcg/Plastic010"
+black = { source = "ambientcg", id = "Plastic006" }
+white = { source = "ambientcg", id = "Plastic010" }
 
 [tpu.manufacturing]
 printable_fdm = true
@@ -486,7 +486,7 @@ metallic = 0.0
 roughness = 0.5
 
 [vespel.vis.finishes]
-dark = "ambientcg/Plastic003"
+dark = { source = "ambientcg", id = "Plastic003" }
 
 
 [torlon]
@@ -511,7 +511,7 @@ metallic = 0.0
 roughness = 0.5
 
 [torlon.vis.finishes]
-amber = "ambientcg/Plastic004"
+amber = { source = "ambientcg", id = "Plastic004" }
 
 
 [pctfe]
@@ -534,7 +534,7 @@ metallic = 0.0
 roughness = 0.4
 
 [pctfe.vis.finishes]
-white = "ambientcg/Plastic010"
+white = { source = "ambientcg", id = "Plastic010" }
 
 
 # ============================================================================
@@ -583,7 +583,7 @@ ior = 1.49
 
 # pmma is transparent — finishes are secondary, PBR scalars dominate
 [pmma.vis.finishes]
-clear = "ambientcg/Plastic005"
+clear = { source = "ambientcg", id = "Plastic005" }
 
 [pmma.manufacturing]
 machinability = 90
@@ -631,8 +631,8 @@ metallic = 0.0
 roughness = 0.6
 
 [pe.vis.finishes]
-natural = "ambientcg/Plastic013A"
-white = "ambientcg/Plastic010"
+natural = { source = "ambientcg", id = "Plastic013A" }
+white = { source = "ambientcg", id = "Plastic010" }
 
 [pe.compliance]
 food_safe = true
@@ -747,7 +747,7 @@ transmission = 0.85
 ior = 1.58
 
 [pc.vis.finishes]
-clear = "ambientcg/Plastic005"
+clear = { source = "ambientcg", id = "Plastic005" }
 
 [pc.manufacturing]
 machinability = 85

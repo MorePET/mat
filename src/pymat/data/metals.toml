@@ -31,9 +31,9 @@ transmission = 0.0
 default = "brushed"
 
 [stainless.vis.finishes]
-brushed = "ambientcg/Metal012"
-polished = "ambientcg/Metal049A"
-dirty = "ambientcg/Metal049B"
+brushed = { source = "ambientcg", id = "Metal012" }
+polished = { source = "ambientcg", id = "Metal049A" }
+dirty = { source = "ambientcg", id = "Metal049B" }
 
 # Stainless Steel 304
 [stainless.s304]
@@ -150,8 +150,8 @@ transmission = 0.0
 default = "smooth"
 
 [aluminum.vis.finishes]
-smooth = "ambientcg/Metal049A"
-machined = "ambientcg/Metal055A"
+smooth = { source = "ambientcg", id = "Metal049A" }
+machined = { source = "ambientcg", id = "Metal055A" }
 
 # Aluminum 6061-T6
 [aluminum.a6061]
@@ -288,9 +288,9 @@ transmission = 0.0
 default = "polished"
 
 [copper.vis.finishes]
-polished = "ambientcg/Metal043A"
-oxidized = "ambientcg/Metal043B"
-aged = "ambientcg/Metal026"
+polished = { source = "ambientcg", id = "Metal043A" }
+oxidized = { source = "ambientcg", id = "Metal043B" }
+aged = { source = "ambientcg", id = "Metal026" }
 
 [copper.OFHC]
 name = "OFHC Copper (Oxygen-Free High Conductivity)"
@@ -336,8 +336,8 @@ roughness = 0.4
 transmission = 0.0
 
 [tungsten.vis.finishes]
-polished = "ambientcg/Metal014"
-raw = "ambientcg/Metal030"
+polished = { source = "ambientcg", id = "Metal014" }
+raw = { source = "ambientcg", id = "Metal030" }
 
 [tungsten.pure]
 name = "Tungsten 99.95%"
@@ -387,8 +387,8 @@ roughness = 0.5
 transmission = 0.0
 
 [lead.vis.finishes]
-dull = "ambientcg/Metal030"
-oxidized = "ambientcg/Metal031"
+dull = { source = "ambientcg", id = "Metal030" }
+oxidized = { source = "ambientcg", id = "Metal031" }
 
 
 # ============================================================================
@@ -423,7 +423,7 @@ transmission = 0.0
 default = "smooth"
 
 [titanium.vis.finishes]
-smooth = "ambientcg/Metal049A"
+smooth = { source = "ambientcg", id = "Metal049A" }
 
 
 # ============================================================================
@@ -454,8 +454,8 @@ transmission = 0.0
 default = "polished"
 
 [brass.vis.finishes]
-polished = "ambientcg/Metal008"
-oxidized = "ambientcg/Metal035"
+polished = { source = "ambientcg", id = "Metal008" }
+oxidized = { source = "ambientcg", id = "Metal035" }
 
 
 # ============================================================================

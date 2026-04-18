@@ -23,34 +23,48 @@ class TestVisConstruction:
             {
                 "default": "brushed",
                 "finishes": {
-                    "brushed": "ambientcg/Metal032",
-                    "polished": "ambientcg/Metal012",
+                    "brushed": {"source": "ambientcg", "id": "Metal032"},
+                    "polished": {"source": "ambientcg", "id": "Metal012"},
                 },
             }
         )
-        assert v.source_id == "ambientcg/Metal032"
+        assert v.source == "ambientcg"
+        assert v.material_id == "Metal032"
         assert v.finish == "brushed"
         assert v.finishes == {
-            "brushed": "ambientcg/Metal032",
-            "polished": "ambientcg/Metal012",
+            "brushed": {"source": "ambientcg", "id": "Metal032"},
+            "polished": {"source": "ambientcg", "id": "Metal012"},
         }
 
     def test_from_toml_no_default_uses_first(self):
         v = Vis.from_toml(
             {
                 "finishes": {
-                    "matte": "polyhaven/metal_matte",
-                    "satin": "polyhaven/metal_satin",
+                    "matte": {"source": "polyhaven", "id": "metal_matte"},
+                    "satin": {"source": "polyhaven", "id": "metal_satin"},
                 }
             }
         )
         assert v.finish == "matte"
-        assert v.source_id == "polyhaven/metal_matte"
+        assert v.source == "polyhaven"
+        assert v.material_id == "metal_matte"
 
     def test_from_toml_empty(self):
         v = Vis.from_toml({})
-        assert v.source_id is None
+        assert v.source is None
+        assert v.material_id is None
         assert v.finishes == {}
+
+    def test_from_toml_rejects_slashed_string(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="slashed-string form"):
+            Vis.from_toml(
+                {
+                    "default": "brushed",
+                    "finishes": {"brushed": "ambientcg/Metal032"},
+                }
+            )
 
 
 # ── Finish switching ──────────────────────────────────────────
@@ -62,25 +76,27 @@ class TestFinishSwitching:
             {
                 "default": "brushed",
                 "finishes": {
-                    "brushed": "ambientcg/Metal032",
-                    "polished": "ambientcg/Metal012",
+                    "brushed": {"source": "ambientcg", "id": "Metal032"},
+                    "polished": {"source": "ambientcg", "id": "Metal012"},
                 },
             }
         )
-        assert v.source_id == "ambientcg/Metal032"
+        assert (v.source, v.material_id) == ("ambientcg", "Metal032")
 
         v.finish = "polished"
-        assert v.source_id == "ambientcg/Metal012"
+        assert (v.source, v.material_id) == ("ambientcg", "Metal012")
         assert v.finish == "polished"
 
     def test_switch_clears_cache(self):
         v = Vis.from_toml(
             {
                 "default": "a",
-                "finishes": {"a": "src/a", "b": "src/b"},
+                "finishes": {
+                    "a": {"source": "src", "id": "a"},
+                    "b": {"source": "src", "id": "b"},
+                },
             }
         )
-        # Simulate cached textures
         v._textures = {"color": b"fake_png"}
         v._fetched = True
 
@@ -92,7 +108,7 @@ class TestFinishSwitching:
         v = Vis.from_toml(
             {
                 "default": "brushed",
-                "finishes": {"brushed": "ambientcg/Metal032"},
+                "finishes": {"brushed": {"source": "ambientcg", "id": "Metal032"}},
             }
         )
         with pytest.raises(ValueError, match="Unknown finish 'mirror'"):
@@ -103,27 +119,28 @@ class TestFinishSwitching:
 
 
 class TestTextures:
-    def test_no_source_id_returns_empty(self):
+    def test_no_mapping_returns_empty(self):
         v = Vis()
         assert v.textures == {}
 
-    def test_with_source_id_attempts_fetch(self, monkeypatch):
-        """Verify that accessing textures triggers the fetch layer."""
+    def test_with_mapping_attempts_fetch(self, monkeypatch):
+        """Verify that accessing textures delegates to the client."""
         called = {}
 
-        def mock_fetch(source, material_id, *, tier="1k", **kw):
-            called["source"] = source
-            called["material_id"] = material_id
-            return {"color": b"\x89PNG_mock"}
+        class FakeClient:
+            def fetch_all_textures(self, source, material_id, *, tier="1k"):
+                called["source"] = source
+                called["material_id"] = material_id
+                called["tier"] = tier
+                return {"color": b"\x89PNG_mock"}
 
-        # _model.py imports fetch from pymat.vis (our wrapper), not from
-        # mat_vis_client directly — 0.2.0+ removed the module-level fetch.
-        monkeypatch.setattr("pymat.vis.fetch", mock_fetch)
+        # Override the shared client singleton
+        import mat_vis_client as _client
+        monkeypatch.setattr(_client, "_client", FakeClient())
 
-        v = Vis(source_id="ambientcg/Metal032")
+        v = Vis(source="ambientcg", material_id="Metal032")
         textures = v.textures
-        assert called["source"] == "ambientcg"
-        assert called["material_id"] == "Metal032"
+        assert called == {"source": "ambientcg", "material_id": "Metal032", "tier": "1k"}
         assert textures["color"] == b"\x89PNG_mock"
 
 
@@ -131,23 +148,21 @@ class TestTextures:
 
 
 class TestResolvedChannel:
-    def test_texture_available(self):
-        v = Vis()
-        v._textures = {"roughness": b"\x89PNG_roughness"}
+    def _prefetched(self, textures):
+        v = Vis(source="test", material_id="id")
+        v._textures = textures
         v._fetched = True
-        v.source_id = "test/id"  # set to avoid re-fetch
+        return v
 
+    def test_texture_available(self):
+        v = self._prefetched({"roughness": b"\x89PNG_roughness"})
         rc = v.resolve("roughness", scalar=0.3)
         assert rc.has_texture is True
         assert rc.texture == b"\x89PNG_roughness"
         assert rc.scalar == 0.3
 
     def test_texture_missing_fallback_to_scalar(self):
-        v = Vis()
-        v._textures = {}
-        v._fetched = True
-        v.source_id = "test/id"
-
+        v = self._prefetched({})
         rc = v.resolve("metalness", scalar=1.0)
         assert rc.has_texture is False
         assert rc.texture is None
@@ -155,7 +170,7 @@ class TestResolvedChannel:
 
     def test_no_texture_no_scalar(self):
         v = Vis()
-        # source_id is None → textures returns {}
+        # no mapping → textures returns {}
         rc = v.resolve("color")
         assert rc.has_texture is False
         assert rc.texture is None
@@ -178,8 +193,9 @@ class TestDiscover:
         v = Vis()
         candidates = v.discover(category="metal")
         assert len(candidates) == 2
-        assert candidates[0]["id"] == "ambientcg/Metal032"
-        assert v.source_id is None  # not set without auto_set
+        assert candidates[0]["source"] == "ambientcg"
+        assert candidates[0]["id"] == "Metal032"
+        assert v.source is None  # not set without auto_set
 
     def test_discover_auto_set(self, monkeypatch):
         import mat_vis_client as _client
@@ -191,7 +207,8 @@ class TestDiscover:
 
         v = Vis()
         v.discover(category="metal", auto_set=True)
-        assert v.source_id == "ambientcg/Metal032"
+        assert v.source == "ambientcg"
+        assert v.material_id == "Metal032"
 
     def test_discover_no_results(self, monkeypatch):
         import mat_vis_client as _client
@@ -201,7 +218,7 @@ class TestDiscover:
         v = Vis()
         candidates = v.discover(category="exotic")
         assert candidates == []
-        assert v.source_id is None
+        assert v.source is None
 
 
 # ── Material.vis wiring ──────────────────────────────────────
@@ -213,15 +230,29 @@ class TestMaterialVisWiring:
 
         m = Material(name="test-alloy", density=5.0)
         assert m.vis is not None
-        assert m.vis.source_id is None
+        assert m.vis.source is None
+        assert m.vis.material_id is None
         assert m.vis.textures == {}
 
     def test_vis_is_settable(self):
         from pymat import Material
 
         m = Material(name="test")
-        m.vis.source_id = "ambientcg/Wood001"
-        assert m.vis.source_id == "ambientcg/Wood001"
+        m.vis.source = "ambientcg"
+        m.vis.material_id = "Wood001"
+        assert m.vis.source == "ambientcg"
+        assert m.vis.material_id == "Wood001"
+
+    def test_source_id_is_read_only(self):
+        from pymat import Material
+
+        m = Material(name="test")
+        m.vis.source = "ambientcg"
+        m.vis.material_id = "Wood001"
+        assert m.vis.source_id == "ambientcg/Wood001"  # read-only convenience
+
+        with pytest.raises(AttributeError, match="read-only"):
+            m.vis.source_id = "other/thing"
 
     def test_vis_same_instance_on_repeat_access(self):
         from pymat import Material
@@ -234,16 +265,17 @@ class TestMaterialVisWiring:
     def test_toml_material_gets_populated_vis(self):
         from pymat import stainless
 
-        assert stainless.vis.source_id is not None
+        assert stainless.vis.source == "ambientcg"
+        assert stainless.vis.material_id == "Metal012"
         assert stainless.vis.finish == "brushed"
         assert "polished" in stainless.vis.finishes
 
     def test_child_without_vis_gets_empty(self):
         from pymat import stainless
 
-        # s304 has no [vis] section — gets empty Vis
         s304 = stainless.s304
-        assert s304.vis.source_id is None
+        assert s304.vis.source is None
+        assert s304.vis.material_id is None
 
 
 # ── Module-level API ─────────────────────────────────────────

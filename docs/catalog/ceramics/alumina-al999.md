@@ -26,6 +26,6 @@
 
 | Property | Value |
 |---|---|
-| Base Color | `(0.95, 0.95, 0.93, 1.0)` |
+| Base Color | `(0.8, 0.8, 0.8, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.5 |

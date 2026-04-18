@@ -39,6 +39,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Plastic005` |
+| Source | `ambientcg` |
+| Material ID | `Plastic005` |
 | Finish | clear |
 | Available Finishes | clear |

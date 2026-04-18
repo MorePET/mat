@@ -35,6 +35,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal030` |
+| Source | `ambientcg` |
+| Material ID | `Metal030` |
 | Finish | dull |
 | Available Finishes | dull, oxidized |

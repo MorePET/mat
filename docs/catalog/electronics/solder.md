@@ -25,6 +25,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal030` |
+| Source | `ambientcg` |
+| Material ID | `Metal030` |
 | Finish | matte |
 | Available Finishes | matte, reflowed |

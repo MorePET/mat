@@ -25,6 +25,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal043A` |
+| Source | `ambientcg` |
+| Material ID | `Metal043A` |
 | Finish | clean |
 | Available Finishes | clean, oxidized |

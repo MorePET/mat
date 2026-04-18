@@ -37,8 +37,8 @@ metallic = 0.0
 roughness = 0.5
 
 [alumina.vis.finishes]
-white = "ambientcg/Porcelain001"
-smear = "ambientcg/Porcelain002"
+white = { source = "ambientcg", id = "Porcelain001" }
+smear = { source = "ambientcg", id = "Porcelain002" }
 
 [alumina.manufacturing]
 machinability = 30
@@ -94,8 +94,8 @@ metallic = 0.0
 roughness = 0.4
 
 [zirconia.vis.finishes]
-white = "ambientcg/Porcelain001"
-black = "ambientcg/Porcelain003"
+white = { source = "ambientcg", id = "Porcelain001" }
+black = { source = "ambientcg", id = "Porcelain003" }
 
 
 # ============================================================================
@@ -130,7 +130,7 @@ metallic = 0.0
 roughness = 0.6
 
 [sic.vis.finishes]
-dark = "ambientcg/Porcelain003"
+dark = { source = "ambientcg", id = "Porcelain003" }
 
 
 # ============================================================================
@@ -166,7 +166,7 @@ metallic = 0.0
 roughness = 0.4
 
 [macor.vis.finishes]
-white = "ambientcg/Porcelain001"
+white = { source = "ambientcg", id = "Porcelain001" }
 
 [macor.manufacturing]
 machinability = 100
@@ -198,8 +198,8 @@ metallic = 0.0
 roughness = 0.5
 
 [shapal.vis.finishes]
-white = "ambientcg/Porcelain001"
-smear = "ambientcg/Porcelain002"
+white = { source = "ambientcg", id = "Porcelain001" }
+smear = { source = "ambientcg", id = "Porcelain002" }
 
 [shapal.manufacturing]
 machinability = 80
@@ -311,7 +311,7 @@ metallic = 0.0
 roughness = 0.3
 
 [beryllia.vis.finishes]
-white = "ambientcg/Porcelain001"
+white = { source = "ambientcg", id = "Porcelain001" }
 
 [beryllia.compliance]
 toxic = true
@@ -347,4 +347,4 @@ metallic = 0.0
 roughness = 0.4
 
 [yttria.vis.finishes]
-white = "ambientcg/Porcelain001"
+white = { source = "ambientcg", id = "Porcelain001" }

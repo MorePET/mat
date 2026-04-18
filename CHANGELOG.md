@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-18
+
+### Breaking
+
+* **`Vis.source_id: str` split into `Vis.source: str` + `Vis.material_id: str`.** Matches `mat-vis-client`'s `(source, material_id, tier)` positional-arg shape end-to-end — no more `.split("/")` at every delegation site. `source_id` remains as a **read-only** convenience property returning `f"{source}/{material_id}"`; **assignment raises `AttributeError`**. Codified in [ADR-0002](docs/decisions/0002-vis-owns-identity-client-exposed.md).
+* **TOML `[<material>.vis.finishes]` values are now inline tables.** The 3.0 slashed-string form (`brushed = "ambientcg/Metal012"`) raises `ValueError` on load. The 3.1 form:
+  
+  ```toml
+    [stainless.vis.finishes]
+    brushed = { source = "ambientcg", id = "Metal012" }
+    polished = { source = "ambientcg", id = "Metal049A" }
+    ```
+  
+  One-shot migrator ships at `scripts/migrate_toml_finishes.py`. Bundled TOMLs have been migrated. No deprecation cycle — consistent with the 3.0 PBR→vis stance.
+* `Vis.finishes` value type changed from `dict[str, str]` (slashed) to `dict[str, dict[str, str]]` (`{"source": ..., "id": ...}`).
+
+### Added
+
+* **ADR-0002** — *`Material.vis` owns identity + scalars; `mat-vis-client` is exposed, not wrapped.* Codifies three principles (identity/scalars on `Vis`; client exposed not wrapped; material-keyed delegation sugar only), the ownership test for future API questions, and the rationale for the two-field split above.
+* **Delegation sugar properties on `Vis`** — thin delegates that pre-fill `(source, material_id, tier)` from the material's identity:
+  * `material.vis.mtlx` → `MtlxSource` (lazy MaterialX accessor; `.xml`, `.export(path)`, `.original`)
+  * `material.vis.client` → the shared `MatVisClient` singleton (escape hatch for tier enumeration, cache management, discovery)
+  * `material.vis.channels` → texture channel names for this material at this tier
+  * `material.vis.materialize(out)` → PNG dump to disk
+* `Vis.has_mapping` property — replaces `if vis.source_id is not None:` sniffs.
+* `scripts/migrate_toml_finishes.py` — idempotent line-oriented rewriter for `[vis.finishes]` blocks. Supports `--check` and `--diff`.
+
+### Changed
+
+* `scripts/enrich_vis.py` — now emits 3.1 inline-table finish syntax. Also fixes a pre-existing bug where it wrote `default = "..."` inside `[vis.finishes]` (which collides with `[vis].default` semantics, per the design-review that informed ADR-0002).
+* `tests/test_toml_integrity.py::test_vis_finishes_use_valid_source_ids` → `test_vis_finishes_have_valid_shape`. The single over-permissive slashed-string regex is replaced with two per-field regexes (`_SOURCE_RE` lowercase-dashed, `_MATERIAL_ID_RE` allows uppercase + dots) — catches malformed fields that the old combined regex couldn't distinguish.
+
 ## [3.0.0](https://github.com/MorePET/mat/compare/v2.1.1...v3.0.0) - 2026-04-18
 
 ### Breaking

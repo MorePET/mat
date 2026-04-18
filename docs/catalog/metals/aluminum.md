@@ -36,6 +36,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal049A` |
+| Source | `ambientcg` |
+| Material ID | `Metal049A` |
 | Finish | smooth |
 | Available Finishes | smooth, machined |

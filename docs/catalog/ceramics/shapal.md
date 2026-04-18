@@ -33,6 +33,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Porcelain001` |
+| Source | `ambientcg` |
+| Material ID | `Porcelain001` |
 | Finish | white |
 | Available Finishes | white, smear |

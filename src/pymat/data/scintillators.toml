@@ -270,7 +270,7 @@ transmission = 0.85
 # Plastic scintillators are translucent — PBR scalars (transmission=0.85)
 # dominate. The finish tag is for catalog completeness.
 [plastic_scint.vis.finishes]
-clear = "ambientcg/Plastic010"
+clear = { source = "ambientcg", id = "Plastic010" }
 
 # BC-400
 [plastic_scint.BC400]

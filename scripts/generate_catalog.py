@@ -188,12 +188,13 @@ def _material_page(mat, thumb_path: str | None, category: str, key: str, catalog
     lines.append("")
 
     # Vis
-    if mat.vis.source_id:
+    if mat.vis.has_mapping:
         lines.append("## Visual (mat-vis)")
         lines.append("")
         lines.append("| Field | Value |")
         lines.append("|---|---|")
-        lines.append(f"| Source ID | `{mat.vis.source_id}` |")
+        lines.append(f"| Source | `{mat.vis.source}` |")
+        lines.append(f"| Material ID | `{mat.vis.material_id}` |")
         if mat.vis.finish:
             lines.append(f"| Finish | {mat.vis.finish} |")
         if mat.vis.finishes:
@@ -329,7 +330,7 @@ def _category_index(category: str, materials: list, has_thumbnails: bool, catalo
                 and (category_dir / preview[1]).exists()
             ):
                 row.append(_preview_picture_tag(preview))
-            elif mat.vis.source_id is not None:
+            elif mat.vis.has_mapping:
                 row.append(f"![]({'thumbs/' + key + '.png'})")
             else:
                 row.append("—")
@@ -383,15 +384,13 @@ def generate(output_dir: Path, skip_thumbnails: bool = False) -> None:
             thumb_dir = output_dir / category / "thumbs"
             thumb_dir.mkdir(parents=True, exist_ok=True)
             for mat, key in mats:
-                if not mat.vis.source_id:
+                if not mat.vis.has_mapping:
                     continue
                 thumb_path = thumb_dir / f"{key}.png"
                 if thumb_path.exists():
                     thumb_count += 1
                     continue
-                parts = mat.vis.source_id.split("/", 1)
-                if len(parts) != 2:
-                    continue
+                parts = (mat.vis.source, mat.vis.material_id)
                 source, material_id = parts
                 thumb_bytes = _fetch_thumbnail(source, material_id)
                 if thumb_bytes:

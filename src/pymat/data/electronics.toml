@@ -140,8 +140,8 @@ roughness = 0.35
 transmission = 0.0
 
 [copper_pcb.vis.finishes]
-clean = "ambientcg/Metal043A"
-oxidized = "ambientcg/Metal043B"
+clean = { source = "ambientcg", id = "Metal043A" }
+oxidized = { source = "ambientcg", id = "Metal043B" }
 
 # 1 oz Copper (35 µm)
 [copper_pcb.oz1]
@@ -187,8 +187,8 @@ roughness = 0.4
 transmission = 0.0
 
 [solder.vis.finishes]
-matte = "ambientcg/Metal030"
-reflowed = "ambientcg/Metal031"
+matte = { source = "ambientcg", id = "Metal030" }
+reflowed = { source = "ambientcg", id = "Metal031" }
 
 # Sn63Pb37 (traditional, leaded)
 [solder.Sn63Pb37]

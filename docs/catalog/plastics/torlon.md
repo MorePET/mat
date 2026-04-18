@@ -33,6 +33,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Plastic004` |
+| Source | `ambientcg` |
+| Material ID | `Plastic004` |
 | Finish | amber |
 | Available Finishes | amber |

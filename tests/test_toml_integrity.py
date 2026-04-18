@@ -59,7 +59,12 @@ _KNOWN_LEAF_KEYS = {
     "vendor",
 }
 
-_SOURCE_ID_RE = re.compile(r"^[a-z0-9_-]+/[A-Za-z0-9_.-]+$")
+# Separate regexes per field — the slashed form conflated the two
+# alphabets: source is lowercase-dashed (ambientcg, polyhaven, gpuopen),
+# id can contain uppercase, digits, underscores, dots, dashes
+# (Metal012, Plastic013A, metal_matte, Tiles074_A).
+_SOURCE_RE = re.compile(r"^[a-z0-9_-]+$")
+_MATERIAL_ID_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
 @pytest.fixture(scope="module")
@@ -145,15 +150,26 @@ class TestMaterialInvariants:
         }
         assert not negatives, f"Materials with negative density: {negatives}"
 
-    def test_vis_finishes_use_valid_source_ids(self, all_materials):
-        """Every finish value must look like `source/material_id` — anything
-        else is a paste error that would 404 on the CDN at fetch time."""
+    def test_vis_finishes_have_valid_shape(self, all_materials):
+        """Every finish value must be {source, id} with both fields valid.
+
+        Malformed entries get rejected at load time by Vis.from_toml,
+        so this is a belt-and-braces check — any finish that made it
+        through loading must also pass the per-field regexes.
+        """
         bad = []
         for key, mat in all_materials.items():
-            for finish_name, source_id in (mat.vis.finishes or {}).items():
-                if not _SOURCE_ID_RE.match(source_id):
-                    bad.append(f"{key}.vis.finishes.{finish_name} = {source_id!r}")
-        assert not bad, f"Malformed vis source_ids: {bad}"
+            for finish_name, entry in (mat.vis.finishes or {}).items():
+                if not isinstance(entry, dict):
+                    bad.append(f"{key}.vis.finishes.{finish_name} = {entry!r} (not a dict)")
+                    continue
+                src = entry.get("source")
+                mid = entry.get("id")
+                if not src or not _SOURCE_RE.match(src):
+                    bad.append(f"{key}.vis.finishes.{finish_name}.source = {src!r}")
+                if not mid or not _MATERIAL_ID_RE.match(mid):
+                    bad.append(f"{key}.vis.finishes.{finish_name}.id = {mid!r}")
+        assert not bad, f"Malformed vis finishes: {bad}"
 
     def test_vis_pbr_scalars_in_range(self, all_materials):
         """Sanity-check PBR scalars — metallic/roughness in [0, 1], ior > 0."""

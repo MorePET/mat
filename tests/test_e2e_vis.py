@@ -93,7 +93,8 @@ class TestEndToEnd:
         # Create a material and wire vis
         m = Material(name="Test Wood")
         m.vis.roughness = 0.6
-        m.vis.source_id = f"{source}/{mat_id}"
+        m.vis.source = source
+        m.vis.material_id = mat_id
 
         with _skip_on_upstream_outage():
             # Access textures — triggers lazy HTTP fetch
@@ -117,7 +118,8 @@ class TestEndToEnd:
         m.vis.metallic = 1.0
         m.vis.roughness = 0.3
         m.vis.base_color = (0.8, 0.8, 0.8, 1.0)
-        m.vis.source_id = f"{source}/{mat_id}"
+        m.vis.source = source
+        m.vis.material_id = mat_id
 
         with _skip_on_upstream_outage():
             d = to_threejs(m)
@@ -138,24 +140,23 @@ class TestEndToEnd:
                     assert d[key].startswith("data:image/png;base64,"), f"{key}: not a data URI"
 
     def test_toml_material_with_vis_mapping(self):
-        """Stainless steel from TOML has vis.source_id from [vis] section."""
+        """Stainless steel from TOML has vis identity from [vis] section."""
         from pymat import stainless
 
-        assert stainless.vis.source_id is not None
+        assert stainless.vis.source == "ambientcg"
+        assert stainless.vis.material_id == "Metal012"
         assert stainless.vis.finish == "brushed"
         assert stainless.vis.roughness == 0.3
         assert stainless.vis.metallic == 1.0
-
-        # Finishes available
         assert "polished" in stainless.vis.finishes
 
-        # Switch finish — source_id should change to something different
-        brushed_id = stainless.vis.source_id
+        # Switch finish — identity should change
+        brushed_id = stainless.vis.material_id
         stainless.vis.finish = "polished"
-        assert stainless.vis.source_id != brushed_id
-        assert stainless.vis.source_id.startswith("ambientcg/Metal")
+        assert stainless.vis.material_id != brushed_id
+        assert stainless.vis.source == "ambientcg"
+        assert stainless.vis.material_id.startswith("Metal")
 
-        # Switch back
         stainless.vis.finish = "brushed"
 
     def test_discover_finds_candidates(self):
@@ -192,7 +193,8 @@ class TestEndToEnd:
 
         m = Material(name="Test Stone")
         m.vis.roughness = 0.7
-        m.vis.source_id = f"{source}/{mat_id}"
+        m.vis.source = source
+        m.vis.material_id = mat_id
 
         with _skip_on_upstream_outage():
             rc = m.vis.resolve("roughness", scalar=0.7)

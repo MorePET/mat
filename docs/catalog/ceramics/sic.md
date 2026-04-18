@@ -35,6 +35,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Porcelain003` |
+| Source | `ambientcg` |
+| Material ID | `Porcelain003` |
 | Finish | dark |
 | Available Finishes | dark |

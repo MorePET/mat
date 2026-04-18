@@ -129,7 +129,7 @@ def propose_mappings(limit_per_material: int = 3) -> list[dict]:
         base = path.split(".")[0]
 
         # Skip if the base (or this node) already has a curated mapping
-        if mat.vis.source_id is not None:
+        if mat.vis.has_mapping:
             base_has_vis.add(base)
             continue
 
@@ -163,11 +163,6 @@ def propose_mappings(limit_per_material: int = 3) -> list[dict]:
         if not candidates:
             continue
 
-        # Format source_id as "source/id"
-        for c in candidates:
-            if "source" in c and "id" in c and "/" not in c["id"]:
-                c["id"] = f"{c['source']}/{c['id']}"
-
         proposals.append(
             {
                 "material_key": path,
@@ -183,7 +178,11 @@ def propose_mappings(limit_per_material: int = 3) -> list[dict]:
 
 
 def format_toml(proposals: list[dict]) -> str:
-    """Format proposals as TOML [vis] sections."""
+    """Format proposals as TOML [vis.finishes] sections (3.1 inline-table form).
+
+    Emits one finish named after the top candidate's id (curators usually
+    rename this to something meaningful like 'brushed' / 'polished').
+    """
     lines = ["# Auto-generated vis mapping proposals (tag-based matching)", ""]
 
     for p in proposals:
@@ -194,9 +193,14 @@ def format_toml(proposals: list[dict]) -> str:
         lines.append(f"# {p['material_name']} — matched on tags {p['tags_matched']}")
         lines.append(f"# top tags: {', '.join(top.get('tags', [])[:6])}")
         if alts:
-            lines.append(f"# alternatives: {[c['id'] for c in alts]}")
+            alt_fmt = [f"{c['source']}/{c['id']}" for c in alts]
+            lines.append(f"# alternatives: {alt_fmt}")
+        # Use the candidate id as the finish name — curator renames as needed.
+        finish_name = top["id"].lower()
         lines.append(f"[{key}.vis.finishes]")
-        lines.append(f'default = "{top["id"]}"')
+        lines.append(
+            f'{finish_name} = {{ source = "{top["source"]}", id = "{top["id"]}" }}'
+        )
         lines.append("")
 
     return "\n".join(lines)

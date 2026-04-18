@@ -19,5 +19,4 @@
 | Base Color | `(0.8, 0.85, 1.0, 0.02)` |
 | Metallic | 0.0 |
 | Roughness | 0.0 |
-| IOR | 1.000702 |
 | Transmission | 0.98 |

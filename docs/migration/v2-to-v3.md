@@ -1,4 +1,70 @@
-# Migrating from 2.x to 3.0
+# Migrating to 3.x
+
+- [3.0 → 3.1: Vis identity split](#30--31-vis-identity-split) (current)
+- [2.x → 3.0: PBR → .vis consolidation](#2x--30-pbr--vis-consolidation)
+
+---
+
+## 3.0 → 3.1: Vis identity split
+
+3.1 splits `Vis.source_id` into `Vis.source` + `Vis.material_id` so py-mat's
+types match `mat-vis-client`'s `(source, material_id, tier)` positional-arg
+shape end-to-end. No more string surgery at delegation sites. See
+[ADR-0002](../decisions/0002-vis-owns-identity-client-exposed.md) for the
+full rationale.
+
+### Rename cheat sheet (3.0 → 3.1)
+
+| 3.0 | 3.1 |
+|---|---|
+| `vis.source_id` | `vis.source` + `vis.material_id` (`source_id` is read-only convenience) |
+| `vis.source_id = "ambientcg/Metal012"` | `vis.source = "ambientcg"; vis.material_id = "Metal012"` |
+| `if vis.source_id is not None:` | `if vis.has_mapping:` |
+| `vis.source_id.split("/", 1)` | `vis.source`, `vis.material_id` — already split |
+| `client.mtlx(*vis.source_id.split("/"), tier=vis.tier)` | `vis.mtlx` — dotted sugar |
+| `client.channels(*vis.source_id.split("/"), vis.tier)` | `vis.channels` |
+| `client.materialize(*vis.source_id.split("/"), vis.tier, out)` | `vis.materialize(out)` |
+
+### TOML `[vis.finishes]` format change
+
+Slashed-string form is removed in 3.1. Run the one-shot migrator:
+
+```bash
+python scripts/migrate_toml_finishes.py          # rewrites src/pymat/data/*.toml
+python scripts/migrate_toml_finishes.py --check  # exits non-zero if stale
+python scripts/migrate_toml_finishes.py --diff   # preview only
+```
+
+Before (3.0):
+
+```toml
+[stainless.vis.finishes]
+brushed = "ambientcg/Metal012"
+polished = "ambientcg/Metal049A"
+```
+
+After (3.1):
+
+```toml
+[stainless.vis.finishes]
+brushed  = { source = "ambientcg", id = "Metal012" }
+polished = { source = "ambientcg", id = "Metal049A" }
+```
+
+The loader raises `ValueError` on a bare-string finish value in 3.1 with
+a pointer back to this doc. No deprecation cycle, consistent with the 3.0
+PBR→vis stance.
+
+### Catching 3.0 → 3.1 misuse
+
+- **`AttributeError: Vis.source_id is read-only in 3.1+`** — someone assigned
+  to `source_id`. Assign `source` + `material_id` separately, or via `finish = "..."`.
+- **`ValueError: Finish 'X' uses the 3.0 slashed-string form`** — TOML still has
+  the old value shape. Run `python scripts/migrate_toml_finishes.py`.
+
+---
+
+## 2.x → 3.0: PBR → .vis consolidation
 
 py-materials 3.0 consolidates all PBR (physically-based rendering)
 state under `material.vis`. `material.properties.pbr`, `PBRProperties`,

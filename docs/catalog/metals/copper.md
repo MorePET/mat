@@ -37,6 +37,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal043A` |
+| Source | `ambientcg` |
+| Material ID | `Metal043A` |
 | Finish | polished |
 | Available Finishes | polished, oxidized, aged |

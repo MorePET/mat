@@ -36,6 +36,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Plastic013A` |
+| Source | `ambientcg` |
+| Material ID | `Plastic013A` |
 | Finish | natural |
 | Available Finishes | natural, white |

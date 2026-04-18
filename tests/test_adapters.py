@@ -33,7 +33,8 @@ def _make_material(with_vis=False):
             "roughness": b"\x89PNG_roughness",
         }
         m.vis._fetched = True
-        m.vis.source_id = "ambientcg/Metal032"
+        m.vis.source = "ambientcg"
+        m.vis.material_id = "Metal032"
     return m
 
 

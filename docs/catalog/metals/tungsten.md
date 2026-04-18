@@ -35,6 +35,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal014` |
+| Source | `ambientcg` |
+| Material ID | `Metal014` |
 | Finish | polished |
 | Available Finishes | polished, raw |

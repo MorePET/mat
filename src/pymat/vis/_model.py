@@ -2,15 +2,29 @@
 Vis model — the visual representation attached to a Material.
 
 Material.vis returns a Vis instance. It holds:
-- source_id: pointer to a mat-vis appearance
-- finishes: dict of finish_name → source_id (for TOML-registered materials)
-- textures: dict of channel → PNG bytes (lazy-fetched, cached)
+- source + material_id: pointer to a mat-vis appearance (matches
+  mat-vis-client's two-arg signature; see ADR-0002)
+- finishes: dict of finish_name → {"source": ..., "id": ...}
+- PBR scalars (roughness, metallic, base_color, ior, transmission, ...)
+
+Per ADR-0002, Vis holds identity + scalars only. Anything reachable
+on the mat-vis-client is exposed directly via:
+
+- `material.vis.client` — the shared MatVisClient (escape hatch)
+- `material.vis.source` — MtlxSource (pre-filled delegate)
+- `material.vis.textures` / `.channels` / `.materialize(...)` — same
+
+These are thin delegates, not wrappers. No translation.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, ClassVar
+
+if TYPE_CHECKING:
+    from mat_vis_client import MatVisClient, MtlxSource
 
 
 @dataclass
@@ -27,21 +41,26 @@ class Vis:
     """Visual representation of a material, backed by mat-vis data.
 
     Always instantiated (never None on Material). Starts with
-    source_id=None and empty textures for custom materials.
+    source=None and empty textures for custom materials.
     Populated from TOML [vis] section for registered materials.
 
     Usage:
-        steel.vis.source_id          # "ambientcg/Metal_Brushed_001"
+        steel.vis.source           # "ambientcg"
+        steel.vis.material_id      # "Metal012"
         steel.vis.textures["color"]  # PNG bytes (lazy-fetched)
-        steel.vis.finishes           # {"brushed": "...", "polished": "..."}
+        steel.vis.finishes         # {"brushed": {"source": ..., "id": ...}, ...}
         steel.vis.finish = "polished"  # switch appearance
+        steel.vis.mtlx.xml         # MaterialX document (3.1+)
     """
 
-    source_id: str | None = None
+    # Identity — matches mat-vis-client's (source, material_id, tier) signature
+    source: str | None = None
+    material_id: str | None = None
     tier: str = "1k"
-    finishes: dict[str, str] = field(default_factory=dict)
+    # {finish_name: {"source": str, "id": str}}
+    finishes: dict[str, dict[str, str]] = field(default_factory=dict)
 
-    # PBR scalars — the canonical home in 3.0. Loaded from the [vis]
+    # PBR scalars — the canonical home in 3.0+. Loaded from the [vis]
     # section of a TOML material, or derived from physics properties
     # (ior from optical.refractive_index, transmission from optical
     # .transparency / 100) in Material.__post_init__.
@@ -57,9 +76,37 @@ class Vis:
     _textures: dict[str, bytes] = field(default_factory=dict, repr=False)
     _fetched: bool = False
 
+    # ── Identity helpers ─────────────────────────────────────────
+
+    @property
+    def has_mapping(self) -> bool:
+        """True when this Vis points at a concrete mat-vis appearance."""
+        return self.source is not None and self.material_id is not None
+
+    @property
+    def source_id(self) -> str | None:
+        """Deprecated alias. Use `source` + `material_id` instead.
+
+        Retained as a read-only convenience for logging and tests; raises
+        on assignment in 3.1 per ADR-0002. See docs/migration/v2-to-v3.md.
+        """
+        if not self.has_mapping:
+            return None
+        return f"{self.source}/{self.material_id}"
+
+    @source_id.setter
+    def source_id(self, _value: str) -> None:
+        raise AttributeError(
+            "Vis.source_id is read-only in 3.1+. Set vis.source and "
+            "vis.material_id separately, or assign a finish. "
+            "See docs/migration/v2-to-v3.md."
+        )
+
+    # ── Finish switcher ──────────────────────────────────────────
+
     @property
     def finish(self) -> str | None:
-        """Current finish name, or None if using source_id directly."""
+        """Current finish name, or None if set directly without a finish map."""
         return self._finish
 
     @finish.setter
@@ -69,17 +116,52 @@ class Vis:
             available = list(self.finishes.keys())
             raise ValueError(f"Unknown finish '{name}'. Available: {available}")
         self._finish = name
-        self.source_id = self.finishes[name]
+        entry = self.finishes[name]
+        self.source = entry["source"]
+        self.material_id = entry["id"]
         self._textures.clear()
         self._fetched = False
+
+    # ── mat-vis-client: exposed, not wrapped (ADR-0002) ─────────
+
+    @property
+    def client(self) -> MatVisClient:
+        """The shared mat-vis-client singleton.
+
+        Escape hatch for mat-vis-client methods not keyed by a material —
+        tier enumeration, cache management, discovery before a material
+        is picked. Material-keyed operations should prefer the dotted
+        sugar on this Vis (`.textures`, `.source`, `.channels`, ...).
+        """
+        from mat_vis_client import _get_client
+
+        return _get_client()
+
+    @property
+    def mtlx(self) -> MtlxSource | None:
+        """MaterialX document accessor — lazy, no network IO until used.
+
+        Returns None if this Vis has no mapping.
+
+            xml = material.vis.mtlx.xml
+            material.vis.mtlx.export("./out")
+            material.vis.mtlx.original   # upstream-author variant, or None
+
+        Thin delegate for `client.mtlx(source, material_id, tier=tier)`.
+        """
+        if not self.has_mapping:
+            return None
+        return self.client.mtlx(self.source, self.material_id, tier=self.tier)
+
+    # ── Textures + channels ──────────────────────────────────────
 
     @property
     def textures(self) -> dict[str, bytes]:
         """Channel → PNG bytes. Lazy-fetched on first access.
 
-        Returns empty dict if source_id is None (no appearance set).
+        Returns empty dict if no mapping is set.
         """
-        if self.source_id is None:
+        if not self.has_mapping:
             return {}
 
         if not self._fetched:
@@ -87,22 +169,35 @@ class Vis:
 
         return self._textures
 
-    def resolve(self, channel: str, scalar: float | None = None) -> ResolvedChannel:
-        """Resolve a channel: texture if available, scalar fallback.
+    @property
+    def channels(self) -> list[str]:
+        """Available texture channels for this material at this tier."""
+        if not self.has_mapping:
+            return []
+        return self.client.channels(self.source, self.material_id, self.tier)
 
-        Args:
-            channel: Channel name ("roughness", "metalness", etc.)
-            scalar: Scalar fallback value (from properties.pbr).
+    def materialize(self, output_dir: str | Path) -> Path | None:
+        """Write PNGs for every channel to a directory. Returns the directory.
 
-        Returns:
-            ResolvedChannel with texture bytes and/or scalar value.
+        Thin delegate for `client.materialize(source, material_id, tier, out)`.
+        Returns None if this Vis has no mapping.
         """
+        if not self.has_mapping:
+            return None
+        return self.client.materialize(
+            self.source, self.material_id, self.tier, output_dir
+        )
+
+    def resolve(self, channel: str, scalar: float | None = None) -> ResolvedChannel:
+        """Resolve a channel: texture if available, scalar fallback."""
         tex = self.textures.get(channel)
         return ResolvedChannel(
             texture=tex,
             scalar=scalar,
             has_texture=tex is not None,
         )
+
+    # ── Discovery (py-mat's tag-aware layer over client.search) ─
 
     def discover(
         self,
@@ -115,27 +210,8 @@ class Vis:
     ) -> list[dict[str, Any]]:
         """Search mat-vis for appearances matching this material's scalars.
 
-        Does NOT set source_id automatically — returns candidates for
-        the user to review. Pass auto_set=True to pick the top match.
-
-        Args:
-            category: Filter by category. If None, tries to infer from
-                the material's existing PBR properties.
-            roughness: Target roughness. If None, reads from the material.
-            metallic: Target metalness. If None, reads from the material.
-            limit: Max candidates to return.
-            auto_set: If True, set source_id to the top match.
-
-        Returns:
-            List of candidate dicts with "id", "source", "category",
-            "score". Sorted by score (lower = closer match).
-
-        Example:
-            candidates = steel.vis.discover(category="metal")
-            # [{"id": "ambientcg/Metal032", "score": 0.05}, ...]
-            steel.vis.source_id = candidates[0]["id"]  # manual pick
-            # or:
-            steel.vis.discover(category="metal", auto_set=True)
+        Returns candidates with {source, id, category, score, ...}.
+        Pass auto_set=True to set the top match on this Vis.
         """
         from mat_vis_client import search
 
@@ -146,40 +222,29 @@ class Vis:
             limit=limit,
         )
 
-        # Reformat ids as "source/id" for direct assignment
-        for r in results:
-            if "source" in r and "id" in r and "/" not in r["id"]:
-                r["id"] = f"{r['source']}/{r['id']}"
-
         if auto_set and results:
-            self.source_id = results[0]["id"]
+            top = results[0]
+            self.source = top["source"]
+            self.material_id = top["id"]
             self._textures.clear()
             self._fetched = False
 
         return results
 
+    # ── Internals ────────────────────────────────────────────────
+
     def _fetch(self) -> None:
         """Fetch textures via the vis client. Called lazily."""
-        if self.source_id is None:
+        if not self.has_mapping:
             return
 
-        # Parse "source/material_id" format
-        parts = self.source_id.split("/", 1)
-        if len(parts) != 2:
-            raise ValueError(
-                f"Invalid source_id '{self.source_id}'. Expected 'source/material_id' format."
-            )
-        source, material_id = parts
-
-        # Import from pymat.vis (our wrapper) rather than mat-vis-client
-        # directly. mat-vis-client 0.2.0+ removed the module-level `fetch`
-        # in favor of the explicit-client style (MatVisClient().fetch_all_textures).
-        from pymat.vis import fetch
-
-        self._textures = fetch(source, material_id, tier=self.tier)
+        # Thin delegate — matches the ADR-0002 principle.
+        self._textures = self.client.fetch_all_textures(
+            self.source, self.material_id, tier=self.tier
+        )
         self._fetched = True
 
-    _PBR_SCALAR_FIELDS = (
+    _PBR_SCALAR_FIELDS: ClassVar[tuple[str, ...]] = (
         "roughness",
         "metallic",
         "base_color",
@@ -200,15 +265,7 @@ class Vis:
     }
 
     def get(self, field: str, default: Any = None) -> Any:
-        """Get a PBR scalar with fallback to default.
-
-        Returns the field value if set (not None), otherwise the
-        default. If no default provided, uses _PBR_DEFAULTS.
-
-        Usage:
-            vis.get("roughness")       # → 0.3 if set, 0.5 if None
-            vis.get("roughness", 0.0)  # → 0.3 if set, 0.0 if None
-        """
+        """Get a PBR scalar with fallback to default."""
         val = getattr(self, field, None)
         if val is not None:
             return val
@@ -216,38 +273,47 @@ class Vis:
             return default
         return self._PBR_DEFAULTS.get(field)
 
+    # ── TOML loader ──────────────────────────────────────────────
+
     @classmethod
     def from_toml(cls, vis_data: dict[str, Any]) -> Vis:
         """Construct from a TOML [vis] section.
 
-        Accepts PBR scalars alongside finishes/source_id. When PBR
-        scalars are present in [vis], they become the canonical source
-        and are synced back to properties.pbr for backward compat.
-
-        TOML structure:
-            [material.vis]
-            default = "brushed"
-            roughness = 0.3
-            metallic = 1.0
-            base_color = [0.75, 0.75, 0.77, 1.0]
-
-            [material.vis.finishes]
-            brushed = "ambientcg/Metal_Brushed_001"
-            polished = "ambientcg/Metal_Polished_002"
+        3.1 expects finishes as inline tables {source="...", id="..."}.
+        Bare-string values like "source/id" raise on load.
         """
-        finishes = vis_data.get("finishes", {})
+        finishes_raw = vis_data.get("finishes", {})
+        finishes: dict[str, dict[str, str]] = {}
+        for name, entry in finishes_raw.items():
+            if isinstance(entry, str):
+                raise ValueError(
+                    f"Finish '{name}' uses the 3.0 slashed-string form "
+                    f"({entry!r}); 3.1 expects inline tables like "
+                    f'{{ source = "ambientcg", id = "Metal012" }}. '
+                    f"Run `python scripts/migrate_toml_finishes.py` or see "
+                    f"docs/migration/v2-to-v3.md."
+                )
+            if not isinstance(entry, dict) or "source" not in entry or "id" not in entry:
+                raise ValueError(
+                    f"Finish '{name}' is malformed. Expected an inline table "
+                    f'with keys `source` and `id`, got: {entry!r}'
+                )
+            finishes[name] = {"source": entry["source"], "id": entry["id"]}
+
         default_finish = vis_data.get("default")
 
-        source_id = None
-        finish = None
+        source: str | None = None
+        material_id: str | None = None
+        finish: str | None = None
         if default_finish and default_finish in finishes:
-            source_id = finishes[default_finish]
+            picked = finishes[default_finish]
+            source, material_id = picked["source"], picked["id"]
             finish = default_finish
         elif finishes:
             finish = next(iter(finishes))
-            source_id = finishes[finish]
+            picked = finishes[finish]
+            source, material_id = picked["source"], picked["id"]
 
-        # Extract PBR scalars from [vis] section
         scalars = {}
         for fname in cls._PBR_SCALAR_FIELDS:
             if fname in vis_data:
@@ -257,7 +323,8 @@ class Vis:
                 scalars[fname] = val
 
         return cls(
-            source_id=source_id,
+            source=source,
+            material_id=material_id,
             finishes=finishes,
             _finish=finish,
             **scalars,

@@ -33,6 +33,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Plastic003` |
+| Source | `ambientcg` |
+| Material ID | `Plastic003` |
 | Finish | dark |
 | Available Finishes | dark |

@@ -25,6 +25,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Plastic006` |
+| Source | `ambientcg` |
+| Material ID | `Plastic006` |
 | Finish | black |
 | Available Finishes | black, white |

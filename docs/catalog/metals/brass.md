@@ -33,7 +33,8 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Metal008` |
+| Source | `ambientcg` |
+| Material ID | `Metal008` |
 | Finish | polished |
 | Available Finishes | polished, oxidized |
 

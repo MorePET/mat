@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render per-material PBR previews for the catalog.
 
-Loops every material that has `vis.source_id`, picks a shape based on
+Loops every material that has `vis.has_mapping`, picks a shape based on
 category (cube for solids, sphere for fluids), and renders a light +
 dark themed PNG via headless Three.js (Playwright + SwiftShader).
 
@@ -154,7 +154,7 @@ def generate(only: set[str] | None = None) -> int:
     mats = load_all()
     targets = []
     for category, path, m in _walk_hierarchy(mats):
-        if m.vis.source_id is None:
+        if not m.vis.has_mapping:
             continue
         base = path.split(".")[0]
         if only is not None and base not in only and path not in only:
@@ -162,7 +162,7 @@ def generate(only: set[str] | None = None) -> int:
         targets.append((category, path, m))
 
     if not targets:
-        log.info("No materials to render (empty `only` filter or nothing with vis.source_id)")
+        log.info("No materials to render (empty `only` filter or nothing with vis.has_mapping)")
         return 0
 
     log.info(

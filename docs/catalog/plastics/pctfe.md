@@ -32,6 +32,7 @@
 
 | Field | Value |
 |---|---|
-| Source ID | `ambientcg/Plastic010` |
+| Source | `ambientcg` |
+| Material ID | `Plastic010` |
 | Finish | white |
 | Available Finishes | white |
