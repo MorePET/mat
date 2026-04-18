@@ -83,6 +83,33 @@ for adding sugar is "does >1 consumer call this same
 `(self.source, self.material_id, self.tier)` shape often enough to
 be worth 3 lines on `Vis`?"
 
+### Intentional exception: `Vis.discover()`
+
+One method on `Vis` does not follow the thin-delegate rule: `discover()`.
+
+`discover()` exists pre-3.0 as a tag-aware convenience wrapper over
+`mat_vis_client.search`. It renames `metallic → metalness` (py-mat's
+internal name for the scalar vs upstream's), widens roughness /
+metalness into search-range tuples, and optionally mutates the Vis
+(`auto_set=True`). All three of those are translation-layer behaviors
+Principle 2 otherwise rejects.
+
+We keep it because:
+
+- **Ergonomics.** `steel.vis.discover(category="metal")` reads
+  naturally; moving it to a module function `pymat.vis.discover_for
+  (material, ...)` loses the dotted sugar without a clear win.
+- **Domain logic.** Tag-aware search with py-mat's scalar renaming is
+  genuinely py-mat-side — not a delegation to an identical
+  mat-vis-client operation.
+- **Scope.** It's the single exception. If a second method tempts us
+  into wrapping rather than delegating, that's the signal to
+  re-evaluate this ADR.
+
+When adding new material-keyed operations, the default answer is
+still "thin delegate." `discover()` is the carve-out, not the
+precedent.
+
 ## Ownership test
 
 When the question "should py-mat add sugar for X, or should

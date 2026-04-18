@@ -17,7 +17,7 @@ full rationale.
 
 | 3.0 | 3.1 |
 |---|---|
-| `vis.source_id` | `vis.source` + `vis.material_id` (`source_id` is read-only convenience) |
+| `vis.source_id` | `vis.source` + `vis.material_id` (both as real fields). `source_id` remains as a **read-only convenience** returning `"{source}/{material_id}"` — handy for logs and CLI output. |
 | `vis.source_id = "ambientcg/Metal012"` | `vis.source = "ambientcg"; vis.material_id = "Metal012"` |
 | `if vis.source_id is not None:` | `if vis.has_mapping:` |
 | `vis.source_id.split("/", 1)` | `vis.source`, `vis.material_id` — already split |

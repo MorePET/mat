@@ -5,13 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-04-19
+
+Post-3.1 audit follow-ups ([milestone 1](https://github.com/MorePET/mat/milestone/1)).
+Three parallel agents reviewed the 3.1 + 3.1.1 surface from different angles
+(DX, API good-practice checklist, adversarial); this release addresses the
+13 issues they filed.
+
+### Fixed
+
+* **Dropped the misleading `from mat_vis_client import adapters` re-export** (#59). `pymat.vis.adapters` now unambiguously resolves to the local submodule (Material-accepting signatures). A regression test pins `adapters.__name__ == "pymat.vis.adapters"` and the one-param signature.
+* **Renamed `Vis.get(field, default)` → `Vis.get(name, default)`** (#60) to stop shadowing `dataclasses.field` imported at module scope. Signature test pins the rename.
+* **`vis.source = vis.source` no longer clears the texture cache** (#64). `__setattr__` now short-circuits when the incoming value equals the current one — `vis.finish = vis.finish` is also a cache-safe no-op now.
+* **`dataclasses.replace(vis, source="new")` no longer inherits stale cache** (#63). Added `__post_init__` that zeros `_textures` + `_fetched`; pickle round-trip still preserves cache because pickle goes through `__dict__.update`, not `__init__`.
+* **`Vis.has_mapping` now requires `tier is not None`** (#67). An explicit `vis.tier = None` un-maps the Vis so delegates fail at the gate rather than downstream in the client.
+
+### Added
+
+* **`Vis._identity_args()` helper** (#65) returning `(source, material_id, tier)`. `.mtlx`, `.channels`, `.materialize`, and `_fetch` all route through it — consistent call-site shape so adding new delegates doesn't drift.
+* **`Vis.set_identity(*, source=, material_id=, tier=)`** (#69) — atomic multi-field identity update with a single cache invalidation. `Material(vis={"source": ..., "material_id": ...})` constructor path routes identity through this so the material is never observed in a half-assigned state.
+* **Round-trip tests** (#63): `copy.deepcopy`, `pickle.dumps/loads`, `dataclasses.replace(vis, ...)`. Pins the current correct-by-construction behavior so a future refactor can't silently regress any of them.
+* **Thread-safety race reproducer test** (#72). Deterministically exhibits the documented two-thread double-fetch race by gating the mock client with `threading.Event`s. Pins the docstring claim — any future "look, we fixed it" removal of the warning needs to make this test go RED first.
+* **`_fetched` equality test pinned independently of `_textures`** (#62), using `object.__setattr__` to bypass the invalidation hook. Guards against a future `field(compare=False)` regression on one field without the other.
+* **`Vis.__post_init__`** zeros the lazy texture cache after every `@dataclass` construction. See #63 above for rationale.
+
+### Changed
+
+* **`Vis.discover()` is now an intentional ADR-0002 exception**, called out in a new section of the ADR. It's a tag-aware convenience wrapper (renames `metallic → metalness`, widens scalars to ranges, optionally mutates via `auto_set`) — translation layer behavior Principle 2 otherwise rejects, kept for ergonomics. Any *second* wrapper on `Vis` re-triggers the ADR conversation.
+* **`Vis.source_id` is no longer described as "deprecated"** (#68). It's a read-only convenience property (joined `"source/material_id"`) useful for logs + CLI output. The setter raising `AttributeError` remains the breaking signal for write attempts.
+* **`.channels` docstring clarifies the cache asymmetry with `.textures`** (#70). `.channels` reads from the client's in-memory rowmap (cheap, shared across instances); `.textures` caches per-instance because the payload is large PNG bytes.
+* **Cross-referenced docstrings** (#71) so readers landing on either `pymat.vis.client()` (module function) or `material.vis.client` (property) find the other. Same singleton, two entry points.
+* **Strengthened two weak tests** from the 3.1.1 red/green pass. `test_init_does_not_trip_invalidation` (#61) replaced with two tests that actually exercise the guard's invariant. Previous form passed even when the guard was deleted.
+
+### Internal
+
+* Filed [mat-vis#84](https://github.com/MorePET/mat-vis/issues/84) asking for `mat_vis_client._get_client` → `get_client` rename. Until that lands, py-mat reaches into the underscore symbol from six property bodies.
+
 ## [3.1.1] - 2026-04-19
 
 ### Fixed
 
 * **Identity mutation now invalidates the lazy texture cache.** Assigning `vis.source`, `vis.material_id`, or `vis.tier` after a fetch populated `_textures` silently left the old bytes in place — only `.finish = ...` cleared the cache. Now any identity-field assignment triggers cache invalidation via `Vis.__setattr__`. Guarded against the dataclass `__init__` so construction doesn't trip the clear.
 * **`Vis` equality no longer depends on cache state or `_finish` label.** Two `Vis` objects with the same identity + scalars now compare equal regardless of whether one has been lazy-fetched. Fixed by adding `field(compare=False, repr=False)` to `_textures`, `_fetched`, and `_finish`.
-* `pymat.vis.adapters._extract_textures` — use `.has_mapping` instead of the deprecated `source_id is None` sniff.
+* `pymat.vis.adapters._extract_textures` — use `.has_mapping` instead of `source_id is None` (the string-concatenating convenience property; `has_mapping` is the clearer intent).
 * Stale docstrings: `Vis` class docstring no longer claims `.source` is a MtlxSource (it's `.mtlx`); `_MaterialInternal.vis` docstring updated for the 3.1 two-field identity; `CONTRIBUTING.md` TOML template no longer shows the 3.0 `[pbr]` section or slashed-string finishes (new contributors copying it would produce TOMLs that raise on load).
 
 ### Added

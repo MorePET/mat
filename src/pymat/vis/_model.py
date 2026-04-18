@@ -62,6 +62,11 @@ class FinishEntry(TypedDict):
 # in O(1) without re-allocating a set each call.
 _IDENTITY_FIELDS = frozenset({"source", "material_id", "tier"})
 
+# Sentinel for the no-op short-circuit in __setattr__ — distinguishes
+# "attribute not present yet" from "attribute is None" when comparing
+# the old value against the incoming one.
+_SENTINEL: Any = object()
+
 
 @dataclass
 class ResolvedChannel:
@@ -138,11 +143,33 @@ class Vis:
     _textures: dict[str, bytes] = field(default_factory=dict, compare=False, repr=False)
     _fetched: bool = field(default=False, compare=False, repr=False)
 
+    def __post_init__(self) -> None:
+        """Start every newly-constructed Vis with an empty cache.
+
+        ``@dataclass`` init and ``dataclasses.replace(vis, ...)`` both
+        assign every field including ``_textures`` / ``_fetched``. For
+        ``replace(v, source="new")`` that means a new identity paired
+        with stale cache bytes from the old identity — the same
+        invalidation hazard ``__setattr__`` fixes for plain mutation.
+
+        We zero here rather than fighting it in ``replace`` because:
+
+        - Direct construction ``Vis(source="x", material_id="y")``
+          already starts unfetched (no user ever passes cache via
+          kwargs; tests populate after construction).
+        - Pickling uses ``__dict__.update``, NOT ``__init__``, so
+          ``pickle.loads(vis)`` preserves cache state by design.
+
+        The only observable change: ``replace`` now starts unfetched.
+        """
+        super().__setattr__("_textures", {})
+        super().__setattr__("_fetched", False)
+
     # ── Cache invalidation on identity mutation ──────────────────
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Write-through to dataclass fields, clearing the lazy texture
-        cache when identity changes.
+        cache when identity changes to a *new* value.
 
         Assigning ``source``, ``material_id``, or ``tier`` after a fetch
         has populated ``_textures`` invalidates the cache — the next
@@ -150,30 +177,53 @@ class Vis:
         this, assigning ``vis.tier = "2k"`` silently leaves the 1k
         bytes in ``_textures``.
 
+        Short-circuit: a no-op assignment (new value equals current
+        value) skips the invalidation. Otherwise ``vis.source = vis
+        .source`` and ``vis.finish = vis.finish`` silently bust the
+        cache for no reason.
+
         The ``"_fetched" in self.__dict__`` guard tolerates the
         dataclass-generated ``__init__`` where ``source`` is assigned
         before ``_textures`` / ``_fetched`` exist.
         """
-        super().__setattr__(name, value)
         if name in _IDENTITY_FIELDS and "_fetched" in self.__dict__:
+            # Compare before the write so we can detect a no-op.
+            if getattr(self, name, _SENTINEL) == value:
+                return
+            super().__setattr__(name, value)
             # Invalidate via super() to avoid infinite recursion into
             # this same __setattr__ handler.
             super().__setattr__("_textures", {})
             super().__setattr__("_fetched", False)
+            return
+        super().__setattr__(name, value)
 
     # ── Identity helpers ─────────────────────────────────────────
 
     @property
     def has_mapping(self) -> bool:
-        """True when this Vis points at a concrete mat-vis appearance."""
-        return self.source is not None and self.material_id is not None
+        """True when this Vis points at a concrete mat-vis appearance.
+
+        Requires all three identity components to be set —
+        ``(source, material_id, tier)``. An explicit ``vis.tier = None``
+        un-maps the Vis even if source + material_id are still populated,
+        to match what the downstream client expects when we delegate.
+        """
+        return (
+            self.source is not None
+            and self.material_id is not None
+            and self.tier is not None
+        )
 
     @property
     def source_id(self) -> str | None:
-        """Deprecated alias. Use ``source`` + ``material_id`` instead.
+        """Read-only convenience accessor: ``"{source}/{material_id}"``.
 
-        Retained as a read-only convenience for logging and tests; raises
-        on assignment in 3.1 per ADR-0002. See docs/migration/v2-to-v3.md.
+        Not deprecated — kept because the joined form is a useful lossless
+        logging / identifier shape (mirrors Docker image refs). The
+        **setter** raises because the identity is two fields in 3.1+;
+        assign ``source`` and ``material_id`` directly, or switch via
+        the ``finish`` setter. See docs/migration/v2-to-v3.md.
         """
         if not self.has_mapping:
             return None
@@ -215,15 +265,75 @@ class Vis:
 
     # ── mat-vis-client: exposed, not wrapped (ADR-0002) ─────────
 
+    def _identity_args(self) -> tuple[str, str, str]:
+        """Return ``(source, material_id, tier)`` — the positional arg
+        triple every mat-vis-client method takes.
+
+        Callers are responsible for gating on ``has_mapping`` first;
+        this helper doesn't check, so that delegates can surface a
+        useful error from the client itself when identity is missing
+        rather than silently returning a null.
+
+        The helper exists so new delegation sugar doesn't drift across
+        positional-vs-keyword call shapes — change the delegate target
+        in one place and every sugar property follows.
+        """
+        return (self.source, self.material_id, self.tier)
+
+    def set_identity(
+        self,
+        *,
+        source: str | None = None,
+        material_id: str | None = None,
+        tier: str | None = None,
+    ) -> None:
+        """Update any subset of ``(source, material_id, tier)`` atomically.
+
+        Consolidates multi-field identity updates into a single cache
+        invalidation. Regular attribute assignment via ``__setattr__``
+        would clear ``_textures`` + ``_fetched`` once per field — fine
+        functionally (end state is correct) but wasteful and gives
+        consumers a window where only one field has been updated.
+
+        Used by ``Material(vis={"source": ..., "material_id": ...})``
+        constructor path (core.py) so the Material is never observed
+        in a half-assigned identity state.
+
+        Pass ``None`` to leave a field unchanged. Pass an explicit
+        value to update it — even if that value equals the current
+        one, the no-op short-circuit in ``__setattr__`` handles it.
+        """
+        # Write directly via super() to avoid the per-field invalidation.
+        # We'll clear the cache at the end, once, if anything changed.
+        changed = False
+        if source is not None and source != self.source:
+            super().__setattr__("source", source)
+            changed = True
+        if material_id is not None and material_id != self.material_id:
+            super().__setattr__("material_id", material_id)
+            changed = True
+        if tier is not None and tier != self.tier:
+            super().__setattr__("tier", tier)
+            changed = True
+        if changed:
+            super().__setattr__("_textures", {})
+            super().__setattr__("_fetched", False)
+
     @property
     def client(self) -> MatVisClient:
-        """The shared mat-vis-client singleton.
+        """The shared ``mat-vis-client`` singleton.
 
         Escape hatch for mat-vis-client methods not keyed by a material
         — tier enumeration, cache management, discovery before a
         material is picked. Material-keyed operations should prefer the
-        dotted sugar on this Vis (``.textures``, ``.mtlx``, ``.channels``,
-        ``.materialize``).
+        dotted sugar on this Vis (``.textures``, ``.mtlx``,
+        ``.channels``, ``.materialize``).
+
+        **Note:** if you don't have a Material yet,
+        ``pymat.vis.client()`` is the same singleton reached via a
+        module-level function. Same object; different entry points so
+        callers without a Material don't have to construct one to
+        reach the client.
         """
         from mat_vis_client import _get_client
 
@@ -247,7 +357,8 @@ class Vis:
         """
         if not self.has_mapping:
             return None
-        return self.client.mtlx(self.source, self.material_id, tier=self.tier)
+        src, mid, tier = self._identity_args()
+        return self.client.mtlx(src, mid, tier=tier)
 
     # ── Textures + channels ──────────────────────────────────────
 
@@ -274,13 +385,15 @@ class Vis:
     def channels(self) -> list[str]:
         """Available texture channel names for this material at this tier.
 
-        **Blocking**: triggers an index lookup on the shared
-        ``MatVisClient`` if the rowmap for this source × tier isn't
-        cached yet.
+        **Blocking** on first access per source × tier (rowmap fetch);
+        subsequent accesses hit the shared ``MatVisClient``'s in-memory
+        rowmap cache — cheap, not cached on this ``Vis`` instance.
+        (Unlike ``.textures``, which DOES cache per-instance because
+        the payload is large PNG bytes, not a small list of strings.)
         """
         if not self.has_mapping:
             return []
-        return self.client.channels(self.source, self.material_id, self.tier)
+        return self.client.channels(*self._identity_args())
 
     def materialize(self, output_dir: str | Path) -> Path | None:
         """Write a PNG for every channel to a directory. Returns the directory.
@@ -290,7 +403,7 @@ class Vis:
         """
         if not self.has_mapping:
             return None
-        return self.client.materialize(self.source, self.material_id, self.tier, output_dir)
+        return self.client.materialize(*self._identity_args(), output_dir)
 
     def resolve(self, channel: str, scalar: float | None = None) -> ResolvedChannel:
         """Resolve a channel: texture if available, scalar fallback."""
@@ -338,7 +451,8 @@ class Vis:
             return
 
         # Thin delegate — matches the ADR-0002 principle.
-        textures = self.client.fetch_all_textures(self.source, self.material_id, tier=self.tier)
+        src, mid, tier = self._identity_args()
+        textures = self.client.fetch_all_textures(src, mid, tier=tier)
         # Write via super() so we don't trip the identity-invalidation
         # guard (`_textures` and `_fetched` aren't identity fields, so
         # direct assignment would work too; using super() documents that
@@ -366,14 +480,20 @@ class Vis:
         "emissive": (0, 0, 0),
     }
 
-    def get(self, field: str, default: Any = None) -> Any:
-        """Get a PBR scalar with fallback to default."""
-        val = getattr(self, field, None)
+    def get(self, name: str, default: Any = None) -> Any:
+        """Get a PBR scalar with fallback to default.
+
+        Parameter is ``name`` rather than ``field`` to avoid shadowing
+        ``dataclasses.field`` imported at module scope — any future
+        refactor that reaches for ``field(...)`` inside this method
+        would otherwise silently grab the parameter instead.
+        """
+        val = getattr(self, name, None)
         if val is not None:
             return val
         if default is not None:
             return default
-        return self._PBR_DEFAULTS.get(field)
+        return self._PBR_DEFAULTS.get(name)
 
     # ── TOML loader ──────────────────────────────────────────────
 

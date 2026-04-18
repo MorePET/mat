@@ -69,9 +69,17 @@ def _make_material(
     )
 
     # vis={} kwarg — apply after internal init so we write through the
-    # public .vis accessor (which sets _vis lazily).
+    # public .vis accessor (which sets _vis lazily). Identity keys are
+    # batched through set_identity so construction never exposes a
+    # half-assigned (source-but-no-material_id) state.
     if vis:
+        _IDENTITY_KEYS = {"source", "material_id", "tier"}
+        identity_kwargs = {k: vis[k] for k in _IDENTITY_KEYS if k in vis}
+        if identity_kwargs:
+            mat.vis.set_identity(**identity_kwargs)
         for key, value in vis.items():
+            if key in _IDENTITY_KEYS:
+                continue
             setattr(mat.vis, key, value)
 
     # Apply density convenience param
@@ -587,7 +595,15 @@ class Material(_MaterialInternal):
         if density is not None:
             self.properties.mechanical.density = density
 
-        # Apply vis={} kwarg — writes through the public .vis accessor
+        # Apply vis={} kwarg — writes through the public .vis accessor.
+        # Identity keys batch through set_identity (single invalidation,
+        # no half-assigned intermediate state).
         if vis:
+            _IDENTITY_KEYS = {"source", "material_id", "tier"}
+            identity_kwargs = {k: vis[k] for k in _IDENTITY_KEYS if k in vis}
+            if identity_kwargs:
+                self.vis.set_identity(**identity_kwargs)
             for key, value in vis.items():
+                if key in _IDENTITY_KEYS:
+                    continue
                 setattr(self.vis, key, value)

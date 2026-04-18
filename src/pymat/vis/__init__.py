@@ -28,22 +28,21 @@ wires into this module for lazy texture loading; see ADR-0002.
 
 from typing import Any
 
-# Re-export the adapters module so new formats (e.g. a future to_ktx2)
-# are available as soon as mat-vis-client ships them.
 from mat_vis_client import (
     MatVisClient,
-    adapters,  # noqa: F401
     get_manifest,
     prefetch,
     rowmap_entry,
     seed_indexes,
 )
 
-# Adapters — Material → Three.js / glTF / MaterialX. Re-exported at
-# top level so `from pymat.vis import to_threejs` works and tab
-# completion on `pymat.vis.` surfaces the main cross-tool handoff.
-# (The pymat.vis.adapters wrappers take a Material; the mat-vis-client
-# adapters imported above take (scalars, textures) primitives.)
+# Material-accepting adapters: Three.js / glTF / MaterialX.
+# Re-exported at top level so ``from pymat.vis import to_threejs`` works
+# and tab completion on ``pymat.vis.`` surfaces the main cross-tool
+# handoff. Note: ``pymat.vis.adapters`` resolves to the local submodule
+# (Material signatures). Users who want mat-vis-client's primitive-
+# signature adapters (``(scalars_dict, textures_dict)``) should import
+# them explicitly: ``from mat_vis_client import adapters``.
 from pymat.vis.adapters import export_mtlx, to_gltf, to_threejs
 
 
@@ -137,16 +136,24 @@ def search(
 
 
 def client() -> MatVisClient:
-    """Get the shared MatVisClient instance (lazy-initialized).
+    """Get the shared ``MatVisClient`` singleton (lazy-initialized).
 
-    Future-proof access point — any new methods mat-vis-client adds
-    are available immediately without pymat code changes:
+    Module-level entry point for operations that don't have a material
+    in hand yet — tier enumeration, cache management, discovery before
+    a material is picked::
 
         c = vis.client()
-        c.tiers()           # discover available tiers
-        c.sources("1k")     # discover sources for a tier
+        c.tiers()           # ["128", "256", "1k", "ktx2-1k", "mtlx", ...]
+        c.sources("1k")     # ["ambientcg", "polyhaven", ...]
         c.search("metal")   # search by category
         c.fetch_all_textures("ambientcg", "Metal032", tier="1k")
+
+    **Note:** if you already have a ``Material``, use
+    ``material.vis.client`` — it's the same singleton without the
+    parens, and the property exists on every ``Vis`` by ADR-0002.
+
+    Future-proof: any new method ``mat-vis-client`` adds is callable
+    immediately without a py-mat release.
     """
     from mat_vis_client import _get_client
 
