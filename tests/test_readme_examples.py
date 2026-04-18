@@ -29,7 +29,7 @@ class TestBasicUsage:
 
         # With visualization color
         aluminum = Material(name="Aluminum", density=2.7, color=(0.88, 0.88, 0.88))
-        assert aluminum.properties.pbr.base_color[:3] == (0.88, 0.88, 0.88)
+        assert aluminum.vis.base_color[:3] == (0.88, 0.88, 0.88)
 
         # With formula
         lyso = Material(name="LYSO", formula="Lu1.8Y0.2SiO5", density=7.1)
@@ -48,13 +48,13 @@ class TestBasicUsage:
             name="Stainless Steel 304",
             mechanical={"density": 8.0, "youngs_modulus": 193, "yield_strength": 170},
             thermal={"melting_point": 1450, "thermal_conductivity": 15.1},
-            pbr={"base_color": (0.75, 0.75, 0.77, 1.0), "metallic": 1.0},
+            vis={"base_color": (0.75, 0.75, 0.77, 1.0), "metallic": 1.0},
         )
 
         assert steel.properties.mechanical.density == 8.0
         assert steel.properties.mechanical.youngs_modulus == 193
         assert steel.properties.thermal.melting_point == 1450
-        assert steel.properties.pbr.metallic == 1.0
+        assert steel.vis.metallic == 1.0
 
     def test_applying_to_shapes(self):
         """
@@ -213,7 +213,7 @@ class TestOpticalVsVisualization:
             name="Optical Glass",
             color=(0.9, 0.9, 0.9, 0.8),  # Visual: 80% opaque white
             optical={"transparency": 95, "refractive_index": 1.517},  # Physics: 95% transmission
-            pbr={"transmission": 0.8},  # Rendering: how transparent it looks
+            vis={"transmission": 0.8},  # Rendering: how transparent it looks
         )
 
         # Physics properties (measured)
@@ -221,8 +221,8 @@ class TestOpticalVsVisualization:
         assert glass.properties.optical.refractive_index == 1.517
 
         # Visualization properties (rendering)
-        assert glass.properties.pbr.base_color[3] == 0.8  # Alpha
-        assert glass.properties.pbr.transmission == 0.8
+        assert glass.vis.base_color[3] == 0.8  # Alpha
+        assert glass.vis.transmission == 0.8
 
     def test_scintillator_properties(self):
         """
@@ -242,12 +242,12 @@ class TestOpticalVsVisualization:
                 "decay_time": 41,  # ns
                 "emission_peak": 420,  # nm
             },
-            pbr={"base_color": (0.0, 1.0, 1.0, 0.85), "transmission": 0.85},
+            vis={"base_color": (0.0, 1.0, 1.0, 0.85), "transmission": 0.85},
         )
 
         assert lyso_crystal.properties.optical.light_yield == 32000
         assert lyso_crystal.properties.optical.decay_time == 41
-        assert lyso_crystal.properties.pbr.transmission == 0.85
+        assert lyso_crystal.vis.transmission == 0.85
 
 
 class TestFactoryFunctions:

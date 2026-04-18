@@ -10,22 +10,29 @@ A hierarchical material library for CAD applications and Monte Carlo particle tr
 - **TOML Data Storage**: Easy-to-edit material definitions
 - **Formula Parsing + Molar Mass**: Computed from the chemical formula via `Material.molar_mass`, with fractional stoichiometry (`Lu1.8Y0.2SiO5`) and dopant suffix stripping (`LYSO:Ce`). Atomic weights mirror the Rust `rs-materials` crate for Python ↔ Rust parity.
 - **build123d Integration**: Apply materials to shapes with automatic mass calculation
-- **PBR Rendering**: Physically-based rendering properties for visualization
+- **PBR Rendering via `material.vis`**: Scalars (roughness, metallic, base_color) and lazy-fetched textures from [mat-vis][mat-vis]
 - **periodictable Integration**: Auto-fill composition from chemical formulas for compounds; auto-fill density for pure elements
 - **Factory Functions**: Temperature/pressure-dependent materials (water, air, saline)
-- **Separation of Concerns**: Optical properties (physics) separate from PBR (visualization)
+- **Separation of Concerns**: Optical properties (physics) separate from `vis` (visualization)
 - **Python 3.10 – 3.13 supported**, core library depends only on `pint`
+
+[mat-vis]: https://github.com/MorePET/mat-vis
 
 ## Installation
 
 ```bash
+# From PyPI (recommended)
 pip install py-materials
 # or: uv add py-materials
-```
 
-Core install includes `pint` + `periodictable`. No extras needed —
-PBR textures are fetched on demand from [mat-vis][mat-vis] via
-pure-Python HTTP range reads (zero binary deps).
+# From the main branch (development)
+pip install git+https://github.com/MorePET/mat.git@main
+
+# With optional extras
+pip install "py-materials[periodictable]"    # auto-fill from chemical formulas
+pip install "py-materials[build123d]"        # build123d Shape integration (Python <= 3.12)
+pip install "py-materials[all]"              # everything above
+```
 
 ## Quick Start
 
@@ -42,7 +49,7 @@ assert steel.density == 7.85
 
 # With visualization color
 aluminum = Material(name="Aluminum", density=2.7, color=(0.88, 0.88, 0.88))
-assert aluminum.properties.pbr.base_color[:3] == (0.88, 0.88, 0.88)
+assert aluminum.vis.base_color[:3] == (0.88, 0.88, 0.88)
 
 # With formula
 lyso = Material(name="LYSO", formula="Lu1.8Y0.2SiO5", density=7.1)
@@ -61,13 +68,13 @@ steel = Material(
     name="Stainless Steel 304",
     mechanical={"density": 8.0, "youngs_modulus": 193, "yield_strength": 170},
     thermal={"melting_point": 1450, "thermal_conductivity": 15.1},
-    pbr={"base_color": (0.75, 0.75, 0.77, 1.0), "metallic": 1.0},
+    vis={"base_color": (0.75, 0.75, 0.77, 1.0), "metallic": 1.0},
 )
 
 assert steel.properties.mechanical.density == 8.0
 assert steel.properties.mechanical.youngs_modulus == 193
 assert steel.properties.thermal.melting_point == 1450
-assert steel.properties.pbr.metallic == 1.0
+assert steel.vis.metallic == 1.0
 ```
 
 ## Applying Materials to Shapes
@@ -217,7 +224,7 @@ glass = Material(
     name="Optical Glass",
     color=(0.9, 0.9, 0.9, 0.8),  # Visual: 80% opaque white
     optical={"transparency": 95, "refractive_index": 1.517},  # Physics: 95% transmission
-    pbr={"transmission": 0.8},  # Rendering: how transparent it looks
+    vis={"transmission": 0.8},  # Rendering: how transparent it looks
 )
 
 # Physics properties (measured)
@@ -225,8 +232,8 @@ assert glass.properties.optical.transparency == 95
 assert glass.properties.optical.refractive_index == 1.517
 
 # Visualization properties (rendering)
-assert glass.properties.pbr.base_color[3] == 0.8  # Alpha
-assert glass.properties.pbr.transmission == 0.8
+assert glass.vis.base_color[3] == 0.8  # Alpha
+assert glass.vis.transmission == 0.8
 ```
 
 ## Scintillator-Specific Properties
@@ -246,12 +253,12 @@ lyso_crystal = Material(
         "decay_time": 41,  # ns
         "emission_peak": 420,  # nm
     },
-    pbr={"base_color": (0.0, 1.0, 1.0, 0.85), "transmission": 0.85},
+    vis={"base_color": (0.0, 1.0, 1.0, 0.85), "transmission": 0.85},
 )
 
 assert lyso_crystal.properties.optical.light_yield == 32000
 assert lyso_crystal.properties.optical.decay_time == 41
-assert lyso_crystal.properties.pbr.transmission == 0.85
+assert lyso_crystal.vis.transmission == 0.85
 ```
 
 ## Temperature-Dependent Materials
@@ -473,7 +480,7 @@ Each material can have properties organized in these domains:
 - **Thermal**: melting point, thermal conductivity, expansion coefficient
 - **Electrical**: resistivity, conductivity, dielectric constant
 - **Optical**: refractive index, transparency, light yield (PHYSICS - measured values)
-- **PBR**: base color, metallic, roughness (VISUALIZATION - rendering appearance)
+- **Vis** (on `material.vis`): base_color, metallic, roughness, ior, transmission, textures, finishes — visual/rendering layer, fetches PBR textures from mat-vis on demand
 - **Manufacturing**: machinability, printability, weldability
 - **Compliance**: RoHS, REACH, food-safe, biocompatible
 - **Sourcing**: cost, availability, suppliers
@@ -494,7 +501,7 @@ my_material = Material(
         "youngs_modulus": 200,
         "yield_strength": 450
     },
-    pbr={
+    vis={
         "base_color": (0.7, 0.7, 0.75, 1.0),
         "metallic": 1.0,
         "roughness": 0.4
@@ -537,37 +544,24 @@ assert alumina.molar_mass == 101.96     # computed from formula
 assert alumina.density is None          # use enrich_from_matproj for compounds
 ```
 
-## Optical vs PBR Properties
+## Optical vs Visual Properties
 
 **Important**: Understand the distinction between physics and visualization:
 
-- **Optical Properties** (`optical.*`): Measured/calculated physical values
+- **Optical Properties** (`properties.optical.*`): Measured/calculated physical values
   - `transparency`: % light transmission (measured)
   - `refractive_index`: optical property (measured)
   - `light_yield`: scintillator brightness (measured)
 
-- **PBR Properties** (`pbr.*`): Rendering/visualization parameters
+- **Visual Properties** (`material.vis.*`): Rendering/visualization parameters
   - `base_color`: RGBA values (0-1) for display
   - `transmission`: how transparent it LOOKS in renders
   - `metallic`: surface finish appearance
   - `roughness`: surface roughness appearance
+  - `textures`: PBR texture maps (lazy-fetched from mat-vis when a `source_id` is set)
+  - `finishes`: named alternate looks (e.g. `brushed` / `polished` / `oxidized`)
 
-These can differ intentionally! A material might be physically transparent (95% optical transmission) but rendered opaque (0% pbr transmission) for CAD clarity.
-
-## Material Catalog
-
-Browse all materials with properties and thumbnails:
-[**docs/catalog/**](docs/catalog/)
-
-Generated from TOML data + [mat-vis][mat-vis] textures via
-`python scripts/generate_catalog.py`.
-
-## Contributing
-
-[**CONTRIBUTING.md**](CONTRIBUTING.md) — how to request, add, or
-correct materials. Issue templates for
-[material requests](https://github.com/MorePET/mat/issues/new?template=material-request.yml)
-and [data corrections](https://github.com/MorePET/mat/issues/new?template=material-correction.yml).
+These can differ intentionally! A material might be physically transparent (95% optical transmission) but rendered opaque (0% vis.transmission) for CAD clarity.
 
 ## License
 
@@ -588,6 +582,3 @@ and the conditions under which the decision should be revisited.
 - **Issues**: https://github.com/MorePET/mat/issues
 - **PyPI**: https://pypi.org/project/py-materials/
 - **Rust crate** (`rs-materials`): https://crates.io/crates/rs-materials
-- **PBR textures** (`mat-vis`): https://github.com/MorePET/mat-vis
-
-[mat-vis]: https://github.com/MorePET/mat-vis

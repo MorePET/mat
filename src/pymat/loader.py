@@ -176,24 +176,10 @@ def _build_properties_from_dict(
     if "optical" in data:
         update_properties(props.optical, data["optical"], "optical")
     if "pbr" in data:
-        import warnings
-
-        warnings.warn(
-            "TOML [pbr] section is deprecated — use [vis] instead. "
-            "PBR scalars belong under [material.vis]. "
-            "See migration guide: https://github.com/MorePET/mat/issues/40",
-            DeprecationWarning,
-            stacklevel=4,
+        raise ValueError(
+            f"TOML [pbr] section is no longer supported in 3.0. "
+            f"Move PBR scalars to [vis]. See docs/migration/v2-to-v3.md."
         )
-        pbr_data = data["pbr"]
-        if "base_color" in pbr_data:
-            pbr_data["base_color"] = tuple(pbr_data["base_color"])
-        if "emissive" in pbr_data:
-            pbr_data["emissive"] = tuple(pbr_data["emissive"])
-        # Route to properties._pbr for backward compat — bypasses the
-        # public `.pbr` deprecation warning since this is the library
-        # itself loading the legacy TOML section.
-        update_properties(props._pbr, pbr_data, "pbr")
     if "manufacturing" in data:
         update_properties(props.manufacturing, data["manufacturing"], "manufacturing")
     if "compliance" in data:
@@ -276,7 +262,6 @@ def _resolve_material_node(
         from pymat.vis._model import Vis
 
         material._vis = Vis.from_toml(vis_data)
-        material._sync_vis_to_pbr()  # backward compat for ocp_vscode
 
     # Register for direct access
     registry.register(key, material)

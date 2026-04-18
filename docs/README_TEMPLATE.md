@@ -10,11 +10,13 @@ A hierarchical material library for CAD applications and Monte Carlo particle tr
 - **TOML Data Storage**: Easy-to-edit material definitions
 - **Formula Parsing + Molar Mass**: Computed from the chemical formula via `Material.molar_mass`, with fractional stoichiometry (`Lu1.8Y0.2SiO5`) and dopant suffix stripping (`LYSO:Ce`). Atomic weights mirror the Rust `rs-materials` crate for Python ↔ Rust parity.
 - **build123d Integration**: Apply materials to shapes with automatic mass calculation
-- **PBR Rendering**: Physically-based rendering properties for visualization
+- **PBR Rendering via `material.vis`**: Scalars (roughness, metallic, base_color) and lazy-fetched textures from [mat-vis][mat-vis]
 - **periodictable Integration**: Auto-fill composition from chemical formulas for compounds; auto-fill density for pure elements
 - **Factory Functions**: Temperature/pressure-dependent materials (water, air, saline)
-- **Separation of Concerns**: Optical properties (physics) separate from PBR (visualization)
+- **Separation of Concerns**: Optical properties (physics) separate from `vis` (visualization)
 - **Python 3.10 – 3.13 supported**, core library depends only on `pint`
+
+[mat-vis]: https://github.com/MorePET/mat-vis
 
 ## Installation
 
@@ -54,7 +56,7 @@ Each material can have properties organized in these domains:
 - **Thermal**: melting point, thermal conductivity, expansion coefficient
 - **Electrical**: resistivity, conductivity, dielectric constant
 - **Optical**: refractive index, transparency, light yield (PHYSICS - measured values)
-- **PBR**: base color, metallic, roughness (VISUALIZATION - rendering appearance)
+- **Vis** (on `material.vis`): base_color, metallic, roughness, ior, transmission, textures, finishes — visual/rendering layer, fetches PBR textures from mat-vis on demand
 - **Manufacturing**: machinability, printability, weldability
 - **Compliance**: RoHS, REACH, food-safe, biocompatible
 - **Sourcing**: cost, availability, suppliers
@@ -75,7 +77,7 @@ my_material = Material(
         "youngs_modulus": 200,
         "yield_strength": 450
     },
-    pbr={
+    vis={
         "base_color": (0.7, 0.7, 0.75, 1.0),
         "metallic": 1.0,
         "roughness": 0.4
@@ -118,22 +120,24 @@ assert alumina.molar_mass == 101.96     # computed from formula
 assert alumina.density is None          # use enrich_from_matproj for compounds
 ```
 
-## Optical vs PBR Properties
+## Optical vs Visual Properties
 
 **Important**: Understand the distinction between physics and visualization:
 
-- **Optical Properties** (`optical.*`): Measured/calculated physical values
+- **Optical Properties** (`properties.optical.*`): Measured/calculated physical values
   - `transparency`: % light transmission (measured)
   - `refractive_index`: optical property (measured)
   - `light_yield`: scintillator brightness (measured)
 
-- **PBR Properties** (`pbr.*`): Rendering/visualization parameters
+- **Visual Properties** (`material.vis.*`): Rendering/visualization parameters
   - `base_color`: RGBA values (0-1) for display
   - `transmission`: how transparent it LOOKS in renders
   - `metallic`: surface finish appearance
   - `roughness`: surface roughness appearance
+  - `textures`: PBR texture maps (lazy-fetched from mat-vis when a `source_id` is set)
+  - `finishes`: named alternate looks (e.g. `brushed` / `polished` / `oxidized`)
 
-These can differ intentionally! A material might be physically transparent (95% optical transmission) but rendered opaque (0% pbr transmission) for CAD clarity.
+These can differ intentionally! A material might be physically transparent (95% optical transmission) but rendered opaque (0% vis.transmission) for CAD clarity.
 
 ## License
 

@@ -278,7 +278,7 @@ class OpticalProperties:
     Physical optical properties (measured values, physics calculations).
 
     These are PHYSICS properties, not visualization/rendering properties.
-    For visualization, see PBRProperties.
+    For visualization, see ``Material.vis``.
     """
 
     # Basic optical properties
@@ -299,35 +299,6 @@ class OpticalProperties:
     interaction_length: Optional[float] = None  # cm (λ for hadrons)
     moliere_radius: Optional[float] = None  # cm
     energy_resolution: Optional[float] = None  # % at 1 MeV (for detectors)
-
-
-@dataclass
-class PBRProperties:
-    """
-    Physically-based rendering properties for visualization (NOT physics).
-
-    These control how the material LOOKS in 3D viewers and renders.
-    They may differ from physical optical properties intentionally.
-
-    For physics/measured optical properties, see OpticalProperties.
-    """
-
-    # Surface appearance
-    base_color: tuple = (0.8, 0.8, 0.8, 1.0)  # RGBA (0-1) - Alpha is VISUAL opacity
-    metallic: float = 0.0  # 0=dielectric, 1=metal
-    roughness: float = 0.5  # 0=glossy, 1=rough
-    emissive: tuple = (0, 0, 0)  # RGB emitted light
-
-    # Transparency (RENDERING property, not physical measurement)
-    ior: float = 1.5  # index of refraction (for rendering)
-    transmission: float = 0.0  # 0=opaque, 1=transparent (volumetric)
-    clearcoat: float = 0.0  # secondary glossy layer
-
-    # Texture maps (paths or URIs)
-    normal_map: Optional[str] = None
-    roughness_map: Optional[str] = None
-    metallic_map: Optional[str] = None
-    ambient_occlusion_map: Optional[str] = None
 
 
 @dataclass
@@ -458,44 +429,9 @@ class AllProperties:
     thermal: ThermalProperties = field(default_factory=ThermalProperties)
     electrical: ElectricalProperties = field(default_factory=ElectricalProperties)
     optical: OpticalProperties = field(default_factory=OpticalProperties)
-    # Real storage for PBR scalars — 2.3.0 renamed this from `pbr` to
-    # `_pbr` so the public `pbr` accessor below can emit a deprecation
-    # warning. Internal callers (core sync, factories, loader) reach
-    # through `_pbr` directly to stay silent. See issue #40.
-    _pbr: PBRProperties = field(default_factory=PBRProperties, repr=False, compare=False)
     manufacturing: ManufacturingProperties = field(default_factory=ManufacturingProperties)
     compliance: ComplianceProperties = field(default_factory=ComplianceProperties)
     sourcing: SourcingProperties = field(default_factory=SourcingProperties)
 
     # Extra user properties
     custom: Dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def pbr(self) -> PBRProperties:
-        """DEPRECATED — use ``material.vis`` instead.
-
-        PBR scalars moved to ``Material.vis`` in 2.2.0. ``.properties.pbr``
-        will be removed in 3.0; this 2.3.0 release surfaces the migration
-        via a ``DeprecationWarning`` on every access.
-
-            # Before (deprecated)
-            material.properties.pbr.roughness
-
-            # After
-            material.vis.roughness
-        """
-        import warnings
-
-        warnings.warn(
-            "material.properties.pbr is deprecated in 2.3 and will be removed "
-            "in 3.0 — use material.vis for PBR scalars and textures "
-            "(e.g. material.vis.roughness, material.vis.base_color, "
-            "material.vis.textures). See issue #40.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._pbr
-
-    @pbr.setter
-    def pbr(self, value: PBRProperties) -> None:
-        self._pbr = value

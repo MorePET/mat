@@ -89,15 +89,14 @@ class TestPropertyAccess:
         assert bgo.properties.optical.light_yield == 8500
         assert bgo.properties.optical.decay_time == 300
 
-    def test_access_pbr_properties(self):
-        """Test accessing PBR rendering properties."""
+    def test_access_vis_pbr_properties(self):
+        """Test accessing PBR rendering scalars via material.vis."""
         materials = load_category("metals")
         copper = materials.get("copper")
 
         if copper:
-            pbr = copper.properties.pbr
-            assert pbr.base_color is not None
-            assert pbr.metallic == 1.0
+            assert copper.vis.base_color is not None
+            assert copper.vis.metallic == 1.0
 
 
 class TestCategoryLoading:

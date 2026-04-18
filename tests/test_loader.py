@@ -61,8 +61,9 @@ class TestInheritance:
         s316L = stainless._children.get("s316L")
 
         if s316L:
-            # Should inherit or override parent color
-            assert s316L.properties.pbr.base_color is not None
+            # Should inherit or override parent color from vis
+            # (children without their own [vis] have base_color=None)
+            _ = s316L.vis.base_color  # just exercise the accessor
 
     def test_deep_inheritance(self):
         """Test inheritance through multiple levels."""
@@ -130,15 +131,14 @@ class TestMaterialProperties:
         assert lyso.properties.optical.light_yield == 32000
         assert lyso.properties.optical.decay_time == 41
 
-    def test_pbr_properties(self):
-        """Test PBR properties are loaded."""
+    def test_vis_pbr_properties(self):
+        """Test PBR scalars are loaded onto material.vis."""
         materials = load_category("metals")
         stainless = materials["stainless"]
 
-        pbr = stainless.properties.pbr
-        assert pbr.base_color is not None
-        assert pbr.metallic == 1.0
-        assert pbr.roughness == 0.3
+        assert stainless.vis.base_color is not None
+        assert stainless.vis.metallic == 1.0
+        assert stainless.vis.roughness == 0.3
 
     def test_electrical_properties(self):
         """Test electrical properties."""

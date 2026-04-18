@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-04-18
+
+### Breaking
+
+- **Removed `material.properties.pbr` / `PBRProperties`.** All PBR scalars (`base_color`, `metallic`, `roughness`, `ior`, `transmission`, `clearcoat`, `emissive`) live on `material.vis` now. See [docs/migration/v2-to-v3.md](docs/migration/v2-to-v3.md) for the full rename table.
+- **Removed `Material(pbr={...})` kwarg.** Use `Material(vis={...})` instead — same shape.
+- **Removed `[<material>.pbr]` TOML section.** The loader raises `ValueError` on it. Bundled TOMLs already use `[<material>.vis]`; external TOMLs need to rename the block.
+- **Removed legacy texture-path fields** (`normal_map`, `roughness_map`, `metallic_map`, `ambient_occlusion_map`) from what was `PBRProperties`. Use `material.vis.textures["color"|"normal"|"roughness"|…]` — lazy-fetched bytes from mat-vis.
+- **Removed `PBRProperties` from `pymat` top-level imports**.
+- Internal: `Material._sync_vis_to_pbr()` deleted (the back-compat shim that kept `.vis` and `.properties.pbr` in sync). `AllProperties` no longer has a `pbr` field or property.
+- No 2.3 deprecation-cycle release was shipped. The rationale is in [issue #40](https://github.com/MorePET/mat/issues/40).
 
 ### Added
 

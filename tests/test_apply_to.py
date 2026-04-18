@@ -195,7 +195,7 @@ class TestApplyToTransparency:
 
         # Create a transparent material (90% transmission = 10% alpha)
         glass = Material(
-            name="Glass", pbr={"base_color": (0.9, 0.95, 1.0, 1.0), "transmission": 0.9}
+            name="Glass", vis={"base_color": (0.9, 0.95, 1.0, 1.0), "transmission": 0.9}
         )
 
         shape = Box(10, 10, 10)
@@ -217,7 +217,7 @@ class TestApplyToTransparency:
 
         # Create an opaque material (transmission=0)
         steel = Material(
-            name="Steel", pbr={"base_color": (0.5, 0.5, 0.5, 1.0), "transmission": 0.0}
+            name="Steel", vis={"base_color": (0.5, 0.5, 0.5, 1.0), "transmission": 0.0}
         )
 
         shape = Box(10, 10, 10)
@@ -236,7 +236,7 @@ class TestApplyToTransparency:
 
         # Create a half-transparent material
         frosted = Material(
-            name="Frosted Glass", pbr={"base_color": (0.8, 0.8, 0.8, 1.0), "transmission": 0.5}
+            name="Frosted Glass", vis={"base_color": (0.8, 0.8, 0.8, 1.0), "transmission": 0.5}
         )
 
         shape = Box(10, 10, 10)
