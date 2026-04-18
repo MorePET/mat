@@ -26,13 +26,6 @@
           "path": "src/pymat/__init__.py"
         }
       ]
-    },
-    "mat-rs": {
-      "release-type": "rust",
-      "package-name": "rs-materials",
-      "component": "rs-materials",
-      "include-component-in-tag": true,
-      "tag-separator": "/"
     }
   }
 }
