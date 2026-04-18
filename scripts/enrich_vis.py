@@ -94,16 +94,53 @@ def _hints_for(key: str, name: str) -> tuple[str | None, list[list[str]]]:
     return None, [[]]
 
 
+def _walk_hierarchy(materials):
+    """Yield (dotted_path, material) for every base material + descendant.
+
+    load_all() returns a flat dict keyed by leaf name. Children live on
+    their parents' `_children` dict. Walking top-down from _CATEGORY_BASES
+    gives us the correct dotted path for TOML output (e.g.
+    `stainless.s304.electropolished`).
+    """
+    from pymat import _CATEGORY_BASES
+
+    def walk(mat, path):
+        yield path, mat
+        for child_key, child_mat in getattr(mat, "_children", {}).items():
+            yield from walk(child_mat, f"{path}.{child_key}")
+
+    for bases in _CATEGORY_BASES.values():
+        for base_key in bases:
+            mat = materials.get(base_key)
+            if mat is not None:
+                yield from walk(mat, base_key)
+
+
 def propose_mappings(limit_per_material: int = 3) -> list[dict]:
     """Generate vis mapping proposals using tag-based matching."""
     materials = load_all()
     proposals = []
 
-    for key, mat in materials.items():
+    # Track which bases already got a proposal — children of already-mapped
+    # or already-proposed materials inherit visually by convention and
+    # don't need their own [x.vis.finishes] block in most cases.
+    base_has_vis: set[str] = set()
+
+    for path, mat in _walk_hierarchy(materials):
+        base = path.split(".")[0]
+
+        # Skip if the base (or this node) already has a curated mapping
         if mat.vis.source_id is not None:
+            base_has_vis.add(base)
             continue
 
-        category, tag_sets = _hints_for(key, mat.name)
+        # Skip descendants of a base we've already proposed for
+        if "." in path and base in base_has_vis:
+            continue
+
+        # Use the leaf key for hint matching (the grade name carries signal)
+        leaf_key = path.rsplit(".", 1)[-1]
+        category, tag_sets = _hints_for(leaf_key, mat.name)
         if not category:
             continue
 
@@ -133,12 +170,13 @@ def propose_mappings(limit_per_material: int = 3) -> list[dict]:
                 c["id"] = f"{c['source']}/{c['id']}"
 
         proposals.append({
-            "material_key": key,
+            "material_key": path,
             "material_name": mat.name,
             "category": category,
             "tags_matched": tags_used,
             "candidates": candidates,
         })
+        base_has_vis.add(base)
 
     return proposals
 
