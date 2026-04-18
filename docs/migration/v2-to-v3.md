@@ -98,6 +98,22 @@ If you have leftover 2.x code paths, 3.0 will surface them quickly:
 - **`ValueError: TOML [pbr] section is no longer supported in 3.0`** —
   a TOML file has a `[<material>.pbr]` block. Rename to `[<material>.vis]`.
 
+## mat-vis-client upgrade
+
+3.0 requires `mat-vis-client>=0.4.0` (was `>=0.2.0` in 2.x). The jump brings several behaviors worth knowing about:
+
+- **Manifest `schema_version` now required.** `mat-vis-client` 0.3.0 dropped its legacy `version` fallback. If you had a warm cache from a 0.2.x install, the first `material.vis.*` call on 3.0 will error on the stale manifest format. One-time fix:
+
+  ```bash
+  mat-vis-client cache clear
+  ```
+
+  Fresh installs and CI environments are unaffected — only pre-existing caches need this.
+
+- **Module-level `fetch()` and static `CATEGORIES` frozenset are gone** from `mat_vis_client`. py-mat doesn't use either, but if your own code imported `mat_vis_client.fetch` or `mat_vis_client.CATEGORIES` directly, migrate to `MatVisClient().fetch_all_textures(...)` and `client.categories()` respectively.
+
+- **Friendlier errors + automatic 502/504 retries** (0.4.0) — no action needed, just better diagnostics when the CDN hiccups.
+
 ## Why no deprecation cycle?
 
 A 2.3 release would have added `DeprecationWarning`s on every
