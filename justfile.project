@@ -93,15 +93,94 @@ branch:
     echo "Recent branches:"
     git branch -a | head -15
 
-# ===============================================================================
-# PROJECT-SPECIFIC RECIPES
-# ===============================================================================
-# Uncomment and customize for your project:
-# # Run the application
-# [group('app')]
-# run *args:
-#     uv run python -m {{project}} {{args}}
-# # Run database migrations (if using sidecar)
-# [group('app')]
-# migrate:
-#     just sidecar postgres migrate
+# -------------------------------------------------------------------------------
+# DEPENDENCIES (extended)
+# -------------------------------------------------------------------------------
+
+# Bump a single pinned dep, re-lock, and run the test suite. Matches the
+# pattern used for `mat-vis-client` bumps — edit `pyproject.toml` first,
+# then `just deps-bump <pkg> <version>`.
+[group('deps')]
+deps-bump PKG VERSION:
+    @echo "Bumping {{PKG}} → {{VERSION}} (expects pyproject.toml pin already edited)"
+    uv lock --upgrade-package {{PKG}}
+    uv sync --extra dev
+    uv run pytest
+
+# -------------------------------------------------------------------------------
+# RELEASE OBSERVABILITY (release-please pipeline)
+# -------------------------------------------------------------------------------
+
+# Show recent release-please runs + any open Release PRs + recent tags.
+[group('release')]
+release-status:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "== Recent release-please runs =="
+    gh run list --workflow release-please.yml --limit 3
+    echo ""
+    echo "== Open Release PRs =="
+    gh pr list --search 'head:release-please-- state:open' --json number,title,headRefName \
+        --jq '.[] | "#\(.number)  \(.title)  (\(.headRefName))"'
+    echo ""
+    echo "== Recent tags =="
+    git tag --sort=-creatordate | head -5
+
+# Summary of a PR's state (checks + merge state + auto-merge flag) — one call
+# replaces the gh pr view + gh pr checks pair used constantly during CI watches.
+[group('release')]
+pr N:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "== PR #{{N}} =="
+    gh pr view {{N}} --json state,mergeStateStatus,mergedAt,autoMergeRequest \
+        --jq '"state: \(.state)\nmergeable: \(.mergeStateStatus)\nautoMerge: \(.autoMergeRequest != null)\nmergedAt: \(.mergedAt // "—")"'
+    echo ""
+    echo "== Checks =="
+    gh pr checks {{N}}
+
+# Show required status checks on a branch ruleset (main or dev).
+[group('release')]
+ruleset BRANCH="main":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    RULESET_ID=$(gh api repos/{owner}/{repo}/rulesets \
+        --jq ".[] | select(.name==\"{{BRANCH}}-protection\") | .id")
+    if [ -z "${RULESET_ID}" ]; then
+        echo "No ruleset named '{{BRANCH}}-protection' found." >&2
+        exit 1
+    fi
+    gh api "repos/{owner}/{repo}/rulesets/${RULESET_ID}" \
+        --jq '{name, enforcement, checks: [.rules[] | select(.type=="required_status_checks") | .parameters.required_status_checks[].context]}'
+
+# -------------------------------------------------------------------------------
+# WORKTREES (release-isolation pattern)
+# -------------------------------------------------------------------------------
+
+# Create a worktree off origin/main for a new branch — matches the pattern
+# used when isolating release-pipeline changes from in-flight feature work.
+#   just worktree chore/foo-bar
+# creates /Users/larsgerchow/worktrees/mat-<last-segment> on branch chore/foo-bar.
+[group('git')]
+worktree BRANCH:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SLUG=$(echo "{{BRANCH}}" | tr '/' '-' | sed 's/^chore-//')
+    WT=/Users/larsgerchow/worktrees/mat-${SLUG}
+    git fetch origin main
+    git worktree add -b "{{BRANCH}}" "${WT}" origin/main
+    echo ""
+    echo "Worktree ready: ${WT}"
+    echo "  cd ${WT}"
+
+# Remove a worktree by branch name (tolerates dirty tree in the worktree).
+[group('git')]
+worktree-rm BRANCH:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SLUG=$(echo "{{BRANCH}}" | tr '/' '-' | sed 's/^chore-//')
+    WT=/Users/larsgerchow/worktrees/mat-${SLUG}
+    git worktree remove --force "${WT}" 2>/dev/null || true
+    git branch -D "{{BRANCH}}" 2>/dev/null || true
+    git worktree prune
+    echo "Removed worktree and branch for {{BRANCH}}"
