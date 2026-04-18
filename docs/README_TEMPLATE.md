@@ -1,6 +1,6 @@
 # pymat
 
-A hierarchical material library for CAD applications with build123d integration.
+A hierarchical material library for CAD applications and Monte Carlo particle transport, with build123d integration.
 
 ## Features
 
@@ -8,20 +8,28 @@ A hierarchical material library for CAD applications with build123d integration.
 - **Property Inheritance**: Children inherit parent properties unless overridden
 - **Lazy Loading**: Categories load on first access
 - **TOML Data Storage**: Easy-to-edit material definitions
+- **Formula Parsing + Molar Mass**: Computed from the chemical formula via `Material.molar_mass`, with fractional stoichiometry (`Lu1.8Y0.2SiO5`) and dopant suffix stripping (`LYSO:Ce`). Atomic weights mirror the Rust `rs-materials` crate for Python ↔ Rust parity.
 - **build123d Integration**: Apply materials to shapes with automatic mass calculation
 - **PBR Rendering**: Physically-based rendering properties for visualization
-- **periodictable Integration**: Auto-fill density from chemical formulas
+- **periodictable Integration**: Auto-fill composition from chemical formulas for compounds; auto-fill density for pure elements
 - **Factory Functions**: Temperature/pressure-dependent materials (water, air, saline)
 - **Separation of Concerns**: Optical properties (physics) separate from PBR (visualization)
+- **Python 3.10 – 3.13 supported**, core library depends only on `pint`
 
 ## Installation
 
 ```bash
-# With uv (recommended)
-uv add git+https://github.com/MorePET/py-mat.git@latest
+# From PyPI (recommended)
+pip install py-materials
+# or: uv add py-materials
 
-# Or specify version
-uv add git+https://github.com/MorePET/py-mat.git@v1.0.0
+# From the main branch (development)
+pip install git+https://github.com/MorePET/mat.git@main
+
+# With optional extras
+pip install "py-materials[periodictable]"    # auto-fill from chemical formulas
+pip install "py-materials[build123d]"        # build123d Shape integration (Python <= 3.12)
+pip install "py-materials[all]"              # everything above
 ```
 
 ## Quick Start
@@ -86,12 +94,28 @@ my_material = materials["my_material"]
 
 ### Enrichment from Chemical Formulas
 
-```python
-from pymat import enrich_from_periodictable
+`enrich_from_periodictable` reads the material's `formula`, populates
+the `composition` dict (element → atom count), and sets the density
+**only for pure elements** — compound density is not derivable from
+`periodictable`'s dataset and requires a crystallographic source like
+Materials Project. Molar mass is always available regardless, via the
+computed `Material.molar_mass` property (see the Quick Start).
 
-material = Material(name="Aluminum Oxide", formula="Al2O3")
-enrich_from_periodictable(material)
-print(material.density)  # ~3.95 g/cm³
+```python
+from pymat import Material, enrich_from_periodictable
+
+# Pure element — density is set
+iron = Material(name="Iron", formula="Fe")
+enrich_from_periodictable(iron)
+assert iron.density == 7.874            # set from periodictable
+assert iron.molar_mass == 55.85         # computed from formula
+
+# Compound — composition is set, density is not
+alumina = Material(name="Alumina", formula="Al2O3")
+enrich_from_periodictable(alumina)
+assert alumina.composition == {"Al": 2, "O": 3}
+assert alumina.molar_mass == 101.96     # computed from formula
+assert alumina.density is None          # use enrich_from_matproj for compounds
 ```
 
 ## Optical vs PBR Properties
@@ -115,7 +139,18 @@ These can differ intentionally! A material might be physically transparent (95% 
 
 MIT
 
+## Design Decisions (ADRs)
+
+Non-trivial architectural decisions live under `docs/decisions/` as
+lightweight ADRs. They explain why the code is shaped the way it is
+and the conditions under which the decision should be revisited.
+
+- [ADR-0001 — Derived chemistry properties live on `Material`](docs/decisions/0001-derived-chemistry-properties-live-on-material.md)
+  (why `molar_mass` is a computed `@property`, not a stored field)
+
 ## Links
 
-- **GitHub**: https://github.com/MorePET/py-mat
-- **Issues**: https://github.com/MorePET/py-mat/issues
+- **GitHub**: https://github.com/MorePET/mat
+- **Issues**: https://github.com/MorePET/mat/issues
+- **PyPI**: https://pypi.org/project/py-materials/
+- **Rust crate** (`rs-materials`): https://crates.io/crates/rs-materials

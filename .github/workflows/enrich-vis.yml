@@ -1,0 +1,45 @@
+name: Propose vis mappings
+
+on:
+  repository_dispatch:
+    types: [mat-vis-release]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enrich:
+    name: Auto-propose vis mappings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e '.[dev]'
+      - run: python scripts/enrich_vis.py -o /tmp/proposed_vis.toml
+      - name: Check for proposals
+        id: check
+        run: |
+          if [ -s /tmp/proposed_vis.toml ]; then
+            echo "has_proposals=true" >> "$GITHUB_OUTPUT"
+            echo "Proposed vis mappings:"
+            cat /tmp/proposed_vis.toml
+          else
+            echo "has_proposals=false" >> "$GITHUB_OUTPUT"
+            echo "No new mappings to propose"
+          fi
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.check.outputs.has_proposals == 'true'
+        with:
+          title: "chore: update vis mappings from mat-vis"
+          commit-message: "chore: auto-proposed vis mappings"
+          branch: chore/enrich-vis
+          body: |
+            Auto-generated vis mapping proposals from mat-vis index.
+            Review each material's suggested appearance match before merging.
+
+            Proposed mappings are in the commit diff.
+          delete-branch: true

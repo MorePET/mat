@@ -223,3 +223,4 @@ justfile.local
 
 # Cursor local config
 .cursor/
+tests/visual_output/

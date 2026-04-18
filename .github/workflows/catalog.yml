@@ -1,0 +1,30 @@
+name: Update catalog
+
+on:
+  push:
+    branches: [dev]
+    paths: ["src/pymat/data/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  catalog:
+    name: Regenerate material catalog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e '.[dev]'
+      - run: python scripts/generate_catalog.py --skip-thumbnails
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          title: "docs: regenerate material catalog"
+          commit-message: "docs: regenerate catalog from TOML data"
+          branch: docs/catalog-update
+          add-paths: docs/catalog/
+          delete-branch: true

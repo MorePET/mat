@@ -19,6 +19,8 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+from uncertainties import ufloat
+
 if TYPE_CHECKING:
     from .core import Material
 
@@ -30,6 +32,57 @@ from .properties import (
 from .units import STANDARD_UNITS
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_value(val: Any) -> float:
+    """Parse a scalar value that may be a plain float or a range/uncertainty dict.
+
+    Accepted forms:
+        0.4                           → ufloat(0.4, 0)
+        {nominal = 0.4, stddev = 0.1} → ufloat(0.4, 0.1)
+        {min = 0.2, max = 0.6}        → ufloat(0.4, 0.2)  (midpoint ± half-range)
+        {nominal = 0.4, min = 0.2, max = 0.6} → ufloat(0.4, 0.2)
+
+    Returns a ufloat when uncertainty info is present, plain float otherwise.
+    """
+    if isinstance(val, (int, float)):
+        return float(val)
+
+    if isinstance(val, dict):
+        nominal = val.get("nominal")
+        stddev = val.get("stddev")
+        lo = val.get("min")
+        hi = val.get("max")
+
+        if nominal is None and lo is not None and hi is not None:
+            nominal = (lo + hi) / 2.0
+
+        if nominal is None:
+            raise ValueError(f"Cannot parse value: {val}")
+
+        if stddev is not None:
+            return ufloat(nominal, stddev)
+        elif lo is not None and hi is not None:
+            return ufloat(nominal, (hi - lo) / 2.0)
+        else:
+            return float(nominal)
+
+    return float(val)
+
+
+def _parse_composition(comp: Any) -> dict[str, Any] | None:
+    """Parse a composition dict, handling range/uncertainty values.
+
+    TOML examples:
+        composition = {Fe = 0.68, Cr = 0.18}           # plain
+        composition = {Si = {min = 0.2, max = 0.6}}    # range
+        composition = {Fe = {nominal = 0.68, stddev = 0.02}}  # uncertainty
+    """
+    if comp is None:
+        return None
+    if not isinstance(comp, dict):
+        return comp
+    return {el: _parse_value(val) for el, val in comp.items()}
 
 
 def _build_properties_from_dict(
@@ -123,12 +176,21 @@ def _build_properties_from_dict(
     if "optical" in data:
         update_properties(props.optical, data["optical"], "optical")
     if "pbr" in data:
+        import warnings
+
+        warnings.warn(
+            "TOML [pbr] section is deprecated — use [vis] instead. "
+            "PBR scalars belong under [material.vis]. "
+            "See migration guide: https://github.com/MorePET/mat/issues/40",
+            DeprecationWarning,
+            stacklevel=4,
+        )
         pbr_data = data["pbr"]
-        # Special handling for tuples
         if "base_color" in pbr_data:
             pbr_data["base_color"] = tuple(pbr_data["base_color"])
         if "emissive" in pbr_data:
             pbr_data["emissive"] = tuple(pbr_data["emissive"])
+        # Route to properties.pbr for backward compat
         update_properties(props.pbr, pbr_data, "pbr")
     if "manufacturing" in data:
         update_properties(props.manufacturing, data["manufacturing"], "manufacturing")
@@ -165,7 +227,7 @@ def _resolve_material_node(
     # Extract material-level attributes
     name = data.get("name", key)
     formula = data.get("formula")
-    composition = data.get("composition")
+    composition = _parse_composition(data.get("composition"))
     grade = data.get("grade")
     temper = data.get("temper")
     treatment = data.get("treatment")
@@ -206,6 +268,14 @@ def _resolve_material_node(
         _key=key,
     )
 
+    # Populate vis from [vis] section if present
+    vis_data = data.get("vis")
+    if vis_data and isinstance(vis_data, dict):
+        from pymat.vis._model import Vis
+
+        material._vis = Vis.from_toml(vis_data)
+        material._sync_vis_to_pbr()  # backward compat for ocp_vscode
+
     # Register for direct access
     registry.register(key, material)
 
@@ -230,6 +300,7 @@ def _resolve_material_node(
                 "temper",
                 "treatment",
                 "vendor",
+                "vis",
             ):
                 child_material = _resolve_material_node(
                     child_key,

@@ -29,25 +29,16 @@ classifiers = [
 
 dependencies = [
     "pint>=0.20",
+    "periodictable>=1.6.0",
+    "uncertainties>=3.2",
+    "mat-vis-client>=2026.4.0",
     "tomli>=1.0.0; python_version == '3.10'",
 ]
 
 [project.optional-dependencies]
-periodictable = ["periodictable>=1.6.0"]
-matproj = ["pymatgen>=2024.0.0"]
-# build123d pulls cadquery-ocp and vtk, which only publish wheels for
-# cp311/cp312 as of 2026-04. The environment marker means `pip install
-# py-materials[build123d]` on Python 3.13+ is a no-op rather than a hard
-# wheel-resolution error — installers silently drop the dep. See #11.
-build123d = ["build123d>=0.7.0; python_version<'3.13'"]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "build123d>=0.7.0; python_version<'3.13'",
-]
-all = [
-    "periodictable>=1.6.0",
-    "pymatgen>=2024.0.0",
     "build123d>=0.7.0; python_version<'3.13'",
 ]
 
@@ -72,6 +63,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v"
+filterwarnings = [
+    "ignore:Material\\(pbr=:DeprecationWarning",
+    "ignore:TOML \\[pbr\\] section:DeprecationWarning",
+    "ignore:AffineScalarFunc:FutureWarning",
+]
 
 [tool.ruff]
 line-length = 100

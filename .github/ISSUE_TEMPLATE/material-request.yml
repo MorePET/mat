@@ -1,0 +1,65 @@
+name: Material request
+description: Request a new material to be added to the library
+labels: ["material-request"]
+body:
+  - type: input
+    id: material_name
+    attributes:
+      label: Material name
+      description: Common name or trade name
+      placeholder: e.g. Inconel 718, Sapphire, Carbon Fiber T300
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Metal / Alloy
+        - Ceramic
+        - Plastic / Polymer
+        - Scintillator / Detector
+        - Glass
+        - Composite
+        - Electronics
+        - Liquid
+        - Gas
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: properties
+    attributes:
+      label: Known properties
+      description: |
+        Any values you already know. Don't worry about completeness —
+        we'll fill in the rest from datasheets / literature.
+      placeholder: |
+        Density: 8.19 g/cm³
+        Yield strength: 1034 MPa
+        Melting point: 1260 °C
+        Composition: Ni 52%, Cr 19%, Fe 18%, Nb 5%, Mo 3%
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you using this material for? Helps us prioritize.
+      placeholder: e.g. PET scanner shielding, 3D printed bracket, Geant4 simulation
+
+  - type: input
+    id: datasheet_url
+    attributes:
+      label: Datasheet or reference URL (optional)
+      placeholder: https://www.matweb.com/...
+
+  - type: textarea
+    id: appearance
+    attributes:
+      label: Visual appearance (optional)
+      description: |
+        If you need PBR textures, describe the finish. We'll try to
+        match from mat-vis's texture library.
+      placeholder: e.g. brushed finish, polished mirror, matte black anodized

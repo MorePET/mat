@@ -1,0 +1,44 @@
+name: Material data correction
+description: Report an incorrect property value or missing data
+labels: ["data-correction"]
+body:
+  - type: input
+    id: material
+    attributes:
+      label: Material
+      description: Which material has the issue
+      placeholder: e.g. stainless.s316L, aluminum.a6061
+    validations:
+      required: true
+
+  - type: input
+    id: property
+    attributes:
+      label: Property
+      description: Which property is wrong or missing
+      placeholder: e.g. density, yield_strength, thermal_conductivity
+    validations:
+      required: true
+
+  - type: input
+    id: current_value
+    attributes:
+      label: Current value (if wrong)
+      placeholder: e.g. 8.0 g/cm³
+
+  - type: input
+    id: correct_value
+    attributes:
+      label: Correct value
+      placeholder: e.g. 7.99 g/cm³
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source / reference
+      description: Where does the correct value come from?
+      placeholder: e.g. ASM Handbook Vol. 2, MatWeb, manufacturer datasheet URL
+    validations:
+      required: true

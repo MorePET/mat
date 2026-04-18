@@ -13,33 +13,70 @@ Usage:
 """
 
 import re
+import textwrap
 from pathlib import Path
 from typing import List, Tuple
 
 
 def extract_docstring(source: str, func_name: str) -> str:
-    """Extract the docstring from a test function."""
-    # Find the function definition
+    """Extract the docstring from a test function, dedented."""
     pattern = rf"def {func_name}\(.*?\):\n\s+\"\"\"(.*?)\"\"\""
     match = re.search(pattern, source, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return ""
+    if not match:
+        return ""
+    raw = match.group(1)
+    # Drop the leading newline after `"""` so dedent can see a uniform
+    # indent on all remaining lines, then strip any trailing whitespace.
+    if raw.startswith("\n"):
+        raw = raw[1:]
+    return textwrap.dedent(raw).rstrip()
 
 
 def extract_code_block(source: str, func_name: str) -> str:
-    """Extract the code block after the docstring from a test function."""
-    # Find the function definition
+    """
+    Extract the code block after the docstring from a test function.
+
+    Returns the code dedented to column 0 with assertion / importorskip
+    scaffolding removed, so it renders as a plain, runnable Python
+    snippet in the README.
+    """
     pattern = rf"def {func_name}\(.*?\):\n\s+\"\"\".*?\"\"\"\n(.*?)(?=\n    def |\nclass |\Z)"
     match = re.search(pattern, source, re.DOTALL)
-    if match:
-        code = match.group(1).strip()
-        # Remove pytest.importorskip lines
-        code = re.sub(r"\s*pytest\.importorskip\(.*?\)\n", "", code)
-        # Remove assert statements
-        code = re.sub(r"\s*assert .*?\n", "", code)
-        return code.strip()
-    return ""
+    if not match:
+        return ""
+
+    raw = match.group(1).rstrip()
+    if not raw.strip():
+        return ""
+
+    # Dedent the entire block relative to its own leading indent. Test
+    # function bodies are indented 8 spaces (4 for the class, 4 for the
+    # method); `textwrap.dedent` handles arbitrary depths correctly.
+    dedented = textwrap.dedent(raw)
+
+    # Filter out pytest scaffolding that doesn't belong in a user-facing
+    # example. Keep comments, blank lines, imports, asserts (they show
+    # the expected return values), and actual code.
+    kept: list[str] = []
+    for line in dedented.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("pytest.importorskip"):
+            continue
+        kept.append(line)
+
+    # Collapse runs of blank lines left behind by filtering.
+    cleaned: list[str] = []
+    prev_blank = False
+    for line in kept:
+        if not line.strip():
+            if prev_blank:
+                continue
+            prev_blank = True
+        else:
+            prev_blank = False
+        cleaned.append(line)
+
+    return "\n".join(cleaned).strip()
 
 
 def parse_test_file(test_file_path: Path) -> List[Tuple[str, str, str]]:

@@ -17,7 +17,7 @@ emission_peak = 420
 radiation_length = 1.14
 interaction_length = 25
 
-[lyso.pbr]
+[lyso.vis]
 base_color = [0.0, 1.0, 1.0, 0.85]
 metallic = 0.0
 roughness = 0.3
@@ -82,7 +82,7 @@ emission_peak = 480
 radiation_length = 1.12
 interaction_length = 11
 
-[bgo.pbr]
+[bgo.vis]
 base_color = [0.58, 0.44, 0.86, 0.8]
 metallic = 0.0
 roughness = 0.3
@@ -114,7 +114,7 @@ emission_peak = 410
 radiation_length = 2.59
 interaction_length = 27
 
-[nai.pbr]
+[nai.vis]
 base_color = [1.0, 0.9, 0.7, 0.7]
 metallic = 0.0
 roughness = 0.2
@@ -159,7 +159,7 @@ emission_peak = 420
 radiation_length = 1.86
 interaction_length = 15
 
-[csi.pbr]
+[csi.vis]
 base_color = [0.9, 0.9, 0.7, 0.75]
 metallic = 0.0
 roughness = 0.25
@@ -209,7 +209,7 @@ emission_peak = 380
 radiation_length = 2.0
 interaction_length = 20
 
-[labr3.pbr]
+[labr3.vis]
 base_color = [0.8, 0.7, 0.9, 0.8]
 metallic = 0.0
 roughness = 0.3
@@ -237,7 +237,7 @@ emission_peak = 420
 radiation_length = 0.89
 interaction_length = 10.7
 
-[pwo.pbr]
+[pwo.vis]
 base_color = [0.4, 0.4, 0.45, 0.85]
 metallic = 0.0
 roughness = 0.35
@@ -261,7 +261,7 @@ light_yield = 12000
 decay_time = 2.3
 emission_peak = 425
 
-[plastic_scint.pbr]
+[plastic_scint.vis]
 base_color = [0.9, 0.9, 0.85, 0.9]
 metallic = 0.0
 roughness = 0.4
