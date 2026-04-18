@@ -1,72 +1,69 @@
 ## Description
 
-<!-- Provide a clear and concise description of what this PR does. -->
+<!-- What this PR does and why. One paragraph is fine. -->
 
 ## Type of Change
 
-<!-- Mark the relevant option(s) with an 'x' -->
+<!-- Keep ONE line below; delete the others. Must match the conventional-commit type. -->
 
-- [ ] `feat` -- New feature
-- [ ] `fix` -- Bug fix
-- [ ] `docs` -- Documentation only
-- [ ] `chore` -- Maintenance task (deps, config, etc.)
-- [ ] `refactor` -- Code restructuring (no behavior change)
-- [ ] `test` -- Adding or updating tests
-- [ ] `ci` -- CI/CD pipeline changes
-- [ ] `build` -- Build system or dependency changes
-- [ ] `revert` -- Reverts a previous commit
-- [ ] `style` -- Code style (formatting, whitespace)
+- [ ] `feat` — New feature (minor version bump)
+- [ ] `fix` — Bug fix (patch version bump)
+- [ ] `feat!` / `fix!` / `BREAKING CHANGE:` — Breaking change (major version bump)
+- [ ] `docs` — Documentation only (no release)
+- [ ] `chore` / `refactor` / `test` / `ci` / `build` / `style` — No release
 
-### Modifiers
+## Required
 
-- [ ] Breaking change (`!`) -- This change breaks backward compatibility
+<!-- All boxes below MUST be checked. CI fails the PR otherwise. -->
 
-## Changes Made
+- [ ] Tests pass locally (`uv run pytest`)
+- [ ] Self-reviewed the diff
+- [ ] No new warnings or errors in the changed code
+- [ ] Linked to an issue in the `Refs:` line at the bottom (or explained why none)
 
-<!-- Describe the changes in detail -->
+## If Applicable
 
-## Changelog Entry
-
-<!-- Paste the exact entry you added to CHANGELOG.md under ## Unreleased.
-     If no changelog update is needed, write "No changelog needed" and explain why.
-     Example:
-     ### Added
-     - **SSH agent forwarding** ([#42](https://github.com/vig-os/devcontainer/issues/42))
-       - Forward host SSH agent into devcontainer for seamless git authentication
+<!--
+DELETE the entire section(s) below that don't apply.
+Any unchecked box left in the body will fail the PR Hygiene check.
 -->
 
-## Testing
+### Documentation
 
-<!-- Describe the tests you ran and how to verify your changes -->
-- [ ] Tests pass locally (`just test`)
-- [ ] Manual testing performed (describe below)
+- [ ] Updated `docs/templates/` and ran `just docs`
+- [ ] Updated `CHANGELOG.md` under `## Unreleased` (release-please will move it to a versioned section on release)
+- [ ] Updated `README.md` if user-facing API changed
 
-### Manual Testing Details
+### Tests
 
-<!-- If applicable, describe manual testing steps -->
+- [ ] Added new tests covering the change
+- [ ] Manual testing performed (steps in **Manual Testing Details** below)
 
-## Checklist
+#### Manual Testing Details
 
-<!-- Mark completed items with an 'x' -->
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have updated the documentation accordingly (edit `docs/templates/`, then run `just docs`)
-- [ ] I have updated `CHANGELOG.md` in the `[Unreleased]` section (and pasted the entry above)
-- [ ] My changes generate no new warnings or errors
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published
+<!-- Keep this section only if the box above is checked. Steps to reproduce. -->
+
+### Dependencies
+
+- [ ] Updated `pyproject.toml` and re-locked (`uv lock`)
+- [ ] Updated `mat-rs/Cargo.toml` and re-locked (`cargo update`)
+- [ ] Verified no breakage with downstream consumers (build123d, ocp_vscode, mat-vis-client)
+
+### Breaking Change
+
+- [ ] Migration notes added to `docs/migration/`
+- [ ] `BREAKING CHANGE:` footer in commit message body
+- [ ] Open issue / PR coordination with known downstream consumers
 
 ## Additional Notes
 
-<!-- Any additional information, screenshots, or context that reviewers should know -->
+<!-- Screenshots, design rationale, links — anything that helps the reviewer. -->
 
 Refs:
 
 <!--
-Please include GitHub issue references in the "Refs:" line above (e.g., `Refs: #42`).
-Every change must be traceable to an issue, per project rules.
-If not related to a specific issue, explain why (chore/documentation only).
-See [commit-messages.mdc](../../rules/commit-messages.mdc) for more details.
+Required: link a GitHub issue (e.g., `Refs: #42`).
+If there's no related issue, replace with a one-line explanation
+(e.g., `Refs: N/A — pure CI tooling change`). The commit-msg hook
+enforces a `Refs:` line; see docs/COMMIT_MESSAGE_STANDARD.md.
 -->
