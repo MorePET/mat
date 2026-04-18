@@ -35,9 +35,11 @@ from pymat import load_all
 USER_AGENT = "pymat-curation/0.1 (https://github.com/MorePet/py-mat)"
 SPARQL_URL = "https://query.wikidata.org/sparql"
 
-# Curator-maintained mapping. Start with elements/alloys that have a
-# clear Wikidata entry; specific grades (s304, a6061) don't belong here.
+# Curator-maintained mapping. Start with entries that have a clear
+# Wikidata identity; specific grades (s304, a6061, hdpe) don't belong
+# here — cross-check the base polymer/element instead.
 WIKIDATA_QIDS: dict[str, str] = {
+    # Metals & alloys
     "aluminum": "Q663",      # aluminium (element)
     "copper": "Q753",        # copper (element)
     "titanium": "Q669",      # titanium (element)
@@ -45,6 +47,14 @@ WIKIDATA_QIDS: dict[str, str] = {
     "lead": "Q708",          # lead (element)
     "brass": "Q39782",       # brass (alloy)
     "stainless": "Q172736",  # stainless steel (alloy)
+    # Plastics (polymer Q-IDs — coverage on Wikidata varies)
+    "peek": "Q145387",       # polyether ether ketone
+    "pc": "Q62246",          # polycarbonate
+    "pmma": "Q146123",       # poly(methyl methacrylate)
+    "ptfe": "Q143252",       # polytetrafluoroethylene
+    "pla": "Q413769",        # polylactic acid
+    "nylon": "Q109454",      # nylon 6
+    "delrin": "Q146139",     # polyoxymethylene
 }
 
 # Wikidata unit Q-IDs we understand. Anything else → mark as "unknown unit".
