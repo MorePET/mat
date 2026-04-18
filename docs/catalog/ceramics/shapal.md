@@ -1,6 +1,6 @@
-# Macor
+# Shapal
 
-![Macor](thumbs/macor.png)
+![Shapal](thumbs/shapal.png)
 
 ## Identity
 
@@ -11,24 +11,23 @@
 
 | Property | Value |
 |---|---|
-| Density | 2.52 g/cm³ |
-| Young's Modulus | 66 GPa |
-| Yield Strength | 60 MPa |
+| Density | 3.58 g/cm³ |
+| Young's Modulus | 270 GPa |
 
 ## Thermal Properties
 
 | Property | Value |
 |---|---|
-| Melting Point | 1000 °C |
-| Thermal Conductivity | 1.46 W/(m·K) |
+| Melting Point | 1600 °C |
+| Thermal Conductivity | 17 W/(m·K) |
 
 ## PBR (Rendering)
 
 | Property | Value |
 |---|---|
-| Base Color | `(0.98, 0.98, 0.96, 1.0)` |
+| Base Color | `(0.85, 0.82, 0.8, 1.0)` |
 | Metallic | 0.0 |
-| Roughness | 0.4 |
+| Roughness | 0.5 |
 
 ## Visual (mat-vis)
 
@@ -36,4 +35,4 @@
 |---|---|
 | Source ID | `ambientcg/Porcelain001` |
 | Finish | white |
-| Available Finishes | white |
+| Available Finishes | white, smear |

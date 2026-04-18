@@ -1,5 +1,7 @@
 # Alumina
 
+![Alumina](thumbs/alumina.png)
+
 ## Identity
 
 | Field | Value |
@@ -29,3 +31,11 @@
 | Base Color | `(0.95, 0.95, 0.93, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.5 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Porcelain001` |
+| Finish | white |
+| Available Finishes | white, smear |

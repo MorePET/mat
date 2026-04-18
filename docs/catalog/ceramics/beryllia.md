@@ -1,34 +1,34 @@
-# Macor
+# Beryllia
 
-![Macor](thumbs/macor.png)
+![Beryllia](thumbs/beryllia.png)
 
 ## Identity
 
 | Field | Value |
 |---|---|
+| Formula | `BeO` |
 
 ## Mechanical Properties
 
 | Property | Value |
 |---|---|
-| Density | 2.52 g/cm³ |
-| Young's Modulus | 66 GPa |
-| Yield Strength | 60 MPa |
+| Density | 3.01 g/cm³ |
+| Young's Modulus | 345 GPa |
 
 ## Thermal Properties
 
 | Property | Value |
 |---|---|
-| Melting Point | 1000 °C |
-| Thermal Conductivity | 1.46 W/(m·K) |
+| Melting Point | 2530 °C |
+| Thermal Conductivity | 270 W/(m·K) |
 
 ## PBR (Rendering)
 
 | Property | Value |
 |---|---|
-| Base Color | `(0.98, 0.98, 0.96, 1.0)` |
+| Base Color | `(0.9, 0.9, 0.9, 1.0)` |
 | Metallic | 0.0 |
-| Roughness | 0.4 |
+| Roughness | 0.3 |
 
 ## Visual (mat-vis)
 

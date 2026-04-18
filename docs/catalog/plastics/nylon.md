@@ -1,5 +1,7 @@
 # Nylon 6
 
+![Nylon 6](thumbs/nylon.png)
+
 ## Identity
 
 | Field | Value |
@@ -27,3 +29,11 @@
 | Base Color | `(0.85, 0.85, 0.8, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.6 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic013A` |
+| Finish | natural |
+| Available Finishes | natural, white |

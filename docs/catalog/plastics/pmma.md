@@ -1,5 +1,7 @@
 # PMMA (Acrylic)
 
+![PMMA (Acrylic)](thumbs/pmma.png)
+
 ## Identity
 
 | Field | Value |
@@ -32,3 +34,11 @@
 | Roughness | 0.1 |
 | IOR | 1.49 |
 | Transmission | 0.9 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic005` |
+| Finish | clear |
+| Available Finishes | clear |

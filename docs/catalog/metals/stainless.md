@@ -1,5 +1,7 @@
 # Stainless Steel
 
+![Stainless Steel](thumbs/stainless.png)
+
 ## Identity
 
 | Field | Value |

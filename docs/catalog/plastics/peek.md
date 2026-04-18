@@ -1,5 +1,7 @@
 # PEEK
 
+![PEEK](thumbs/peek.png)
+
 ## Identity
 
 | Field | Value |
@@ -30,3 +32,11 @@
 | Base Color | `(0.82, 0.7, 0.55, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.5 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic004` |
+| Finish | natural |
+| Available Finishes | natural, dark |

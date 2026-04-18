@@ -1,5 +1,7 @@
 # PLA (Polylactic Acid)
 
+![PLA (Polylactic Acid)](thumbs/pla.png)
+
 ## Identity
 
 | Field | Value |
@@ -27,3 +29,11 @@
 | Base Color | `(0.8, 0.8, 0.8, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.6 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic010` |
+| Finish | white |
+| Available Finishes | white, black, red, blue, green |

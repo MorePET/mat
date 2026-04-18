@@ -1,5 +1,7 @@
 # PCTFE (Polychlorotrifluoroethylene)
 
+![PCTFE (Polychlorotrifluoroethylene)](thumbs/pctfe.png)
+
 ## Identity
 
 | Field | Value |
@@ -25,3 +27,11 @@
 | Base Color | `(0.9, 0.9, 0.95, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.4 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic010` |
+| Finish | white |
+| Available Finishes | white |

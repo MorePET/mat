@@ -1,5 +1,7 @@
 # Vespel (Polyimide)
 
+![Vespel (Polyimide)](thumbs/vespel.png)
+
 ## Identity
 
 | Field | Value |
@@ -26,3 +28,11 @@
 | Base Color | `(0.4, 0.2, 0.1, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.5 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic003` |
+| Finish | dark |
+| Available Finishes | dark |

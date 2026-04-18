@@ -1,5 +1,7 @@
 # Polycarbonate
 
+![Polycarbonate](thumbs/pc.png)
+
 ## Identity
 
 | Field | Value |
@@ -32,3 +34,11 @@
 | Roughness | 0.15 |
 | IOR | 1.58 |
 | Transmission | 0.85 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic005` |
+| Finish | clear |
+| Available Finishes | clear |

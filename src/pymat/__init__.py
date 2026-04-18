@@ -108,7 +108,7 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "pe",
         "pc",
     ],
-    "ceramics": ["alumina", "macor", "zirconia", "glass"],
+    "ceramics": ["alumina", "zirconia", "sic", "macor", "shapal", "glass", "beryllia", "yttria"],
     "electronics": ["fr4", "rogers", "kapton", "copper_pcb", "solder"],
     "liquids": ["water", "heavy_water", "mineral_oil", "glycerol", "silicone_oil"],
     "gases": [

@@ -1,5 +1,7 @@
 # PETG
 
+![PETG](thumbs/petg.png)
+
 ## Identity
 
 | Field | Value |
@@ -25,3 +27,11 @@
 | Base Color | `(0.85, 0.85, 0.8, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.5 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic005` |
+| Finish | clear |
+| Available Finishes | clear, black |

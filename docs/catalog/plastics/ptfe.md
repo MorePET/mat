@@ -1,5 +1,7 @@
 # PTFE (Teflon)
 
+![PTFE (Teflon)](thumbs/ptfe.png)
+
 ## Identity
 
 | Field | Value |
@@ -27,3 +29,11 @@
 | Base Color | `(0.95, 0.95, 0.95, 1.0)` |
 | Metallic | 0.0 |
 | Roughness | 0.3 |
+
+## Visual (mat-vis)
+
+| Field | Value |
+|---|---|
+| Source ID | `ambientcg/Plastic010` |
+| Finish | white |
+| Available Finishes | white |
