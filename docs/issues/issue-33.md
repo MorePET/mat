@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-16T14:43:19Z
-updated: 2026-04-17T11:06:31Z
+updated: 2026-04-18T08:07:00Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/33
-comments: 1
+comments: 2
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-18T04:24:34.106Z
+synced: 2026-04-19T04:44:09.355Z
 ---
 
 # [Issue 33]: [Elemental composition + scalar properties: support ranges / uncertainties (ufloat)](https://github.com/MorePET/mat/issues/33)
@@ -117,4 +117,12 @@ companion issue. This issue is just about the data layer.
 _Posted on April 17, 2026 at 11:06 AM_
 
 Deferred from 2.2.0 to 2.3.0. The `[sci]` extra was removed (periodictable moved to core), but uncertainties itself hasn't been added to core deps yet. The data-layer work (range/ufloat support in TOML + loader) is the main effort.
+
+---
+
+# [Comment #2]() by [gerchowl]()
+
+_Posted on April 18, 2026 at 08:06 AM_
+
+Done on `docs/refresh-readme-2.1.0` (commits 0f1148f, fc8ef18): `uncertainties` added as core dep, loader parses {nominal, stddev} and {min, max} dict forms in composition. Aluminum 6063 shipped with grade-spec ranges as proof-of-concept. 14 tests covering parse logic + ufloat propagation. All existing plain-float compositions unchanged.
 

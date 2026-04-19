@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-17T08:07:49Z
-updated: 2026-04-17T08:19:25Z
+updated: 2026-04-18T08:07:02Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/37
-comments: 0
+comments: 1
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-18T04:24:32.793Z
+synced: 2026-04-19T04:44:08.668Z
 ---
 
 # [Issue 37]: [Replace hardcoded vis client with mat-vis reference client](https://github.com/MorePET/mat/issues/37)
@@ -76,3 +76,11 @@ clients.
 - [ ] `_model.py` unchanged
 - [ ] All existing tests pass
 - [ ] mat-vis client importable without pymat dependency (no circular)
+---
+
+# [Comment #1]() by [gerchowl]()
+
+_Posted on April 18, 2026 at 08:07 AM_
+
+Done on `docs/refresh-readme-2.1.0` (commits f4f1705, 759d6f3, 43467d2): vendored mat-vis client replaced with `mat-vis-client` import. Full client API exposed through `pymat.vis` — `vis.client()` factory, `vis.adapters` module pass-through, `MatVisClient` class. New adapters (to_ktx2 etc.) available automatically when mat-vis-client updates.
+

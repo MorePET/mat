@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-17T11:27:26Z
-updated: 2026-04-17T11:30:17Z
+updated: 2026-04-18T19:33:31Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/40
-comments: 0
+comments: 1
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-18T04:24:31.483Z
+synced: 2026-04-19T04:44:07.620Z
 ---
 
 # [Issue 40]: [3.0: Move PBR scalars from properties.pbr to .vis](https://github.com/MorePET/mat/issues/40)
@@ -102,3 +102,15 @@ derivations move into `Vis` initialization.
 - mat-vis `mtlx/` directory — MaterialX source files in git
 - `export_mtlx()` adapter — becomes `vis.source.export()`
 - mat-vis#36 — reference client + adapters migration
+---
+
+# [Comment #1]() by [gerchowl]()
+
+_Posted on April 18, 2026 at 07:33 PM_
+
+Shipped as **py-materials 3.0.0** on PyPI (2026-04-18, 18:40 UTC).
+
+Pipeline: feature/40-vis-cutover → #52 → release-please #53 → tag v3.0.0 → release.yml → PyPI (38s end-to-end).
+
+Migration story in [docs/migration/v2-to-v3.md](https://github.com/MorePET/mat/blob/main/docs/migration/v2-to-v3.md). CHANGELOG entry under [3.0.0].
+

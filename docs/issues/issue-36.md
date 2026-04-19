@@ -2,18 +2,18 @@
 type: issue
 state: open
 created: 2026-04-16T19:54:12Z
-updated: 2026-04-16T19:54:12Z
+updated: 2026-04-18T10:26:40Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/36
-comments: 0
+comments: 1
 labels: none
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-17T04:41:58.930Z
+synced: 2026-04-19T04:44:09.015Z
 ---
 
 # [Issue 36]: [Data enrichment sources: Materials Project, Wikidata, NIST, etc.](https://github.com/MorePET/mat/issues/36)
@@ -62,3 +62,42 @@ script has its own requirements (possibly a `scripts/requirements-curation.txt`)
 - Runtime API calls to any external database
 - Any of these as pip dependencies of mat
 - pymatgen as an extra (dropped per #34 discussion)
+---
+
+# [Comment #1]() by [gerchowl]()
+
+_Posted on April 18, 2026 at 10:26 AM_
+
+Progress — first prototype landed: [`scripts/enrich_from_wikidata.py`](scripts/enrich_from_wikidata.py) (commit b649e87).
+
+**What it does**
+- SPARQL against `query.wikidata.org` for the 7 base metals (Al, Cu, Ti, W, Pb, brass, stainless)
+- Cross-checks `density` (P2054) and `melting_point` (P2101) against mat's TOML values
+- Normalizes units (g/cm³ ↔ kg/m³, K ↔ °C)
+- Flags relative divergence >5% per cell
+
+**No runtime impact** — lives in `scripts/`, pulls in only `requests` via a new `scripts/requirements-curation.txt`. mat's runtime deps are untouched.
+
+**First-run findings**
+```
+aluminum   OK   ours=2.7    wd=2.7      Δ=0       (0.0%)
+copper     OK   ours=8.96   wd=8.94     Δ=0.02    (0.2%)
+tungsten   DIFF ours=19.3   wd=7.2      Δ=12.1    (62.7%)   ← Wikidata wrong
+lead       OK   ours=11.34  wd=11.34    Δ=0       (0.0%)
+brass      OK   ours=8.5    wd=8.56     Δ=0.06    (0.7%)
+titanium   wd missing
+stainless  wd missing
+```
+Tungsten divergence is a Wikidata data-quality issue (pure W is 19.25 g/cm³, Wikidata has 7.2 with NormalRank only). The tool correctly surfaces it for review rather than auto-merging — this is exactly the behavior we want.
+
+**Checkbox update (from the issue body)**
+- [x] Survey which sources have usable APIs + acceptable licenses → Wikidata validated (CC0, no auth, SPARQL works)
+- [x] Prototype one enrichment script → Wikidata for metals
+- [ ] Document the curation workflow in CONTRIBUTING.md
+- [ ] Track provenance in TOML comments or a metadata field
+
+**Next candidates** (pick one next round):
+- PubChem for plastic chemical properties (formula / CAS cross-check)
+- KittyCAD/material-properties for mechanical props cross-check on alloys
+- Decide on a `[source]` or comment convention for provenance tracking
+
