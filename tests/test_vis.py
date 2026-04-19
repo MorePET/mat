@@ -450,9 +450,13 @@ class TestModuleShape:
         # And the Material-accepting signature must hold
         import inspect
 
+        # First positional parameter must be the Material/Vis object.
+        # 3.2+ renamed the param to ``obj`` for the polymorphic
+        # Material|Vis signature; historically it was ``material``.
         params = list(inspect.signature(adapters.to_threejs).parameters)
-        assert params == ["material"], (
-            f"local to_threejs must accept a Material, got params {params}"
+        assert params and params[0] in {"material", "obj"}, (
+            f"local to_threejs must accept a Material/Vis as first param, "
+            f"got params {params}"
         )
 
     def test_top_level_adapter_reexports(self):

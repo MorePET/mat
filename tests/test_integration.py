@@ -69,6 +69,110 @@ class TestApplyToShape:
         assert material.properties.optical.light_yield == 34000
 
 
+class TestGltfMaterialPassthrough:
+    """Pins what build123d's ``export_gltf`` *actually* preserves from
+    ``shape.material``. The picture is narrower than the README first
+    suggested:
+
+    - ``apply_to()`` sets ``shape.color`` (derived from the material's
+      hex), which build123d serializes as ``baseColorFactor``. **Only
+      base color survives.**
+    - Direct ``shape.material = m`` (no ``apply_to``) writes **no
+      material at all** — build123d's exporter reads ``shape.color``,
+      not ``shape.material``.
+    - ``metallic``, ``roughness``, textures, ``ior``, ``transmission``:
+      all dropped by build123d 0.10's glTF exporter regardless of path.
+
+    Closing that gap is the job of build123d#1270 (Materials class).
+    Until it lands, downstream consumers who want the full PBR surface
+    should reach for ``pymat.vis.to_threejs(m)`` / ``to_gltf(m)`` / the
+    mtlx exporter instead of relying on ``export_gltf``.
+
+    Format note: build123d 0.10 writes JSON (not GLB binary) even when
+    the extension is ``.glb``; we parse the JSON directly.
+    """
+
+    def test_apply_to_preserves_base_color_only(self, tmp_path):
+        pytest.importorskip("build123d")
+
+        import json
+
+        from build123d import Box, export_gltf
+
+        from pymat import stainless
+
+        shape = Box(10, 10, 10)
+        stainless.s304.apply_to(shape)
+        assert shape.color is not None, "apply_to should set shape.color"
+
+        out = tmp_path / "apply_to.glb"
+        export_gltf(shape, str(out))
+        doc = json.loads(out.read_text())
+
+        materials = doc.get("materials") or []
+        assert materials, (
+            "apply_to() should produce a shape.color that build123d "
+            "serializes as a glTF material — got none"
+        )
+
+        pbr = materials[0].get("pbrMetallicRoughness") or {}
+        base_color = pbr.get("baseColorFactor")
+        assert base_color and len(base_color) >= 3, (
+            f"baseColorFactor missing: {base_color!r}"
+        )
+
+        # Document the gap: build123d's exporter reads shape.color only,
+        # so metallic/roughness don't come through even though the
+        # Material has them.
+        assert "metallicFactor" not in pbr, (
+            "Unexpectedly found metallicFactor — build123d glTF exporter "
+            "now serializes more than shape.color? Update this test and "
+            "the claim 8 wording for build123d#1270."
+        )
+        assert "roughnessFactor" not in pbr, (
+            "Unexpectedly found roughnessFactor — see comment above."
+        )
+
+        # Mesh primitive must actually reference the material for it to
+        # render. This one *does* — glTF validator would fail otherwise.
+        primitives = (doc.get("meshes") or [{}])[0].get("primitives") or []
+        mat_indices = [p.get("material") for p in primitives if "material" in p]
+        assert mat_indices, "glTF has a material but no primitive references it"
+
+    def test_direct_material_assignment_does_not_reach_gltf(self, tmp_path):
+        """Counter-case: setting ``shape.material`` directly (no
+        ``apply_to``) produces no material in the glTF — build123d's
+        exporter doesn't read ``shape.material``."""
+        pytest.importorskip("build123d")
+
+        import json
+
+        from build123d import Box, export_gltf
+
+        from pymat import Material
+
+        shape = Box(10, 10, 10)
+        m = Material(name="Direct")
+        m.vis.metallic = 1.0
+        m.vis.roughness = 0.3
+        m.vis.base_color = (0.8, 0.1, 0.1, 1.0)
+        shape.material = m
+        # Intentionally NOT calling apply_to — no shape.color set.
+
+        out = tmp_path / "direct.glb"
+        export_gltf(shape, str(out))
+        doc = json.loads(out.read_text())
+
+        # Note: if build123d#1270 lands and starts reading
+        # shape.material, this assertion will flip — that's the signal
+        # to update this test + the claim wording.
+        assert not doc.get("materials"), (
+            "Unexpectedly found materials[] from direct shape.material = m "
+            "(no apply_to). build123d#1270 may have landed — update the "
+            "build123d integration story and this test."
+        )
+
+
 class TestPropertyAccess:
     """Test accessing various properties through loaded materials."""
 
