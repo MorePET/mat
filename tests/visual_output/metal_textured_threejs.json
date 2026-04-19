@@ -2,11 +2,12 @@
   "type": "MeshPhysicalMaterial",
   "metalness": 1.0,
   "roughness": 0.3,
+  "color": 13421772,
   "ior": 1.5,
   "transmission": 0.0,
-  "map": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQAEAIAAA...",
-  "normalMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAAAAA...",
+  "map": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAYAAA...",
+  "normalMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQAEAYAAA...",
   "roughnessMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAAAAA...",
   "metalnessMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAAAAA...",
-  "aoMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQAEAAAAA..."
+  "displacementMap": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQAEAAAAA..."
 }

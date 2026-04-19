@@ -44,9 +44,7 @@ class TestRMS:
 class TestAssertMatchesBaseline:
     def test_identical_images_pass(self, tmp_path, monkeypatch):
         # Point the baseline dir at tmp
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         # Pre-create a baseline
         baseline_dir = tmp_path / "baselines"
         baseline_dir.mkdir()
@@ -57,9 +55,7 @@ class TestAssertMatchesBaseline:
         assert_matches_baseline(actual, "sample")
 
     def test_within_tolerance_passes(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         baseline_dir = tmp_path / "baselines"
         baseline_dir.mkdir()
         _write_png(baseline_dir / "sample.png", (128, 128, 128))
@@ -69,9 +65,7 @@ class TestAssertMatchesBaseline:
         assert_matches_baseline(actual, "sample")  # should pass
 
     def test_beyond_tolerance_fails(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         baseline_dir = tmp_path / "baselines"
         baseline_dir.mkdir()
         _write_png(baseline_dir / "sample.png", (128, 128, 128))
@@ -82,9 +76,7 @@ class TestAssertMatchesBaseline:
             assert_matches_baseline(actual, "sample")
 
     def test_size_mismatch_fails(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         baseline_dir = tmp_path / "baselines"
         baseline_dir.mkdir()
         _write_png(baseline_dir / "sample.png", (0, 0, 0), size=(32, 32))
@@ -97,9 +89,7 @@ class TestAssertMatchesBaseline:
         """If no baseline is committed, skip with a helpful message
         pointing at MAT_VIS_UPDATE_BASELINES=1 — don't fail the suite
         on a missing baseline."""
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         actual = _write_png(tmp_path / "actual.png", (0, 0, 0))
         with pytest.raises(pytest.skip.Exception, match="No committed baseline"):
             assert_matches_baseline(actual, "never_generated")
@@ -107,9 +97,7 @@ class TestAssertMatchesBaseline:
     def test_update_mode_writes_baseline(self, tmp_path, monkeypatch):
         """MAT_VIS_UPDATE_BASELINES=1 copies the actual PNG to the
         baseline dir instead of comparing."""
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         monkeypatch.setenv("MAT_VIS_UPDATE_BASELINES", "1")
         actual = _write_png(tmp_path / "actual.png", (11, 22, 33))
 
@@ -122,9 +110,7 @@ class TestAssertMatchesBaseline:
 
     def test_tolerance_override(self, tmp_path, monkeypatch):
         """Caller can pass a lower tolerance to catch smaller drift."""
-        monkeypatch.setattr(
-            "tests._visual_compare.BASELINE_DIR", tmp_path / "baselines"
-        )
+        monkeypatch.setattr("tests._visual_compare.BASELINE_DIR", tmp_path / "baselines")
         baseline_dir = tmp_path / "baselines"
         baseline_dir.mkdir()
         _write_png(baseline_dir / "sample.png", (128, 128, 128))

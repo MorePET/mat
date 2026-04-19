@@ -198,9 +198,7 @@ def format_toml(proposals: list[dict]) -> str:
         # Use the candidate id as the finish name — curator renames as needed.
         finish_name = top["id"].lower()
         lines.append(f"[{key}.vis.finishes]")
-        lines.append(
-            f'{finish_name} = {{ source = "{top["source"]}", id = "{top["id"]}" }}'
-        )
+        lines.append(f'{finish_name} = {{ source = "{top["source"]}", id = "{top["id"]}" }}')
         lines.append("")
 
     return "\n".join(lines)

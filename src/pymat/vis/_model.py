@@ -209,11 +209,7 @@ class Vis:
         un-maps the Vis even if source + material_id are still populated,
         to match what the downstream client expects when we delegate.
         """
-        return (
-            self.source is not None
-            and self.material_id is not None
-            and self.tier is not None
-        )
+        return self.source is not None and self.material_id is not None and self.tier is not None
 
     @property
     def source_id(self) -> str | None:

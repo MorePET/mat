@@ -37,13 +37,8 @@ from mat_vis_client import (
 )
 
 # Shared-singleton accessor: ``get_client`` became public in
-# mat-vis-client 0.5.0 (see mat-vis#84). Fall back to the
-# ``_get_client`` shim on 0.4.x so downstream can still install
-# py-mat against the older floor in ``pyproject.toml``.
-try:
-    from mat_vis_client import get_client as _shared_client
-except ImportError:  # pragma: no cover — 0.4.x compatibility
-    from mat_vis_client import _get_client as _shared_client
+# mat-vis-client 0.5.0 (see mat-vis#84). Pinned in pyproject.toml.
+from mat_vis_client import get_client as _shared_client
 
 # Material-accepting adapters: Three.js / glTF / MaterialX.
 # Re-exported at top level so ``from pymat.vis import to_threejs`` works
@@ -65,8 +60,6 @@ def fetch(
     was removed upstream after 2026.4.x in favor of explicit-client
     style — see mat-vis __init__.py docstring).
     """
-    from pymat.vis import _shared_client
-
     client = MatVisClient(tag=tag) if tag else _shared_client()
     return client.fetch_all_textures(source, material_id, tier=tier)
 
@@ -92,8 +85,6 @@ def search(
     Does NOT filter by tier — search is for finding materials,
     tier is a fetch-time concern.
     """
-    from pymat.vis import _shared_client
-
     client = _shared_client()
 
     roughness_range = None
@@ -164,8 +155,6 @@ def client() -> MatVisClient:
     Future-proof: any new method ``mat-vis-client`` adds is callable
     immediately without a py-mat release.
     """
-    from pymat.vis import _shared_client
-
     return _shared_client()
 
 

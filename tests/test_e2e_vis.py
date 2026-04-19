@@ -34,6 +34,7 @@ SKIP_LIVE = os.environ.get("MAT_VIS_SKIP_LIVE", "0") == "1"
 # these don't exist; the guard still works via the urllib catch.
 try:
     from mat_vis_client import HTTPFetchError, NetworkError
+
     _TYPED_FETCH_ERRORS: tuple[type[Exception], ...] = (HTTPFetchError, NetworkError)
 except ImportError:  # pragma: no cover — 0.4.x compatibility
     _TYPED_FETCH_ERRORS = ()
@@ -204,8 +205,7 @@ class TestEndToEnd:
         results = vis.search(category="metal", limit=5)
         if not results:
             pytest.skip(
-                "mat-vis index returned no metals — infra issue, not a "
-                "py-mat bug. Retry or reseed."
+                "mat-vis index returned no metals — infra issue, not a py-mat bug. Retry or reseed."
             )
         assert all("id" in c for c in results)
 

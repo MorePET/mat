@@ -119,6 +119,7 @@ class TestHeadlessRender:
         print(f"steel_cube: {size} bytes")
 
         from tests._visual_compare import assert_matches_baseline
+
         assert_matches_baseline(screenshot, "steel_cube")
 
     def test_red_sphere(self, file_server, browser):
@@ -144,6 +145,7 @@ class TestHeadlessRender:
         print(f"red_sphere: {size} bytes")
 
         from tests._visual_compare import assert_matches_baseline
+
         assert_matches_baseline(screenshot, "red_sphere")
 
     def test_gold_cylinder(self, file_server, browser):
@@ -169,6 +171,7 @@ class TestHeadlessRender:
         print(f"gold_cylinder: {size} bytes")
 
         from tests._visual_compare import assert_matches_baseline
+
         assert_matches_baseline(screenshot, "gold_cylinder")
 
     def test_glass_transmission(self, file_server, browser):

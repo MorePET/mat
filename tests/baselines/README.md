@@ -21,12 +21,12 @@ deliberate:
 ## When to generate or regenerate
 
 1. **First time adding a render test** — run once on the target platform
-   (usually CI's Ubuntu Chromium), commit the resulting PNGs.
+   (usually CI's Ubuntu Chromium), commit the resulting PNG images.
 2. **Intentional visual change** — e.g. updating `tests/visual_render.html`
    to tweak lighting, HDRI, or camera. Regenerate and commit with the
    change.
 3. **Never** regenerate to "fix" a failing test without understanding
-   what drifted. Diff the PNGs first.
+   what drifted. Diff the PNG images first.
 
 ## How to regenerate
 
@@ -39,13 +39,13 @@ MAT_VIS_SKIP_VISUAL=0 MAT_VIS_UPDATE_BASELINES=1 \
 
 The `MAT_VIS_UPDATE_BASELINES=1` flag makes
 `assert_matches_baseline(...)` write the actual render to this directory
-instead of comparing. Commit the resulting PNGs.
+instead of comparing. Commit the resulting PNG images.
 
 CI (preferred for cross-platform stability):
 
 1. Trigger the `Visual Regression` workflow via `workflow_dispatch`.
 2. Download the `visual-regression-screenshots` artifact from the run.
-3. Copy the relevant PNGs into `tests/baselines/` and commit.
+3. Copy the relevant PNG images into `tests/baselines/` and commit.
 
 ## Tolerance
 

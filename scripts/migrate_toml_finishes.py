@@ -51,12 +51,12 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "src" / "pymat" / "data"
 #   5 — trailing content (comments)
 _SLASHED_FINISH_RE = re.compile(
     r"""^(\s*[A-Za-z_][A-Za-z0-9_]*\s*=\s*)"""  # key =
-    r"""(['"])"""                                 # quote
-    r"""([a-z0-9_-]+)"""                          # source
-    r"""/"""                                      # slash
-    r"""([A-Za-z0-9_.-]+)"""                      # material_id
-    r"""\2"""                                     # closing quote (matches opener)
-    r"""(\s*(?:#.*)?)$"""                         # trailing (optional comment)
+    r"""(['"])"""  # quote
+    r"""([a-z0-9_-]+)"""  # source
+    r"""/"""  # slash
+    r"""([A-Za-z0-9_.-]+)"""  # material_id
+    r"""\2"""  # closing quote (matches opener)
+    r"""(\s*(?:#.*)?)$"""  # trailing (optional comment)
 )
 
 # Matches the start of a finishes table header: [anything.vis.finishes]
@@ -105,15 +105,9 @@ def migrate_text(text: str) -> tuple[str, list[str]]:
             continue
 
         prefix, _quote, source, material_id, trailing = m.groups()
-        new_line = (
-            f'{prefix}{{ source = "{source}", id = "{material_id}" }}'
-            f"{trailing}\n"
-        )
+        new_line = f'{prefix}{{ source = "{source}", id = "{material_id}" }}{trailing}\n'
         out.append(new_line)
-        rewritten.append(
-            f"  line {lineno}: "
-            f'{stripped.strip()} -> {new_line.strip()}'
-        )
+        rewritten.append(f"  line {lineno}: {stripped.strip()} -> {new_line.strip()}")
 
     return "".join(out), rewritten
 
@@ -121,11 +115,13 @@ def migrate_text(text: str) -> tuple[str, list[str]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--check", action="store_true",
+        "--check",
+        action="store_true",
         help="Exit non-zero if any file would change. Don't write.",
     )
     parser.add_argument(
-        "--diff", action="store_true",
+        "--diff",
+        action="store_true",
         help="Print the changes that would be made. Don't write.",
     )
     args = parser.parse_args()

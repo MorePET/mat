@@ -2,6 +2,7 @@
   "type": "MeshPhysicalMaterial",
   "metalness": 1.0,
   "roughness": 0.3,
+  "color": 13421772,
   "ior": 1.5,
   "transmission": 0.0
 }

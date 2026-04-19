@@ -388,6 +388,7 @@ class TestTextures:
 
         # Override the shared client singleton
         import mat_vis_client as _client
+
         monkeypatch.setattr(_client, "_client", FakeClient())
 
         v = Vis(source="ambientcg", material_id="Metal032")
@@ -448,6 +449,7 @@ class TestModuleShape:
 
         # And the Material-accepting signature must hold
         import inspect
+
         params = list(inspect.signature(adapters.to_threejs).parameters)
         assert params == ["material"], (
             f"local to_threejs must accept a Material, got params {params}"
@@ -470,8 +472,7 @@ class TestModuleShape:
         assert v.has_mapping  # default tier="1k"
         v.tier = None
         assert not v.has_mapping, (
-            "tier=None must un-map so delegates fail at the gate, "
-            "not downstream in the client"
+            "tier=None must un-map so delegates fail at the gate, not downstream in the client"
         )
 
     def test_identity_args_tuple(self):
@@ -579,11 +580,13 @@ class TestModuleShape:
                 return {"color": b"x"}
 
         import mat_vis_client as _client
+
         monkeypatch.setattr(_client, "_client", CountingClient())
 
         v = Vis(source="a", material_id="b")
 
         results = []
+
         def read():
             results.append(v.textures)
 
@@ -591,9 +594,7 @@ class TestModuleShape:
         t2 = threading.Thread(target=read)
         t1.start()
         # Wait until t1 has entered the fetch (is waiting on proceed_event)
-        assert enter_event.wait(timeout=1.0), (
-            "t1 never entered fetch — test setup broken"
-        )
+        assert enter_event.wait(timeout=1.0), "t1 never entered fetch — test setup broken"
         t2.start()
         # Both threads now in the fetch method (or t2 is about to enter).
         # Release both.
@@ -614,11 +615,10 @@ class TestModuleShape:
         named `field` because that shadows `dataclasses.field` imported
         at module top. Closes #60."""
         import inspect
+
         sig = inspect.signature(Vis.get)
         assert "name" in sig.parameters
-        assert "field" not in sig.parameters, (
-            "don't shadow dataclasses.field"
-        )
+        assert "field" not in sig.parameters, "don't shadow dataclasses.field"
 
 
 # ── Discover ─────────────────────────────────────────────────

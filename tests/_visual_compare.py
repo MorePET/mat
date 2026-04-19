@@ -35,7 +35,7 @@ from pathlib import Path
 
 from PIL import Image
 
-# Root baseline directory. Tests store / load PNGs by logical name
+# Root baseline directory. Tests store / load PNG images by logical name
 # (e.g. "steel_cube") and this module resolves to .../tests/baselines/<name>.png.
 BASELINE_DIR = Path(__file__).parent / "baselines"
 
@@ -108,6 +108,7 @@ def assert_matches_baseline(
         # already asserts the screenshot is non-blank via file size;
         # baseline comparison kicks in once someone commits one.
         import pytest
+
         pytest.skip(
             f"No committed baseline at {baseline_path.relative_to(BASELINE_DIR.parent.parent)}. "
             f"Generate with: MAT_VIS_UPDATE_BASELINES=1 pytest <this file>"
@@ -125,7 +126,7 @@ def assert_matches_baseline(
     rms = _rms(list(actual_img.tobytes()), list(baseline_img.tobytes()))
     assert rms <= rms_tolerance, (
         f"{name}: pixel RMS {rms:.2f} exceeds tolerance {rms_tolerance:.2f}. "
-        f"Visual regression — diff the PNGs in tests/visual_output/ + "
+        f"Visual regression — diff the images in tests/visual_output/ + "
         f"tests/baselines/ to see what drifted. "
         f"If the change is intentional, regenerate via "
         f"MAT_VIS_UPDATE_BASELINES=1 pytest ..."
