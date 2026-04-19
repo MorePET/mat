@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-04-19
+
+Discoverability sugar for the output adapters — motivated by the
+[build123d#1270](https://github.com/gumyr/build123d/pull/1270) Materials-class
+integration. Zero breaking change; existing `pymat.vis.to_gltf(material)` call
+sites keep working identically.
+
+### Added
+
+* **`Vis.to_threejs()` / `Vis.to_gltf(*, name=None)` / `Vis.export_mtlx(out, *, name=None)`** —
+  method-form sugar on `Vis`. `m.vis.<TAB>` now surfaces the three handoff
+  formats. Thin delegates to the module-level adapters; same output byte-for-byte.
+  ([#78](https://github.com/MorePET/mat/issues/78))
+* **Adapters accept `Material` or `Vis`** — `to_gltf(obj)`, `to_threejs(obj)`,
+  `export_mtlx(obj, out)` duck-type on `.vis`, so a detached `Vis()` can be
+  serialized without an owning `Material`. `name=` kwarg populates the glTF /
+  MTLX name field when `obj` is a plain Vis.
+* **Test pins** (15 new):
+  - `TestAdapterPolymorphism` — `to_*(m) == to_*(m.vis)`.
+  - `TestVisAdapterMethods` — `m.vis.to_*() == to_*(m)`.
+  - `TestAdapterOnDetachedVis` — full adapter path on `Vis()` with no Material.
+  - Duck-typing invariant (`Vis` has no `.vis` attribute), keyword-only `name=`
+    signature, and method-surface presence each dedicated-tested.
+* **build123d glTF behaviour pinned** — `TestGltfMaterialPassthrough` documents
+  the real state today: `apply_to()` preserves only `baseColorFactor`; direct
+  `shape.material = m` reaches no glTF field at all. The tests fail the moment
+  build123d#1270 lands and changes either behavior — the signal to update docs.
+* **e2e test for `m.vis.mtlx.xml()`** — pins the 0.5 method shape against the
+  live mat-vis CDN (skips on outage).
+
+### Changed
+
+* `pymat.vis.adapters` docstring and the `test_vis.py` module-shape test both
+  reflect the polymorphic first-arg rename (`material` → `obj`, still
+  positional-compatible).
+
+### Architectural note
+
+The adapter asymmetry is intentional: module-level functions for `Material → format` transforms (open/closed, easy to add new formats without touching Material/Vis), method form for operations *on* a concrete object (`MtlxSource.xml()` etc.). The new `Vis.to_*` sugar is discoverability-only — see
+[mat-vis#93](https://github.com/MorePET/mat-vis/issues/93) for the architecturally-cleaner
+endgame where the payload object moves into `mat-vis-client`.
+
 ## [3.2.0] - 2026-04-19
 
 Adopts `mat-vis-client` 0.5.0 (closes [#73](https://github.com/MorePET/mat/issues/73); upstream: [mat-vis#85](https://github.com/MorePET/mat-vis/issues/85)). Also folds in the visual-regression pixel-diff framework ([#41](https://github.com/MorePET/mat/issues/41)) and infrastructure hygiene.
