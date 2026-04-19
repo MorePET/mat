@@ -188,9 +188,7 @@ class TestAdapterPolymorphism:
             # Via Vis + explicit name — filename stem must match.
             mtlx_path = export_mtlx(m.vis, Path(tmp), name="Stem")
             assert mtlx_path.exists()
-            assert mtlx_path.stem == "Stem", (
-                f"expected stem 'Stem', got {mtlx_path.stem!r}"
-            )
+            assert mtlx_path.stem == "Stem", f"expected stem 'Stem', got {mtlx_path.stem!r}"
 
     def test_export_mtlx_vis_without_name_falls_back(self):
         """A standalone Vis with no name= kwarg must not crash; the

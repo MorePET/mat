@@ -434,9 +434,7 @@ class Vis:
 
         return to_gltf(self, name=name)
 
-    def export_mtlx(
-        self, output_dir: str | Path, *, name: str | None = None
-    ) -> Path:
+    def export_mtlx(self, output_dir: str | Path, *, name: str | None = None) -> Path:
         """Shorthand for ``pymat.vis.export_mtlx(material, out)``.
 
         ``name=`` sets the MTLX filename stem. Omitted on a standalone

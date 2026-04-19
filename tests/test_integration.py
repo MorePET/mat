@@ -117,9 +117,7 @@ class TestGltfMaterialPassthrough:
 
         pbr = materials[0].get("pbrMetallicRoughness") or {}
         base_color = pbr.get("baseColorFactor")
-        assert base_color and len(base_color) >= 3, (
-            f"baseColorFactor missing: {base_color!r}"
-        )
+        assert base_color and len(base_color) >= 3, f"baseColorFactor missing: {base_color!r}"
 
         # Document the gap: build123d's exporter reads shape.color only,
         # so metallic/roughness don't come through even though the

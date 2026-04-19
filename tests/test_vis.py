@@ -455,8 +455,7 @@ class TestModuleShape:
         # Material|Vis signature; historically it was ``material``.
         params = list(inspect.signature(adapters.to_threejs).parameters)
         assert params and params[0] in {"material", "obj"}, (
-            f"local to_threejs must accept a Material/Vis as first param, "
-            f"got params {params}"
+            f"local to_threejs must accept a Material/Vis as first param, got params {params}"
         )
 
     def test_top_level_adapter_reexports(self):
