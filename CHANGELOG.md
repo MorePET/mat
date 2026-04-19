@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-04-19
+
+Adds `pymat.search()` — fuzzy find over the domain library.
+
+### Added
+
+* **`pymat.search(query: str, *, limit: int = 10) -> list[Material]`** —
+  tokenized, weighted-target fuzzy search over the full registered
+  library. Complements `pymat.vis.search(...)` (visual catalog) with a
+  symmetric domain-side verb.
+  * Matches registry key (weight 10) > `Material.name` / `grade`
+    (weight 5) > hierarchy parent names (weight 3).
+  * All query tokens must match somewhere — conjunctive, so
+    `pymat.search("stainless 316")` returns only grades matching both.
+  * Triggers `load_all()` for exhaustive results; case-insensitive.
+  * Ties broken by shorter registry key → parents rank above
+    descendants when both score the same.
+* **30 tests** (`tests/test_search.py`) pinning tokenization, scoring
+  weights, conjunctive matching, tie-breaks, `limit=` semantics,
+  across-category loading, deterministic ordering, and specific
+  realistic queries (`"stainless 316"`, `"lyso ce saint"`, etc.).
+
 ## [3.2.1] - 2026-04-19
 
 Discoverability sugar for the output adapters — motivated by the

@@ -54,9 +54,10 @@ from .properties import (
     SourcingProperties,
     ThermalProperties,
 )
+from .search import search
 from .units import ureg
 
-__version__ = "3.2.1"  # x-release-please-version
+__version__ = "3.3.0"  # x-release-please-version
 __all__ = [
     "Material",
     "AllProperties",
@@ -70,6 +71,7 @@ __all__ = [
     "ureg",
     "load_toml",
     "load_category",
+    "search",
     "enrich_from_periodictable",
     "enrich_from_matproj",
     "enrich_all",
