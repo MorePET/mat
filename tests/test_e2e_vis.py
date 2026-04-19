@@ -220,6 +220,39 @@ class TestEndToEnd:
                 textures = vis.fetch(r["source"], r["id"], tier="128")
                 assert len(textures) >= 0  # may be 0 if 128 tier not available
 
+    def test_mtlx_xml_returns_materialx_string(self):
+        """Material.vis.mtlx.xml() returns a MaterialX XML string.
+
+        Pins the 0.5 method-form (``.xml()`` not property ``.xml``) and
+        asserts the content is MaterialX — not an error page or empty
+        string. The full ``.export(path)`` package path is covered by
+        the adapter test; this test locks the direct ``.xml()`` accessor
+        the README + build123d integration docs call out.
+        """
+        from pymat import Material, vis
+
+        results = vis.search(category="metal", limit=1)
+        if not results:
+            pytest.skip("No metal materials in mat-vis index")
+
+        source = results[0].get("source", "ambientcg")
+        mat_id = results[0]["id"]
+
+        m = Material(name="mtlx xml probe")
+        m.vis.source = source
+        m.vis.material_id = mat_id
+        m.vis.tier = results[0].get("default_tier") or "1k"
+
+        with _skip_on_upstream_outage():
+            xml = m.vis.mtlx.xml()
+
+        assert isinstance(xml, str), f"expected str, got {type(xml).__name__}"
+        lowered = xml.lower()
+        assert "<materialx" in lowered or xml.startswith("<?xml"), (
+            f"not a MaterialX document; first 200 chars: {xml[:200]!r}"
+        )
+        assert len(xml) > 200, f"suspiciously short MaterialX doc ({len(xml)} chars)"
+
     def test_resolve_channel(self):
         """Vis.resolve() returns texture or scalar fallback."""
         from pymat import Material, vis

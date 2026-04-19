@@ -406,6 +406,44 @@ class Vis:
         tex = self.textures.get(channel)
         return ResolvedChannel(texture=tex, scalar=scalar)
 
+    # ── Adapter sugar (delegate to module-level, method discoverability) ─
+
+    def to_threejs(self) -> dict[str, Any]:
+        """Shorthand for ``pymat.vis.to_threejs(material)`` — method form.
+
+        Same output as the module-level adapter. Use this when you have
+        a ``Vis`` in hand (``material.vis.to_threejs()``); use the
+        module-level form (``pymat.vis.to_threejs(material)``) in code
+        that's explicitly function-composition oriented.
+        """
+        from pymat.vis.adapters import to_threejs
+
+        return to_threejs(self)
+
+    def to_gltf(self, *, name: str | None = None) -> dict[str, Any]:
+        """Shorthand for ``pymat.vis.to_gltf(material)`` — method form.
+
+        The glTF material node's ``name`` field is populated from
+        ``name=`` if given, else left empty (the method has no
+        visibility into the owning Material's name; pass it through
+        explicitly when calling on a standalone Vis). The module-level
+        ``pymat.vis.to_gltf(material)`` reads ``material.name``
+        automatically.
+        """
+        from pymat.vis.adapters import to_gltf
+
+        return to_gltf(self, name=name)
+
+    def export_mtlx(self, output_dir: str | Path, *, name: str | None = None) -> Path:
+        """Shorthand for ``pymat.vis.export_mtlx(material, out)``.
+
+        ``name=`` sets the MTLX filename stem. Omitted on a standalone
+        Vis → defaults to ``"material"``.
+        """
+        from pymat.vis.adapters import export_mtlx
+
+        return export_mtlx(self, Path(output_dir), name=name)
+
     # ── Discovery (py-mat's tag-aware layer over client.search) ─
 
     def discover(
