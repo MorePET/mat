@@ -44,7 +44,6 @@ from . import factories, registry, vis
 from .core import Material
 from .enrichers import enrich_all, enrich_from_matproj, enrich_from_periodictable
 from .loader import load_category, load_toml
-from .search import search
 from .properties import (
     AllProperties,
     ComplianceProperties,
@@ -55,6 +54,7 @@ from .properties import (
     SourcingProperties,
     ThermalProperties,
 )
+from .search import search
 from .units import ureg
 
 __version__ = "3.3.0"  # x-release-please-version

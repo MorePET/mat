@@ -14,8 +14,6 @@ Covers the full contract documented in the search module docstring:
 
 from __future__ import annotations
 
-import pytest
-
 import pymat
 from pymat import Material, search
 from pymat.search import _score, _targets
