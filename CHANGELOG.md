@@ -23,10 +23,10 @@ sites keep working identically.
   serialized without an owning `Material`. `name=` kwarg populates the glTF /
   MTLX name field when `obj` is a plain Vis.
 * **Test pins** (15 new):
-  - `TestAdapterPolymorphism` — `to_*(m) == to_*(m.vis)`.
-  - `TestVisAdapterMethods` — `m.vis.to_*() == to_*(m)`.
-  - `TestAdapterOnDetachedVis` — full adapter path on `Vis()` with no Material.
-  - Duck-typing invariant (`Vis` has no `.vis` attribute), keyword-only `name=`
+  * `TestAdapterPolymorphism` — `to_*(m) == to_*(m.vis)`.
+  * `TestVisAdapterMethods` — `m.vis.to_*() == to_*(m)`.
+  * `TestAdapterOnDetachedVis` — full adapter path on `Vis()` with no Material.
+  * Duck-typing invariant (`Vis` has no `.vis` attribute), keyword-only `name=`
     signature, and method-surface presence each dedicated-tested.
 * **build123d glTF behaviour pinned** — `TestGltfMaterialPassthrough` documents
   the real state today: `apply_to()` preserves only `baseColorFactor`; direct
