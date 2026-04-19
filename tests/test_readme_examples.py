@@ -467,3 +467,97 @@ class TestBuild123dIntegration:
         # Colors should differ
         assert steel_part.color != al_part.color
         assert crystal.color != steel_part.color
+
+
+class TestFuzzySearch:
+    """Examples for the domain-library fuzzy search (3.3.0+)."""
+
+    def test_search_by_name(self):
+        """
+        ## Finding Materials by Name
+
+        `pymat.search(query)` does a fuzzy find over the full material
+        library — matches on registry key, `Material.name`, `grade`,
+        and hierarchy parent names:
+        """
+        import pymat
+
+        # Parent materials and all grades match a single word
+        hits = pymat.search("stainless")
+        assert any(m.name == "Stainless Steel" for m in hits)
+        assert any("316L" in m.name for m in hits)
+
+        # Grade numbers work too — matches on Material.grade
+        hits = pymat.search("316")
+        assert any("316" in m.name for m in hits)
+
+    def test_search_multi_token(self):
+        """
+        Queries tokenize on whitespace — every token must match somewhere
+        for a Material to be included. This lets you narrow parent +
+        grade in one string:
+        """
+        import pymat
+
+        # "stainless 316" → grades matching both tokens, parent excluded
+        hits = pymat.search("stainless 316")
+        assert hits[0].grade == "316L"
+
+        # Deep-hierarchy queries work via parent-chain tokens:
+        hits = pymat.search("lyso saint")
+        assert any("Saint-Gobain" in m.name and "LYSO" in m.name for m in hits)
+
+    def test_search_limit(self):
+        """
+        Results are sorted by match score, truncated to `limit=` (default 10):
+        """
+        import pymat
+
+        top3 = pymat.search("steel", limit=3)
+        assert len(top3) <= 3
+
+
+class TestAdapterMethods:
+    """Examples for the Vis adapter method sugar (3.2.1+)."""
+
+    def test_vis_adapter_methods(self):
+        """
+        ## Exporting Materials to Three.js / glTF / MaterialX
+
+        Every `Material.vis` surfaces the adapters as methods. Tab
+        completion on `m.vis.<TAB>` finds them alongside the scalar
+        properties:
+        """
+        from pymat import Material
+
+        m = Material(name="Gold")
+        m.vis.metallic = 1.0
+        m.vis.roughness = 0.2
+        m.vis.base_color = (1.0, 0.84, 0.0, 1.0)
+
+        # Three.js MeshPhysicalMaterial-compatible dict
+        threejs = m.vis.to_threejs()
+        assert threejs["metalness"] == 1.0
+        assert threejs["roughness"] == 0.2
+
+        # glTF 2.0 material node — drop straight into doc["materials"]
+        gltf = m.vis.to_gltf(name=m.name)
+        assert gltf["pbrMetallicRoughness"]["metallicFactor"] == 1.0
+        assert gltf["name"] == "Gold"
+
+    def test_module_level_equivalent(self):
+        """
+        Module-level adapters are the source of truth; method forms are
+        thin delegates. Both produce identical output:
+        """
+        from pymat import Material
+        from pymat.vis import to_gltf, to_threejs
+
+        m = Material(name="Copper")
+        m.vis.metallic = 1.0
+        m.vis.roughness = 0.4
+        m.vis.base_color = (0.72, 0.45, 0.20, 1.0)
+
+        # Pick whichever reads better at the call site
+        assert to_threejs(m) == m.vis.to_threejs()
+        assert to_gltf(m) == m.vis.to_gltf(name=m.name)
