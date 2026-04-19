@@ -324,10 +324,56 @@ class PBRProperties:
     clearcoat: float = 0.0  # secondary glossy layer
 
     # Texture maps (paths or URIs)
+    base_color_map: Optional[str] = None  # albedo / diffuse texture
     normal_map: Optional[str] = None
     roughness_map: Optional[str] = None
     metallic_map: Optional[str] = None
     ambient_occlusion_map: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        """
+        Serialize to a Three.js ``MeshPhysicalMaterial`` dict.
+
+        Makes this class conform to the `pymat.pbr.PbrSource` Protocol
+        so it can be assigned to `Material.pbr_source` as the
+        lightweight, in-tree, zero-dependency backend. For full
+        MaterialX / texture-library support, use
+        `threejs_materials.PbrProperties` instead (install the
+        `[pbr]` extra).
+
+        Keys are Three.js camelCase. Defaults are omitted so the
+        result stays compact.
+        """
+        out: dict = {}
+        r, g, b, a = self.base_color
+        out["color"] = [r, g, b]
+        if self.metallic != 0.0:
+            out["metalness"] = self.metallic
+        if self.roughness != 0.5:
+            out["roughness"] = self.roughness
+        if self.emissive != (0, 0, 0):
+            out["emissive"] = list(self.emissive)
+        if self.ior != 1.5:
+            out["ior"] = self.ior
+        if self.transmission > 0.0:
+            out["transmission"] = self.transmission
+        if self.clearcoat > 0.0:
+            out["clearcoat"] = self.clearcoat
+        if a < 1.0:
+            out["opacity"] = a
+            out["transparent"] = True
+        # Texture maps — keys use Three.js naming (normalMap, etc.).
+        if self.base_color_map is not None:
+            out["map"] = self.base_color_map  # Three.js color channel is plain `map`
+        if self.normal_map is not None:
+            out["normalMap"] = self.normal_map
+        if self.roughness_map is not None:
+            out["roughnessMap"] = self.roughness_map
+        if self.metallic_map is not None:
+            out["metalnessMap"] = self.metallic_map
+        if self.ambient_occlusion_map is not None:
+            out["aoMap"] = self.ambient_occlusion_map
+        return out
 
 
 @dataclass

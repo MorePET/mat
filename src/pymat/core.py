@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
 
 if TYPE_CHECKING:
-    pass
+    from .pbr import PbrSource
 
 from .properties import AllProperties
 
@@ -114,6 +114,13 @@ class _MaterialInternal:
     # Properties (all domains)
     properties: AllProperties = field(default_factory=AllProperties)
 
+    # Optional rich PBR backend. When set, takes precedence over
+    # `properties.pbr` (the lite native dataclass) for rendering. See
+    # ADR-0002 — this is the integration point for
+    # `threejs_materials.PbrProperties` and any other external PBR
+    # loader that conforms to the `pymat.pbr.PbrSource` Protocol.
+    pbr_source: Optional["PbrSource"] = field(default=None, repr=False)
+
     # Hierarchy (not shown in repr)
     parent: Optional[_MaterialInternal] = field(default=None, repr=False)
     _children: Dict[str, _MaterialInternal] = field(default_factory=dict, repr=False)
@@ -191,6 +198,91 @@ class _MaterialInternal:
             and self.properties.optical.transparency is not None
         ):
             self.properties.pbr.transmission = self.properties.optical.transparency / 100.0
+
+        # When a rich pbr_source is provided, project its fields down
+        # onto the lite `properties.pbr` dataclass. This lets existing
+        # ocp_vscode / downstream renderers that only read
+        # `material.properties.pbr.<field>` pick up the rich data
+        # without any changes on their side (graceful enhancement).
+        # `to_three_js_material_dict()` still prefers the full rich
+        # source for callers that can handle it.
+        if self.pbr_source is not None:
+            self._backfill_pbr_from_source()
+
+    def _backfill_pbr_from_source(self) -> None:
+        """
+        Populate the lite `properties.pbr` dataclass from the rich
+        `pbr_source`'s `to_dict()` output.
+
+        Supports two `to_dict()` shapes, detected at runtime:
+
+        - **Nested** (`threejs_materials.PbrProperties` format):
+          ``{id, name, source, url, license, values: {...}, textures: {...}}``
+          — scalars under ``values``, maps under ``textures``.
+        - **Flat** (`pymat`'s own lite `PBRProperties.to_dict()` format):
+          ``{color, metalness, roughness, normalMap, ...}`` — Three.js
+          MeshPhysicalMaterial camelCase keys at the top level.
+
+        The lite dataclass is a strict subset of the Three.js
+        MeshPhysicalMaterial spec — fields on the rich source that
+        don't have a corresponding lite field (sheen, anisotropy,
+        iridescence, dispersion, etc.) are dropped. Downstream
+        consumers that need full fidelity should read
+        `material.pbr_source` directly.
+        """
+        if self.pbr_source is None:
+            return
+        try:
+            d = self.pbr_source.to_dict()
+        except Exception:
+            return
+
+        # Detect shape: nested has `values` key, flat has top-level scalars.
+        if isinstance(d.get("values"), dict):
+            values = d["values"]
+            maps = d.get("textures") if isinstance(d.get("textures"), dict) else {}
+        else:
+            values = d
+            maps = {}
+
+        lite = self.properties.pbr
+
+        # Scalars
+        color = values.get("color")
+        if isinstance(color, (list, tuple)) and len(color) >= 3:
+            r, g, b = color[:3]
+            alpha = values.get(
+                "opacity",
+                lite.base_color[3] if len(lite.base_color) >= 4 else 1.0,
+            )
+            lite.base_color = (r, g, b, alpha)
+        if "metalness" in values:
+            lite.metallic = values["metalness"]
+        if "roughness" in values:
+            lite.roughness = values["roughness"]
+        emissive = values.get("emissive")
+        if isinstance(emissive, (list, tuple)):
+            lite.emissive = tuple(emissive)
+        if "ior" in values:
+            lite.ior = values["ior"]
+        if "transmission" in values:
+            lite.transmission = values["transmission"]
+        if "clearcoat" in values:
+            lite.clearcoat = values["clearcoat"]
+
+        # Texture maps. Nested (`textures`) keys are short names like
+        # `color`, `normal`, `roughness`, `metalness`, `ao`. Flat
+        # format uses Three.js camelCase: `map` (the color channel),
+        # `normalMap`, `roughnessMap`, `metalnessMap`, `aoMap`.
+        lite.base_color_map = maps.get("color") or values.get("map") or lite.base_color_map
+        lite.normal_map = maps.get("normal") or values.get("normalMap") or lite.normal_map
+        lite.roughness_map = (
+            maps.get("roughness") or values.get("roughnessMap") or lite.roughness_map
+        )
+        lite.metallic_map = maps.get("metalness") or values.get("metalnessMap") or lite.metallic_map
+        lite.ambient_occlusion_map = (
+            maps.get("ao") or values.get("aoMap") or lite.ambient_occlusion_map
+        )
 
     # =========================================================================
     # Chaining API
@@ -450,6 +542,19 @@ class _MaterialInternal:
         """Calculate mass in grams from volume in mm³."""
         return volume_mm3 * self.density_g_mm3
 
+    def to_three_js_material_dict(self) -> dict:
+        """
+        Return a Three.js ``MeshPhysicalMaterial`` dict for this material.
+
+        Uses `pbr_source` if set (rich backend such as
+        `threejs_materials.PbrProperties` with full MaterialX
+        support), otherwise falls back to `properties.pbr` (the
+        lite native in-tree backend). See ADR-0002.
+        """
+        if self.pbr_source is not None:
+            return self.pbr_source.to_dict()
+        return self.properties.pbr.to_dict()
+
     def __repr__(self) -> str:
         """String representation showing path and density."""
         density_str = f"ρ={self.density} g/cm³" if self.density else "ρ=?"
@@ -502,6 +607,9 @@ class Material(_MaterialInternal):
     - electrical: Dict of electrical properties (resistivity, dielectric_constant, etc.)
     - optical: Dict of optical properties (refractive_index, transparency, etc.) - PHYSICS
     - pbr: Dict of PBR visualization properties (base_color, metallic, roughness) - RENDERING
+    - pbr_source: Optional rich PBR backend conforming to `pymat.pbr.PbrSource`
+      (typically `threejs_materials.PbrProperties` via the `[pbr]` extra).
+      Takes precedence over `pbr` for `to_three_js_material_dict()`.
     - manufacturing: Dict of manufacturing properties (machinability, weldability, etc.)
     - compliance: Dict of compliance properties (rohs_compliant, food_safe, etc.)
     - sourcing: Dict of sourcing properties (cost_per_kg, availability, etc.)
@@ -529,6 +637,7 @@ class Material(_MaterialInternal):
         electrical: Optional[Dict[str, Any]] = None,
         optical: Optional[Dict[str, Any]] = None,
         pbr: Optional[Dict[str, Any]] = None,
+        pbr_source: Optional["PbrSource"] = None,
         manufacturing: Optional[Dict[str, Any]] = None,
         compliance: Optional[Dict[str, Any]] = None,
         sourcing: Optional[Dict[str, Any]] = None,
@@ -551,6 +660,7 @@ class Material(_MaterialInternal):
             electrical=electrical,
             optical=optical,
             pbr=pbr,
+            pbr_source=pbr_source,
             manufacturing=manufacturing,
             compliance=compliance,
             sourcing=sourcing,

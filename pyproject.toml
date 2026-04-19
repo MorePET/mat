@@ -40,6 +40,11 @@ matproj = ["pymatgen>=2024.0.0"]
 # py-materials[build123d]` on Python 3.13+ is a no-op rather than a hard
 # wheel-resolution error — installers silently drop the dep. See #11.
 build123d = ["build123d>=0.7.0; python_version<'3.13'"]
+# Full MaterialX PBR backend via Bernhard's threejs-materials library.
+# Pure-Python, Apache-2.0, brings pillow + pygltflib + requests + the
+# MaterialX SDK (via threejs-materials' own [materialx] extra) with it.
+# Physics-only users never pull this. See ADR-0002.
+pbr = ["threejs-materials[materialx]>=1.0.0"]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -49,6 +54,7 @@ all = [
     "periodictable>=1.6.0",
     "pymatgen>=2024.0.0",
     "build123d>=0.7.0; python_version<'3.13'",
+    "threejs-materials>=1.0.0",
 ]
 
 [project.urls]

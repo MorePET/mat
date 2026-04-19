@@ -223,3 +223,6 @@ justfile.local
 
 # Cursor local config
 .cursor/
+
+# Example script runtime output
+examples/output/
