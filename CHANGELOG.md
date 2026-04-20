@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0](https://github.com/MorePET/mat/compare/v3.4.0...v4.0.0) (2026-04-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* 3.1 — Vis identity split + inline-table finishes + ADR-0002
+* 3.0 vis cutover — `properties.pbr` removed, `.vis` canonical, mat-vis-client 0.4.x ([#52](https://github.com/MorePET/mat/issues/52))
+
+### Added
+
+* [#88](https://github.com/MorePET/mat/issues/88) vis inheritance + [#89](https://github.com/MorePET/mat/issues/89) pymat[...] lookup + runnable examples (3.4.0) ([048416f](https://github.com/MorePET/mat/commit/048416fc28fdd9ef656756b54cf03f91b48366e9))
+* [#88](https://github.com/MorePET/mat/issues/88) vis inheritance + [#89](https://github.com/MorePET/mat/issues/89) pymat[...] lookup + runnable examples (3.4.0) ([3ad2916](https://github.com/MorePET/mat/commit/3ad2916590e75bc8d16ebf7a6c23c3c7dd2a2050))
+* 3.0 vis cutover — `properties.pbr` removed, `.vis` canonical, mat-vis-client 0.4.x ([#52](https://github.com/MorePET/mat/issues/52)) ([49b5dff](https://github.com/MorePET/mat/commit/49b5dff0f5ca139e8e7f1dec82587d4ddf146c45))
+* 3.1 — Vis identity split + inline-table finishes + ADR-0002 ([24d060e](https://github.com/MorePET/mat/commit/24d060e8e258b4eb3b24f6ff894df0da4622d954))
+* 3.1.1 — audit corrections, cache invalidation on identity change, adapter re-exports ([aa3f956](https://github.com/MorePET/mat/commit/aa3f95681afca7592b0c453327d73fc3328d76f0))
+* 3.1.2 — milestone 1 audit follow-ups (13 issues closed) ([6a70509](https://github.com/MorePET/mat/commit/6a70509fc0e18739e560a3f32c44255f7f9f20f3))
+* 3.2 prep — mat-vis-client 0.5 API adoption (blocked on PyPI publish) ([52bde58](https://github.com/MorePET/mat/commit/52bde5856add4705440b0c6dd4a20e415a40b8e4))
+* add mat-rs Rust crate for material database + formula parsing ([82630d4](https://github.com/MorePET/mat/commit/82630d4dea1c9f26a80f37a1d64d0f4c962e1e8f))
+* embed TOML data files in crate via include_str!() ([0e82f07](https://github.com/MorePET/mat/commit/0e82f0713bf04133c5ff982dafc76cd689bf249c)), closes [#5](https://github.com/MorePET/mat/issues/5)
+* pixel-diff baselines for visual regression (closes [#41](https://github.com/MorePET/mat/issues/41)'s last two checkboxes) ([b6f6cce](https://github.com/MorePET/mat/commit/b6f6cce1904e580b95f7afa99012e3d0535d12c9))
+* pymat.search(query) — fuzzy domain-library search ([bf9629a](https://github.com/MorePET/mat/commit/bf9629a8593dc16057b31a5374b2e80ca79adda9))
+* pymat.search(query) — fuzzy domain-library search ([45c7fdc](https://github.com/MorePET/mat/commit/45c7fdcddf3b93838f78de1b19dfd25da237edb8))
+* Vis.to_gltf() / .to_threejs() / .export_mtlx() method sugar ([e3afd96](https://github.com/MorePET/mat/commit/e3afd96cbd9fdedaafb209c783ca91bec6fe2f53))
+* Vis.to_gltf() / .to_threejs() / .export_mtlx() method sugar ([#78](https://github.com/MorePET/mat/issues/78)) ([1fc3194](https://github.com/MorePET/mat/commit/1fc3194e71ffb95b1b30bfb66b168ae550c8f453))
+
+
+### Fixed
+
+* add --allow-dirty to cargo publish in CI ([2e80119](https://github.com/MorePET/mat/commit/2e801191047602148a3dfb4ed21a3e092dc6c6d8))
+* **ci:** correct release-please extra-file type and manifest baseline ([#46](https://github.com/MorePET/mat/issues/46)) ([30208d0](https://github.com/MorePET/mat/commit/30208d0477a1c36410565a25ff50a3aab581203c)), closes [#43](https://github.com/MorePET/mat/issues/43)
+* **ci:** downgrade Python pin to 3.12 ([5c9eebe](https://github.com/MorePET/mat/commit/5c9eebe572478b9992374c5c59a96e23bdb23c3f))
+* **ci:** pin Python to 3.13 via .python-version ([ee2d5dc](https://github.com/MorePET/mat/commit/ee2d5dc5cb93159be77d0de3718a301f16b7e64c))
+* enricher molar_mass + pymarkdown MD031 + ADR infrastructure ([e212891](https://github.com/MorePET/mat/commit/e21289111739ff170efafbd62a974b9575b8f090))
+* **enricher:** Material.molar_mass computed property + correct enricher docs ([506456b](https://github.com/MorePET/mat/commit/506456b64139a8eccf789300eabf565c8c6819ac))
+* **lint:** resolve ruff errors and remove scaffold stub ([3a73739](https://github.com/MorePET/mat/commit/3a7373926a9b22b2f25c79c1dda01488d5d65e98))
+* **pymarkdown:** rewrite RELEASE_PROCESS + TEMPERATURE_UNITS to satisfy MD031 ([7b67af3](https://github.com/MorePET/mat/commit/7b67af3fcb69f136f308fa1b24ca3be409f681cd))
+* regenerate uv.lock for py-materials rename, apply rustfmt ([d1ace0b](https://github.com/MorePET/mat/commit/d1ace0be9c2c0344f6767ce0820e555bb9e89457))
+* **sync:** use git merge-tree for false-positive-free conflict detection ([373809e](https://github.com/MorePET/mat/commit/373809ed93ef41e2bd0de095d6908d331f7dbf4e))
+* **sync:** use git merge-tree for false-positive-free conflict detection ([4138abc](https://github.com/MorePET/mat/commit/4138abc7bc99aca6d56b39c2c4cf408417c0de22))
+* **test:** stale Vis.source_id usage in visual regression test ([2e41c7b](https://github.com/MorePET/mat/commit/2e41c7b7bab221ebb13c1727664cc12ddbb98196))
+* **tests:** xfail broken periodictable enrichment tests + add ruff dep ([78a5fda](https://github.com/MorePET/mat/commit/78a5fda68d23cac8ec6e6085714330e9a335e141))
+
+
+### Changed
+
+* rename Rust crate mat-rs → rs-materials ([c2d8ec1](https://github.com/MorePET/mat/commit/c2d8ec13a7378f8ec5fc4f94a92db7a703994337))
+
+
+### Documentation
+
+* **adr:** add ADR infrastructure + ADR-0001 on derived chemistry ([8b1d594](https://github.com/MorePET/mat/commit/8b1d59463808a24c29001c9888b4281c6e12910a))
+* sync README with 3.1 visual-properties shape ([d917e6a](https://github.com/MorePET/mat/commit/d917e6a61a450803e70a38f140e54743995f91fe))
+* update README and RELEASE_PROCESS for repo rename to mat ([b7bf7f3](https://github.com/MorePET/mat/commit/b7bf7f3a00f2584499663e38b5644196a68282ef))
+
 ## [3.4.0] - 2026-04-20
 
 Unblocks the build123d#1270 Materials-class adapt pass — fixes two bugs

@@ -57,7 +57,7 @@ from .properties import (
 from .search import search
 from .units import ureg
 
-__version__ = "3.4.0"  # x-release-please-version
+__version__ = "4.0.0"  # x-release-please-version
 __all__ = [
     "Material",
     "AllProperties",
