@@ -29,7 +29,6 @@ class will consume:
 
 # %%
 import pymat
-from pymat import Material, search
 
 print(f"py-materials version: {pymat.__version__}")
 
@@ -209,7 +208,7 @@ except Exception as e:  # pragma: no cover — upstream flake
 # catches up — see build123d#1270 comment for the full mirror status.
 
 # %%
-from pymat import vis
+from pymat import vis  # noqa: E402 — cell-style script, imports near use
 
 baked_metals = vis.search(category="metal", limit=5)
 print(f"Baked metals in mat-vis: {len(baked_metals)}")

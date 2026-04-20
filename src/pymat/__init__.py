@@ -228,8 +228,8 @@ def _lookup(name_or_key: str) -> Material:
 # PEP 562 covers module-level __getattr__ but not __getitem__; the standard
 # pattern is to swap the module's __class__ for a subtype of ModuleType that
 # defines __getitem__. Python's import machinery is unaffected.
-import sys as _sys
-import types as _types
+import sys as _sys  # noqa: E402 — must run after _lookup / Material definitions
+import types as _types  # noqa: E402 — same reason
 
 
 class _PymatModule(_types.ModuleType):

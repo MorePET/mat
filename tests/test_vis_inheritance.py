@@ -215,8 +215,7 @@ class TestInheritedVisEndToEnd:
         # Every result should have a usable vis (either own or inherited)
         for m in hits:
             assert m.vis.source is not None, (
-                f"{m.name} has vis.source=None even after #88 — "
-                f"inheritance regression"
+                f"{m.name} has vis.source=None even after #88 — inheritance regression"
             )
 
     def test_bernhards_workaround_no_longer_needed(self):

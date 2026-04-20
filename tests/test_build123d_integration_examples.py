@@ -61,8 +61,4 @@ def test_example_is_up_to_date_with_api():
     # Method-form adapters the example exercises.
     m = Material(name="probe")
     for method in ("to_threejs", "to_gltf", "export_mtlx"):
-        assert callable(getattr(m.vis, method)), (
-            f"Vis.{method} missing — example will break"
-        )
-
-
+        assert callable(getattr(m.vis, method)), f"Vis.{method} missing — example will break"
