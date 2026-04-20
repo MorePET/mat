@@ -532,6 +532,70 @@ class Vis:
     # ── TOML loader ──────────────────────────────────────────────
 
     @classmethod
+    def merge_from_toml(cls, base: Vis | None, vis_data: dict[str, Any]) -> Vis:
+        """Inherit from ``base`` (parent's Vis), then overlay TOML overrides.
+
+        Rules:
+
+        - If ``base`` is None and ``vis_data`` is empty → fresh ``Vis()``.
+        - If ``base`` is provided, start with ``deepcopy(base)`` so the child
+          inherits identity, finishes, scalars, and the ``_finish`` pick.
+        - If ``vis_data`` is provided, overlay its keys on top:
+            * ``finishes`` (if set) replaces the inherited map. This is the
+              semantically correct call: a grade that declares *any* finishes
+              wants its own set, not a concatenation.
+            * ``default`` (if set) picks a starting finish from the merged
+              map and writes ``source``/``material_id``/``_finish`` from it,
+              matching ``from_toml`` behavior.
+            * Any PBR scalar in ``vis_data`` overwrites the inherited value.
+            * Bare ``source`` / ``material_id`` / ``tier`` keys overwrite
+              directly (supports TOML that pins identity without finishes).
+        - Cache fields (``_textures``, ``_fetched``) are zeroed by
+          ``Vis.__post_init__`` regardless.
+
+        Used by the TOML loader so grades inherit parent vis without needing
+        to re-declare identity + scalars. Closes #88.
+        """
+        from copy import deepcopy
+
+        if base is None:
+            return cls.from_toml(vis_data or {})
+
+        merged = deepcopy(base)
+
+        if not vis_data:
+            return merged
+
+        if "finishes" in vis_data:
+            # Re-route through from_toml just for the finishes validation
+            # path — it raises on the 3.0 slashed-string form + malformed
+            # entries, and we want to keep that guard.
+            finishes_only = {"finishes": vis_data["finishes"]}
+            if "default" in vis_data:
+                finishes_only["default"] = vis_data["default"]
+            fresh = cls.from_toml(finishes_only)
+            merged.finishes = fresh.finishes
+            # If the TOML picked a new default finish, apply it (which will
+            # flip source/material_id/_finish through Vis's setters).
+            if fresh._finish is not None:
+                object.__setattr__(merged, "_finish", fresh._finish)
+                merged.source = fresh.source
+                merged.material_id = fresh.material_id
+
+        for field_name in ("source", "material_id", "tier"):
+            if field_name in vis_data:
+                setattr(merged, field_name, vis_data[field_name])
+
+        for fname in cls._PBR_SCALAR_FIELDS:
+            if fname in vis_data:
+                val = vis_data[fname]
+                if isinstance(val, list):
+                    val = tuple(val)
+                setattr(merged, fname, val)
+
+        return merged
+
+    @classmethod
     def from_toml(cls, vis_data: dict[str, Any]) -> Vis:
         """Construct from a TOML ``[vis]`` section.
 

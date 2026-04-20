@@ -717,12 +717,22 @@ class TestMaterialVisWiring:
         assert stainless.vis.finish == "brushed"
         assert "polished" in stainless.vis.finishes
 
-    def test_child_without_vis_gets_empty(self):
+    def test_child_without_vis_inherits_from_parent(self):
+        """3.4: grades without their own [vis] TOML section inherit
+        the parent's vis via deep-copy at load time (#88). The prior
+        contract returned a fresh empty Vis, which surprised consumers
+        like build123d#1270 who expected s304 to render the same as
+        stainless."""
         from pymat import stainless
 
         s304 = stainless.s304
-        assert s304.vis.source is None
-        assert s304.vis.material_id is None
+        # Inherited identity + scalars from parent
+        assert s304.vis.source == "ambientcg"
+        assert s304.vis.material_id == "Metal012"
+        assert s304.vis.metallic == 1.0
+        # Cache is fresh (not shared with parent)
+        assert s304.vis._textures == {}
+        assert s304.vis._fetched is False
 
 
 # ── Module-level API ─────────────────────────────────────────

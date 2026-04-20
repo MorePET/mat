@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-04-20
+
+Unblocks the build123d#1270 Materials-class adapt pass — fixes two bugs
+Bernhard reported against 3.3.0 ([#88](https://github.com/MorePET/mat/issues/88), [#89](https://github.com/MorePET/mat/issues/89)) and
+adds a runnable, in-CI example file that mirrors his cell-style pattern.
+
+### Added
+
+* **`pymat["Stainless Steel 304"]`** — module-level subscript for exact
+  lookup. Matches registry key OR `Material.name` OR `grade`
+  (case-insensitive, NFKC + whitespace-collapse normalization). Raises
+  `KeyError` with close-match suggestions on miss, raises on ambiguity
+  with candidate list. `in` operator also supported. Closes [#89](https://github.com/MorePET/mat/issues/89).
+* **`pymat.search(q, *, exact=True)`** — list-returning exact variant,
+  symmetric with the fuzzy form. `exact=True` now matches `grade` too
+  (previously only key + name — caught by the falsify review).
+* **Input normalization on all lookup paths** — `search()` and `pymat[...]`
+  both apply NFKC + case-fold + whitespace-collapse, so pasted strings
+  with curly quotes, non-breaking spaces, or tabs resolve cleanly.
+* **`examples/build123d_integration.py`** — cell-style (`# %%`) runnable
+  script showing the full build123d + py-mat integration surface.
+  Wired into pytest via `tests/test_build123d_integration_examples.py`
+  so every cell is exercised on every CI run. Prevents API drift from
+  breaking the downstream copy-paste.
+
+### Fixed
+
+* **Grades inherit parent `Vis` at load time** ([#88](https://github.com/MorePET/mat/issues/88)). Before 3.4, a grade
+  without its own `[vis]` TOML section landed with `source=None`, which
+  made `pymat.s304.vis.source` useless for every grade and forced
+  downstream consumers (build123d#1270) to walk the parent chain
+  manually. The loader now deep-copies the parent's `_vis` when a grade
+  has no `[vis]`, and merges TOML overrides on top when it does. Matches
+  the existing `_add_child` property-inheritance pattern. Runtime mutation
+  semantics: changes on a child don't propagate to parent (or vice versa)
+  — documented, intentional.
+
+### Internal
+
+* **`Vis.merge_from_toml(base, vis_data)`** — new classmethod for the
+  loader's partial-override path. Handles the "grade specifies only
+  `roughness=0.7`, inherit everything else" case that
+  `Vis.from_toml` (pure constructor) couldn't express.
+* **`search.py`**: new `_normalize()` helper, new `exact=True` path,
+  grade added to exact-match targets. 25 new tests across
+  `tests/test_lookup.py` + fuzzy regression coverage.
+* **`tests/test_vis_inheritance.py`** — 21 tests pinning inheritance,
+  isolation (child mutations don't touch parent), `merge_from_toml`
+  unit coverage, cache-invalidation-on-identity-change, and end-to-end
+  "Bernhard's workaround no longer needed".
+* Falsify review documented at [py-mat#88](https://github.com/MorePET/mat/issues/88)
+  — original deep-copy-at-access design was refuted by three orthogonal
+  reviewers; final load-time deep-copy-with-merge design was chosen to
+  match existing `_add_child` convention.
+
 ## [3.3.0] - 2026-04-19
 
 Adds `pymat.search()` — fuzzy find over the domain library.

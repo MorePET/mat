@@ -256,12 +256,21 @@ def _resolve_material_node(
         _key=key,
     )
 
-    # Populate vis from [vis] section if present
+    # Populate vis — inherit from parent, overlay any TOML overrides (#88).
+    # A grade TOML with no [vis] section gets a deep-copy of parent's vis;
+    # a partial [vis] table overrides individual fields on top of the copy.
+    # Root materials (no parent) always get a fresh Vis built from their
+    # own [vis] table (or an empty Vis when the table is absent).
     vis_data = data.get("vis")
+    parent_vis = parent_material._vis if parent_material is not None else None
     if vis_data and isinstance(vis_data, dict):
         from pymat.vis._model import Vis
 
-        material._vis = Vis.from_toml(vis_data)
+        material._vis = Vis.merge_from_toml(parent_vis, vis_data)
+    elif parent_vis is not None:
+        from copy import deepcopy
+
+        material._vis = deepcopy(parent_vis)
 
     # Register for direct access
     registry.register(key, material)

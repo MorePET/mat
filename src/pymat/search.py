@@ -13,10 +13,20 @@ included. Score is the sum of per-token best-target weights.
 
 from __future__ import annotations
 
+import unicodedata
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .core import Material
+
+
+def _normalize(s: str) -> str:
+    """Normalize a lookup/search input: NFKC + lowercase + collapse whitespace.
+
+    Picks up pasted curly quotes, em-dashes, non-breaking spaces, and other
+    lookalikes that users paste from browser UIs.
+    """
+    return " ".join(unicodedata.normalize("NFKC", s).lower().split())
 
 
 # Target weights — higher is a stronger match. Order matters: when a
@@ -73,14 +83,21 @@ def _score(tokens: list[str], targets: list[tuple[str, int]]) -> int:
     return total
 
 
-def search(query: str, *, limit: int = 10) -> list[Material]:
-    """Fuzzy-find Materials in the loaded library by name, key, or grade.
+def search(query: str, *, exact: bool = False, limit: int = 10) -> list[Material]:
+    """Find Materials in the loaded library by name, key, or grade.
 
-    Tokenizes ``query`` on whitespace (case-insensitive). Every token
-    must match somewhere — registry key, ``Material.name``,
-    ``Material.grade``, or a hierarchy parent name — for a Material
-    to be included. Ranks by summed match weight; returns at most
-    ``limit`` best hits.
+    - **Fuzzy (default)**: tokenize ``query`` on whitespace; every token
+      must match somewhere (registry key, ``Material.name``, ``grade``,
+      or a hierarchy parent name). Ranked by summed target weight.
+    - **Exact** (``exact=True``): the whole normalized query must equal
+      the registry key OR ``Material.name`` OR ``Material.grade`` — same
+      three targets the fuzzy path uses, but full-string equality. Use
+      this to resolve a single known material without the list noise of
+      fuzzy mode.
+
+    Normalization: NFKC + case-fold + whitespace-collapse. Curly quotes,
+    em-dashes, non-breaking spaces, leading/trailing and internal-run
+    whitespace all fold away before comparison.
 
     Returns an empty list for an empty / whitespace-only query.
 
@@ -89,20 +106,20 @@ def search(query: str, *, limit: int = 10) -> list[Material]:
         pymat.search("stainless")
         # → [stainless, s304, s316L, s410, ...]
 
-        pymat.search("316")
-        # → [s316L, s316, ...]  — grades match, parent doesn't
-
         pymat.search("stainless 316")
-        # → [s316L]  — all tokens must match, grade wins
+        # → [s316L]  — all tokens must match
 
-        pymat.search("lyso ce saint")
-        # → [prelude420, ...]  — deep hierarchy via tokenization
+        pymat.search("304", exact=True)
+        # → [s304]  — grade match, no fuzz
+
+        pymat.search("Stainless Steel", exact=True)
+        # → [stainless]  — exact parent name
 
     Triggers ``load_all()`` on first call so results are exhaustive
     across categories.
     """
-    tokens = query.lower().split()
-    if not tokens:
+    normalized = _normalize(query)
+    if not normalized:
         return []
 
     # Import lazily to avoid circular import at module load: pymat's
@@ -113,15 +130,25 @@ def search(query: str, *, limit: int = 10) -> list[Material]:
     all_materials = registry.list_all()
 
     scored: list[tuple[int, int, str, Material]] = []
-    for key, material in all_materials.items():
-        targets = _targets(key, material)
-        s = _score(tokens, targets)
-        if s > 0:
-            # Tie-break tuple: primary by score DESC (via -s), then by
-            # key length ASC (shorter key wins — "s316L" before
-            # "electropolished" when both score the same), then by key
-            # alphabetical for determinism.
-            scored.append((-s, len(key), key, material))
+
+    if exact:
+        # Full-string equality against key / name / grade. Same three
+        # targets the fuzzy path cares about.
+        for key, material in all_materials.items():
+            candidates = [key, material.name or ""]
+            grade = getattr(material, "grade", None)
+            if grade:
+                candidates.append(str(grade))
+            if any(_normalize(c) == normalized for c in candidates):
+                # Single-match: tie-break by shorter key for determinism.
+                scored.append((0, len(key), key, material))
+    else:
+        tokens = normalized.split()
+        for key, material in all_materials.items():
+            targets = _targets(key, material)
+            s = _score(tokens, targets)
+            if s > 0:
+                scored.append((-s, len(key), key, material))
 
     scored.sort()
     return [m for _, _, _, m in scored[:limit]]
