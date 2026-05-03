@@ -752,46 +752,45 @@ class TestVisModuleApi:
 
         manifest = vis.get_manifest()
         assert "release_tag" in manifest
-        assert "tiers" in manifest
+        # mat-vis 0.6.x manifest: schema_version=3, top-level "sources" map
+        # (tier coverage moved under sources[*].tiers)
+        assert "sources" in manifest
 
     def test_search_with_mock(self, monkeypatch):
-        """Search against a mock client (no network)."""
-        import mat_vis_client as _client
+        """Search delegates to mat_vis_client.search (forwarder).
 
+        Patches the imported ``_client_search`` reference inside
+        ``pymat.vis`` so we don't need a real client / network.
+        """
         from pymat import vis
 
         mock_results = [
             {
                 "id": "Metal001",
                 "source": "ambientcg",
-                "category": "metal",
-                "roughness": 0.3,
-                "metalness": 1.0,
+                "mat_vis": {
+                    "category": "metal",
+                    "tags": ["brushed", "silver"],
+                    "pbr": {"roughness": 0.3, "metalness": 1.0},
+                },
             },
         ]
 
-        class MockClient:
-            def __init__(self, **kw):
-                pass
+        captured: dict = {}
 
-            @property
-            def manifest(self):
-                return {"release_tag": "mock", "tiers": {}}
+        def fake_search(**kw):
+            captured.update(kw)
+            return mock_results
 
-            def sources(self, tier="1k"):
-                return ["ambientcg"]
-
-            def index(self, source):
-                return mock_results
-
-            def search(self, **kw):
-                return mock_results
-
-        monkeypatch.setattr(_client, "_client", MockClient())
+        monkeypatch.setattr(vis, "_client_search", fake_search)
 
         results = vis.search(category="metal")
-        assert len(results) >= 1
+        assert len(results) == 1
         assert results[0]["id"] == "Metal001"
+        # Forwarder must request unbounded results then apply our limit
+        # locally, so the tags post-filter sees the full set.
+        assert captured["category"] == "metal"
+        assert captured["limit"] is None
 
     def test_rowmap_entry_missing_material_raises(self, monkeypatch):
         import mat_vis_client as _client
@@ -814,125 +813,74 @@ class TestVisModuleApi:
         with pytest.raises(KeyError, match="NotExist"):
             vis.rowmap_entry("ambientcg", "NotExist")
 
-    def test_search_filters_and_scores(self, monkeypatch):
-        """Exercises tag-subset, roughness-range, metalness-range, scoring."""
-        import mat_vis_client as _client
+    def test_search_tags_post_filter(self, monkeypatch):
+        """Tags filter is applied locally on top of upstream search.
 
+        Category / scalar / tier filtering and scoring are upstream's job
+        (covered in mat-vis-client's own test suite). All we need to
+        verify here is the ``tags`` AND-subset post-filter and that the
+        ``limit`` is applied AFTER filtering — not before.
+        """
         from pymat import vis
 
+        # Mock returns 3 metal entries; only one has both required tags.
         rows = [
-            # matches all filters (brushed + silver tags, rough 0.3, met 1.0)
             {
                 "id": "A",
                 "source": "ambientcg",
-                "category": "metal",
-                "tags": ["brushed", "silver", "steel"],
-                "roughness": 0.3,
-                "metalness": 1.0,
+                "mat_vis": {"category": "metal", "tags": ["brushed", "silver", "steel"]},
             },
-            # wrong tags (missing brushed) → filtered out
             {
                 "id": "B",
                 "source": "ambientcg",
-                "category": "metal",
-                "tags": ["silver"],
-                "roughness": 0.3,
-                "metalness": 1.0,
+                "mat_vis": {"category": "metal", "tags": ["silver"]},  # no brushed
             },
-            # roughness out of range → filtered out
             {
                 "id": "C",
                 "source": "ambientcg",
-                "category": "metal",
-                "tags": ["brushed", "silver"],
-                "roughness": 0.9,
-                "metalness": 1.0,
-            },
-            # metalness out of range → filtered out
-            {
-                "id": "D",
-                "source": "ambientcg",
-                "category": "metal",
-                "tags": ["brushed", "silver"],
-                "roughness": 0.3,
-                "metalness": 0.0,
-            },
-            # wrong category → filtered out
-            {
-                "id": "E",
-                "source": "ambientcg",
-                "category": "wood",
-                "tags": ["brushed", "silver"],
-                "roughness": 0.3,
-                "metalness": 1.0,
-            },
-            # matches but scores higher (roughness distance > A's)
-            {
-                "id": "F",
-                "source": "ambientcg",
-                "category": "metal",
-                "tags": ["brushed", "silver"],
-                "roughness": 0.45,
-                "metalness": 1.0,
+                "mat_vis": {"category": "metal", "tags": ["brushed", "silver"]},
             },
         ]
 
-        class MockClient:
-            def __init__(self, **kw):
-                pass
+        monkeypatch.setattr(vis, "_client_search", lambda **kw: rows)
 
-            @property
-            def manifest(self):
-                return {"release_tag": "mock", "tiers": {}}
-
-            def sources(self, tier="1k"):
-                return ["ambientcg"]
-
-            def index(self, source):
-                return rows
-
-        monkeypatch.setattr(_client, "_client", MockClient())
-
-        results = vis.search(
-            category="metal",
-            tags=["brushed", "silver"],
-            roughness=0.3,
-            metalness=1.0,
-        )
+        results = vis.search(category="metal", tags=["brushed", "silver"])
         ids = [r["id"] for r in results]
-        assert ids[0] == "A"  # perfect-score entry sorts first
-        assert "F" in ids  # matches filters, ranks lower
-        assert "B" not in ids  # missing brushed tag
-        assert "C" not in ids  # roughness out of ±0.2 range
-        assert "D" not in ids  # metalness out of ±0.2 range
-        assert "E" not in ids  # wrong category
+        assert ids == ["A", "C"]  # B filtered out (missing brushed)
 
-    def test_search_source_iteration_swallows_index_errors(self, monkeypatch):
-        """A broken source is skipped instead of failing the whole query."""
-        import mat_vis_client as _client
-
+    def test_search_tags_missing_key_excluded(self, monkeypatch):
+        """Entry with no tags key never satisfies a tags requirement."""
         from pymat import vis
 
-        class MockClient:
-            def __init__(self, **kw):
-                pass
+        rows = [
+            {"id": "A", "source": "ambientcg", "mat_vis": {"category": "metal"}},
+            {
+                "id": "B",
+                "source": "ambientcg",
+                "mat_vis": {"category": "metal", "tags": ["matte"]},
+            },
+        ]
+        monkeypatch.setattr(vis, "_client_search", lambda **kw: rows)
 
-            @property
-            def manifest(self):
-                return {"release_tag": "mock", "tiers": {}}
+        results = vis.search(tags=["matte"])
+        assert [r["id"] for r in results] == ["B"]
 
-            def sources(self, tier="1k"):
-                return ["ambientcg", "broken"]
+    def test_search_limit_applied_after_tags(self, monkeypatch):
+        """Limit must clamp the final list, not the upstream call."""
+        from pymat import vis
 
-            def index(self, source):
-                if source == "broken":
-                    raise RuntimeError("source index missing")
-                return [{"id": "ok", "source": "ambientcg", "category": "metal"}]
+        rows = [{"id": str(i), "source": "x", "mat_vis": {"tags": ["t"]}} for i in range(50)]
+        captured: dict = {}
 
-        monkeypatch.setattr(_client, "_client", MockClient())
+        def fake_search(**kw):
+            captured.update(kw)
+            return rows
 
-        results = vis.search(category="metal")
-        assert [r["id"] for r in results] == ["ok"]
+        monkeypatch.setattr(vis, "_client_search", fake_search)
+
+        results = vis.search(tags=["t"], limit=5)
+        assert len(results) == 5
+        assert captured["limit"] is None  # we pass None upstream
 
     def test_client_factory(self, monkeypatch):
         """vis.client() returns the lazy-initialized shared client."""

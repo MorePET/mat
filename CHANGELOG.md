@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-05-03
+
+Substrate compatibility release. mat-vis 0.6.0 moved data hosting from
+sharded parquet/tar bundles to per-file Hugging Face commits
+([ADR-0007 + ADR-0012](https://github.com/MorePET/mat-vis)) and the
+reference client (mat-vis-client 0.6.3) ships an updated index entry
+schema. py-mat's `vis.search` is now a thin forwarder to the upstream
+search; ~50 lines of duplicated filter/score logic deleted.
+
+### Changed
+
+* **`mat-vis-client>=0.6.3`** — pin bumped from `>=0.5.0`. Default
+  release tag is now `v2026.04.2`. Substrate change is transparent to
+  callers; `Material.vis.textures` keeps working.
+* **`pymat.vis.search` is now a forwarder** to `mat_vis_client.search`.
+  Category / scalar / tier filtering and scoring are upstream's job;
+  only the `tags` AND-subset post-filter stays local (upstream doesn't
+  expose tags). New `tier` kwarg (default `"1k"`) reflects upstream
+  semantics — entries are gated by `available_tiers`. Public signature
+  is otherwise unchanged.
+* **Index entry schema follows mat-vis 0.6.x** — scalars and category
+  now live under `entry["mat_vis"]["category"]` and
+  `entry["mat_vis"]["pbr"]["roughness"]` rather than top-level. Internal
+  filters updated; users reading raw entries from `vis.search` results
+  must read the nested keys.
+
+### Internal
+
+* Tests for the search forwarder switched from mocking the full
+  `MatVisClient` to monkeypatching the imported `_client_search`
+  reference — cleaner boundary, doesn't pretend to test upstream's
+  filter logic (which mat-vis-client's own suite covers).
+
 ## [3.4.0] - 2026-04-20
 
 Unblocks the build123d#1270 Materials-class adapt pass — fixes two bugs
