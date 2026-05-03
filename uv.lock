@@ -793,11 +793,11 @@ wheels = [
 
 [[package]]
 name = "mat-vis-client"
-version = "0.5.0"
+version = "0.6.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/45/a0/fa7be45b1b66b6d2839805a09dbcfe99d63e6943c328ad8430908cb99605/mat_vis_client-0.5.0.tar.gz", hash = "sha256:10c87932bbbafea0ccbbaf498da4cf7f2550e857c62309dd52bce632fda1049b", size = 72372, upload-time = "2026-04-19T00:29:53.534Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2d/00/b4ec7c496a06789b8b24212ca6bd9d72550bd592f33d8f28c68a7b65afdb/mat_vis_client-0.6.3.tar.gz", hash = "sha256:368f285cc9c729ec7d098b84fec2e8aa04266d9a53131800316204e7fd42b2f2", size = 93001, upload-time = "2026-05-03T19:04:21.905Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/ea/ccada22622e2af481b554b27b9a619c5dc2f5f29e7861f28b1a81ff5ca21/mat_vis_client-0.5.0-py3-none-any.whl", hash = "sha256:1331924c7d5001e035d6ae8b2c7e415fbd2bd2f64d083175ad17f27618fae912", size = 30719, upload-time = "2026-04-19T00:29:52.069Z" },
+    { url = "https://files.pythonhosted.org/packages/56/29/b21821002e1f4ede632f7a155b1244a3a7e4ca168364419ac3071ae0b180/mat_vis_client-0.6.3-py3-none-any.whl", hash = "sha256:0be7339f51ce6afb06753d17e70e2c55b51b6a1805c93f76f01b357a057ecd46", size = 35975, upload-time = "2026-05-03T19:04:20.273Z" },
 ]
 
 [[package]]
@@ -1311,7 +1311,7 @@ wheels = [
 
 [[package]]
 name = "py-materials"
-version = "3.4.0"
+version = "3.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "mat-vis-client" },
@@ -1337,7 +1337,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "build123d", marker = "python_full_version < '3.13' and extra == 'dev'", specifier = ">=0.7.0" },
-    { name = "mat-vis-client", specifier = ">=0.5.0" },
+    { name = "mat-vis-client", specifier = ">=0.6.3" },
     { name = "periodictable", specifier = ">=1.6.0" },
     { name = "pint", specifier = ">=0.20" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },

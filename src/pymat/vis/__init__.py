@@ -39,6 +39,7 @@ from mat_vis_client import (
 # Shared-singleton accessor: ``get_client`` became public in
 # mat-vis-client 0.5.0 (see mat-vis#84). Pinned in pyproject.toml.
 from mat_vis_client import get_client as _shared_client
+from mat_vis_client import search as _client_search
 
 # Material-accepting adapters: Three.js / glTF / MaterialX.
 # Re-exported at top level so ``from pymat.vis import to_threejs`` works
@@ -71,6 +72,7 @@ def search(
     roughness: float | None = None,
     metalness: float | None = None,
     source: str | None = None,
+    tier: str = "1k",
     limit: int = 20,
 ) -> list[dict[str, Any]]:
     """Search the mat-vis index by category, tags, and scalar similarity.
@@ -78,60 +80,35 @@ def search(
     Args:
         category: filter by canonical category (metal, wood, stone, ...)
         tags: require ALL these tags to be present in the entry's tags list
-        roughness / metalness: score by scalar distance (if set in index)
+        roughness / metalness: score by scalar distance (widened ±0.2)
         source: limit to one source
+        tier: only return entries that have this tier available (default 1k);
+            scalar-only sources (e.g. physicallybased) are tier-independent
         limit: max results
 
-    Does NOT filter by tier — search is for finding materials,
-    tier is a fetch-time concern.
+    Thin forwarder to ``mat_vis_client.search`` for the category / scalar /
+    tier / scoring path; adds the ``tags`` post-filter (not in upstream).
+
+    Index entries follow the mat-vis 0.6.x schema: scalars and category
+    live under ``entry["mat_vis"]["category"]`` / ``["pbr"]["roughness"]``.
     """
-    client = _shared_client()
+    results = _client_search(
+        category=category,
+        roughness=roughness,
+        metalness=metalness,
+        source=source,
+        tier=tier,
+        limit=None,  # apply limit after tags post-filter
+    )
 
-    roughness_range = None
-    if roughness is not None:
-        roughness_range = (max(0.0, roughness - 0.2), min(1.0, roughness + 0.2))
+    if tags:
+        required = {t.lower() for t in tags}
+        results = [
+            e
+            for e in results
+            if required.issubset({t.lower() for t in (e.get("mat_vis") or {}).get("tags") or []})
+        ]
 
-    metalness_range = None
-    if metalness is not None:
-        metalness_range = (max(0.0, metalness - 0.2), min(1.0, metalness + 0.2))
-
-    required_tags = set(t.lower() for t in (tags or []))
-
-    # Search all sources, no tier filter
-    sources = [source] if source else client.sources()
-    results: list[dict] = []
-    for src in sources:
-        try:
-            for entry in client.index(src):
-                if category and entry.get("category") != category:
-                    continue
-                entry_tags = set(t.lower() for t in entry.get("tags", []))
-                if required_tags and not required_tags.issubset(entry_tags):
-                    continue
-                if roughness_range and not (
-                    entry.get("roughness") is not None
-                    and roughness_range[0] <= entry["roughness"] <= roughness_range[1]
-                ):
-                    continue
-                if metalness_range and not (
-                    entry.get("metalness") is not None
-                    and metalness_range[0] <= entry["metalness"] <= metalness_range[1]
-                ):
-                    continue
-                results.append(entry)
-        except Exception:
-            continue
-
-    # Score by scalar distance
-    for r in results:
-        score = 0.0
-        if roughness is not None and r.get("roughness") is not None:
-            score += abs(r["roughness"] - roughness)
-        if metalness is not None and r.get("metalness") is not None:
-            score += abs(r["metalness"] - metalness)
-        r["score"] = score
-
-    results.sort(key=lambda r: r["score"])
     return results[:limit]
 
 
