@@ -1,0 +1,57 @@
+name: Publish pymat-mcp
+
+# Triggered by tags of the form ``pymat-mcp/v<semver>`` (e.g.
+# ``pymat-mcp/v0.1.0``). Builds the wheel + sdist from
+# ``clients/python/pymat-mcp`` and publishes to PyPI via trusted
+# publishing (OIDC). Mirrors release.yml for the py-materials core
+# package; lives in a separate workflow so the two packages can be
+# tagged + released independently.
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    tags: ["pymat-mcp/v*"]
+
+permissions:
+  contents: read
+
+# Serialize PyPI publishes across both this workflow and release.yml
+# so concurrent tags don't queue against the same ``pypi`` GitHub
+# environment. Different PyPI projects, but shared environment
+# protection rules — concurrency keeps things tidy.
+concurrency:
+  group: pypi-publish
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/python/pymat-mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Build package
+        run: uv build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pymat-mcp-dist
+          path: clients/python/pymat-mcp/dist/
+
+  publish-pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pymat-mcp-dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

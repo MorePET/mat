@@ -262,11 +262,45 @@ jobs:
       - name: Run tests
         run: cargo test --manifest-path mat-rs/Cargo.toml
 
+  pymat-mcp:
+    name: "Tests (pymat-mcp)"
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.test-suite == 'all' ||
+      inputs.test-suite == 'test'
+
+    defaults:
+      run:
+        working-directory: clients/python/pymat-mcp
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install pymat-mcp + py-materials (editable)
+        # Editable install of both so any breaking change in the core
+        # package fails the MCP test suite in the same PR run, not on
+        # tag-time when it's too late.
+        run: |
+          uv venv .venv --python 3.12
+          uv pip install --python .venv/bin/python -e . -e ../../.. pytest pytest-asyncio
+
+      - name: Run tests
+        run: .venv/bin/python -m pytest -v
+
   summary:
     name: CI Summary
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [lint, test, security, dependency-review, pr-hygiene, rust]
+    needs: [lint, test, security, dependency-review, pr-hygiene, rust, pymat-mcp]
     if: always()
 
     steps:
@@ -281,6 +315,7 @@ jobs:
           echo "Dependency Review: ${{ needs.dependency-review.result }}"
           echo "PR Hygiene:        ${{ needs.pr-hygiene.result }}"
           echo "Rust (mat-rs):     ${{ needs.rust.result }}"
+          echo "pymat-mcp:         ${{ needs.pymat-mcp.result }}"
           echo ""
 
           FAILED=false
@@ -312,6 +347,11 @@ jobs:
 
           if [ "${{ needs.rust.result }}" = "failure" ]; then
             echo "ERROR: Rust checks failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.pymat-mcp.result }}" = "failure" ]; then
+            echo "ERROR: pymat-mcp tests failed"
             FAILED=true
           fi
 
