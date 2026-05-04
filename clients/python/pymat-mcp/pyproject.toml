@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pymat-mcp"
+version = "0.1.0"
+description = "MCP server exposing py-materials curated material properties to AI agents"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Lars Gerchow" }
+]
+keywords = ["mcp", "model-context-protocol", "materials", "cad", "ai", "claude"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# py-materials floor: 3.7.0 — that's where ``Material.with_vis``
+# landed, which ``to_threejs(finish=...)`` / ``to_gltf(finish=...)``
+# rely on. We don't use the 3.8.0 ``VisDeltas`` typed surface
+# internally (that's static-typing-only), so floor stays at 3.7.
+# mcp upper cap: ``<2`` to defend against a future major breaking
+# stdio transport semantics.
+dependencies = [
+    "py-materials>=3.7.0",
+    "mcp>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+pymat-mcp = "pymat_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/MorePET/mat/tree/main/clients/python/pymat-mcp"
+Repository = "https://github.com/MorePET/mat"
+Issues = "https://github.com/MorePET/mat/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pymat_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/pymat_mcp/**",
+    "tests/**",
+    "README.md",
+    "LICENSE",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"

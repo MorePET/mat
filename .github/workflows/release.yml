@@ -12,6 +12,11 @@ on:  # yamllint disable-line rule:truthy
 permissions:
   contents: read
 
+# Serialize PyPI publishes with publish-mcp.yml so concurrent tags
+# don't queue against the same ``pypi`` GitHub environment.
+concurrency:
+  group: pypi-publish
+
 jobs:
   build:
     runs-on: ubuntu-latest
