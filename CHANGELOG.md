@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-05-04
+
+Closes the registry-singleton mutation hazard end-to-end. 3.6.0
+shipped `Vis.override(...)` for the visual side; 3.7.0 fixes two bugs
+in that method, adds `Material.copy()` / `Material.with_vis(vis)` for
+the parent layer, and updates the docs/example to teach the safe
+pattern as canonical. All issues identified by independent
+implementation / DX / coverage reviews of 3.6.0.
+
+### Added
+
+* **`Material.copy() -> Material`** — return a registry-detached copy
+  of a Material. Deep-copies `_vis`, `properties`, and all
+  property-group kwarg dicts; resets the texture cache (deepcopy
+  bypasses `Vis.__post_init__` so the cache is zeroed explicitly);
+  preserves `parent` for inheritance fallback; clears `_children` and
+  `_key`. Closes the parent-singleton hazard
+  ([#109](https://github.com/MorePET/mat/issues/109)).
+
+* **`Material.with_vis(vis: Vis) -> Material`** — return a detached
+  copy with the supplied Vis attached. The supplied Vis is
+  *deep-copied* so callers passing the registry's own `m.vis` don't
+  re-alias the singleton — essential because `with_vis` exists
+  precisely to avoid that aliasing. Pairs with `Vis.override` for the
+  canonical safe-derive pattern:
+
+  ```python
+  steel = pymat["Stainless Steel 304"]
+  shiny = steel.with_vis(steel.vis.override(roughness=0.05, finish="polished"))
+  pymat.vis.to_threejs(shiny)
+  ```
+
+### Fixed
+
+* **`Vis.override(tier=...)` no longer clears `_finish`**
+  ([#103](https://github.com/MorePET/mat/issues/103)). Tier is
+  orthogonal to which finish-map entry is selected — finishes pin
+  `(source, material_id)`, not tier — so a tier-only change must
+  preserve the finish label. The stale-finish guard now only fires
+  when `source` or `material_id` actually change.
+
+* **`Vis.override(finishes=...)` deep-copies the supplied dict**
+  ([#104](https://github.com/MorePET/mat/issues/104)). Previous
+  behavior stored the caller's dict by reference, so a subsequent
+  caller mutation leaked into the override result. Matches the
+  docstring promise and `merge_from_toml` semantics.
+
+### Documentation
+
+* `Vis` class docstring rewritten to lead with the rule ("don't mutate
+  the Vis on a registry Material") rather than jargon, and to spell out
+  which Materials are shared vs. user-constructed
+  ([#106](https://github.com/MorePET/mat/issues/106)).
+* `examples/build123d_integration.py` polished-finish cell rewritten
+  from `s304.vis.finish = "polished"` (with manual restoration) to
+  `s304_polished = s304.with_vis(s304.vis.override(finish="polished"))`.
+  The "restore so downstream cells see consistent state" workaround is
+  no longer needed.
+* New README section "Customizing Appearance Safely" between "Direct
+  Material Access" and "Physics vs Visualization" — teaches the
+  override/with_vis pattern as the canonical path with the hazard rule.
+* `Vis.override` docstring clarifies it is the runtime mirror of TOML
+  grade override (NOT a flat field substitution like
+  `dataclasses.replace`), addresses [#107](https://github.com/MorePET/mat/issues/107)
+  feedback (rename declined; added disambiguating note instead).
+
+### Tests
+
+* 16 new tests in `test_vis_override.py` (43 total) covering: tier-only
+  finish preservation (#103), caller-dict deep-copy (#104), adapter
+  round-trip, scalar-`None` reset, error-message quality, registry-
+  data-decoupled fixtures, idempotence — all from the
+  [#105](https://github.com/MorePET/mat/issues/105) coverage gap list.
+* 25 tests in new `test_material_copy.py`: independence, identity-
+  metadata preservation, registry detachment, parent-chain
+  preservation, hazard closure, `with_vis` deep-copy contract, vis
+  cache zeroing on copy, parent-mutation footgun, custom-Material
+  copy, parent-level children-emptying.
+
+### Internal
+
+* Three independent design reviews (correctness / semantics / DX) on
+  the 3.6.0 surface drove this release. Two real bugs caught
+  (#103, #104) plus one mirror bug each in `with_vis` (caller-vis
+  aliasing) and `copy` (cache zeroing) — all fixed before tagging.
+
 ## [3.6.0] - 2026-05-04
 
 Responds to Bernhard's [build123d#1270](https://github.com/gumyr/build123d/pull/1270)

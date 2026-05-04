@@ -98,7 +98,6 @@ class Vis:
         steel.vis.material_id      # "Metal012"
         steel.vis.tier             # "1k"
         steel.vis.finishes         # {"brushed": {"source": ..., "id": ...}, ...}
-        steel.vis.finish = "polished"  # switch appearance
 
     Material-keyed delegates (ADR-0002)::
 
@@ -111,6 +110,21 @@ class Vis:
 
         import pymat
         d = pymat.vis.to_threejs(steel)   # MeshPhysicalMaterial init dict
+
+    **Don't mutate the Vis on a registry Material.** Materials reached
+    via ``pymat["..."]`` or category imports (``from pymat import
+    stainless``) are *shared instances* — the same object every caller
+    in the process sees. Writing ``steel.vis.finish = "polished"`` on
+    one of those leaks into every other consumer.
+
+    The safe path: derive an independent copy via :meth:`override`,
+    attach it to a fresh Material via :meth:`Material.with_vis`::
+
+        polished_vis = steel.vis.override(finish="polished", roughness=0.05)
+        steel_polished = steel.with_vis(polished_vis)
+
+    Materials *you* construct directly (``Material(name="custom",
+    vis={...})``) are not shared and can be mutated freely.
 
     Assigning ``source``, ``material_id``, or ``tier`` invalidates the
     lazy texture cache automatically — the next ``.textures`` access
@@ -328,17 +342,24 @@ class Vis:
             polished = steel.vis.override(roughness=0.3, finish="polished")
             # steel.vis is unchanged; polished is independent.
 
-        The ``finishes`` dict is deep-copied so child mutations don't
-        propagate to the parent (matches ``merge_from_toml`` semantics
-        and closes the registry-mutation hazard that motivated this
-        method).
+        Note: ``override`` is the runtime mirror of TOML grade override
+        (children inherit parent properties unless overridden). It is
+        NOT a flat field substitution like ``dataclasses.replace`` —
+        the ``finishes`` map is deep-copied (including caller-supplied
+        deltas), ``finish=`` is a special-cased lookup that flips
+        identity via the finishes map, and identity changes invalidate
+        the texture cache atomically.
 
         Identity deltas (``source`` / ``material_id`` / ``tier``) route
-        through :meth:`set_identity` for atomic invalidation. If
-        identity changes without an explicit ``finish=``, the inherited
-        ``_finish`` label is cleared — it would otherwise be stale,
-        pointing at a finish whose entry no longer matches the new
-        identity.
+        through :meth:`set_identity` for atomic invalidation. The
+        ``_finish`` label is cleared only when ``source`` or
+        ``material_id`` change without an explicit ``finish=`` —
+        finishes pin (source, material_id), not tier, so a tier-only
+        change preserves the finish label.
+
+        ``finish=`` runs LAST against the new (deep-copied) finishes
+        map, so ``override(finishes={...}, finish="x")`` resolves
+        ``x`` in the replaced map.
 
         Unknown kwargs raise ``TypeError`` — catches typos like
         ``roughnes=0.5`` that ``dataclasses.replace`` would accept
@@ -366,21 +387,28 @@ class Vis:
         finish_delta = deltas.pop("finish", None)
 
         # Identity-pair updates: route through set_identity for atomic
-        # cache invalidation. Compute "changing" from the original
-        # values before pop so a no-op (same value) doesn't trigger
-        # the stale-_finish clear below.
-        identity_keys = {"source", "material_id", "tier"} & deltas.keys()
-        identity_changing = any(deltas[k] != getattr(new, k) for k in identity_keys)
+        # cache invalidation. Compute "finish-invalidating change" from
+        # ``source``/``material_id`` only — tier doesn't pin which
+        # finish entry is selected (#103). Computed before set_identity
+        # writes so a no-op (same value) doesn't trigger the clear.
+        identity_keys = _IDENTITY_FIELDS & deltas.keys()
+        finish_invalidating_keys = identity_keys & {"source", "material_id"}
+        finish_invalidating = any(deltas[k] != getattr(new, k) for k in finish_invalidating_keys)
         if identity_keys:
             new.set_identity(**{k: deltas.pop(k) for k in list(identity_keys)})
 
         for k, v in deltas.items():
+            # Caller-supplied ``finishes=`` must be deep-copied — storing
+            # by reference breaks the docstring promise and diverges from
+            # ``merge_from_toml`` semantics (#104).
+            if k == "finishes":
+                v = deepcopy(v)
             setattr(new, k, v)
 
-        # Identity moved without an explicit finish= → the inherited
-        # _finish label is now stale.
-        if identity_changing and finish_delta is None:
-            super(Vis, new).__setattr__("_finish", None)
+        # Identity moved (source/material_id) without an explicit
+        # finish= → the inherited _finish label is now stale.
+        if finish_invalidating and finish_delta is None:
+            object.__setattr__(new, "_finish", None)
 
         if finish_delta is not None:
             new.finish = finish_delta

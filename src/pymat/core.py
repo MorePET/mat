@@ -410,6 +410,121 @@ class _MaterialInternal:
 
         return obj
 
+    def copy(self) -> "Material":
+        """Return a detached copy of this Material.
+
+        Materials reached via ``pymat["..."]`` or category imports
+        (``from pymat import stainless``) are *shared instances* — the
+        same object every caller in the process sees. Mutating
+        ``m.properties.mechanical.density``, reassigning ``m.vis``, or
+        flipping ``m.vis.finish`` on those leaks into every other
+        consumer. ``copy`` returns an independent instance — same name
+        / grade / properties / vis — that can be tweaked freely.
+
+        Materials *you* construct (``Material(name="custom", ...)``)
+        are not shared and need no copy. The hazard only applies to
+        registry instances.
+
+        Detached:
+
+        - ``_vis`` deep-copied AND its texture cache zeroed (deepcopy
+          bypasses ``Vis.__post_init__``, so the cache is cleared
+          explicitly here)
+        - ``properties`` deep-copied
+        - all property-group kwarg dicts (mechanical, thermal, …) deep-copied
+
+        Preserved by reference (intentionally — these are part of the
+        registry hierarchy, not per-instance state):
+
+        - ``parent`` (the registry parent the copy still belongs under).
+          Note: mutating ``c.parent.<anything>`` still affects the
+          registry. Don't.
+        - ``_children`` dict — empty for the copy (a detached node has
+          no children of its own; it's a leaf variant). For parent-level
+          materials this means ``stainless.copy().s304`` raises.
+        - ``_key`` cleared so it can't be confused with the registry entry
+
+        For just changing appearance, prefer
+        :meth:`with_vis` + :meth:`Vis.override` — single-shot and clearer.
+        """
+        from copy import deepcopy
+
+        new = type(self)(name=self.name)
+        # Identity / hierarchy metadata
+        new.formula = self.formula
+        new.composition = deepcopy(self.composition)
+        new.color = self.color
+        new.grade = self.grade
+        new.temper = self.temper
+        new.treatment = self.treatment
+        new.vendor = self.vendor
+        # Property-group kwarg dicts — preserve so re-init is consistent
+        new.mechanical = deepcopy(self.mechanical)
+        new.thermal = deepcopy(self.thermal)
+        new.electrical = deepcopy(self.electrical)
+        new.optical = deepcopy(self.optical)
+        new.manufacturing = deepcopy(self.manufacturing)
+        new.compliance = deepcopy(self.compliance)
+        new.sourcing = deepcopy(self.sourcing)
+        # Independent properties + vis. ``deepcopy`` bypasses
+        # ``Vis.__post_init__`` (it goes through ``__reduce_ex__``), so
+        # the texture cache must be zeroed explicitly. Otherwise the copy
+        # carries duplicated texture bytes (waste, not a leak — the deep
+        # copy is independent of the parent — but the docstring promises
+        # a clean cache so we deliver it).
+        new.properties = deepcopy(self.properties)
+        if self._vis is not None:
+            new_vis = deepcopy(self._vis)
+            # ``deepcopy`` bypasses ``Vis.__post_init__`` (it goes through
+            # ``__reduce_ex__``), so the texture cache must be zeroed
+            # explicitly. ``object.__setattr__`` skips the identity-
+            # invalidation hook in ``Vis.__setattr__`` (which is fine here
+            # — we're not changing identity, just resetting cache).
+            object.__setattr__(new_vis, "_textures", {})
+            object.__setattr__(new_vis, "_fetched", False)
+            new._vis = new_vis
+        else:
+            new._vis = None
+        # Registry decoupling
+        new.parent = self.parent  # stays registry-aware for fallback chain
+        new._children = {}
+        new._key = None
+        return new
+
+    def with_vis(self, vis: "Vis") -> "Material":  # noqa: F821 — forward ref
+        """Return a detached copy with the given Vis attached.
+
+        The canonical safe path for "I want this material with a tweaked
+        appearance" — pairs cleanly with :meth:`Vis.override`::
+
+            steel = pymat["Stainless Steel 304"]
+            shiny = steel.with_vis(steel.vis.override(roughness=0.05, finish="polished"))
+            pymat.vis.to_threejs(shiny)
+            # steel is the registry singleton; shiny is independent.
+
+        Closes the parent-singleton hazard: ``m.vis = ...`` directly on
+        a registry instance still mutates the shared object. ``with_vis``
+        returns a fresh Material whose ``vis`` slot is the new value,
+        leaving the registry untouched.
+
+        The supplied ``vis`` is deep-copied so passing in a registry
+        instance's own ``vis`` (e.g. ``m.with_vis(m.vis)``) does not
+        re-alias the singleton. Always returns an independent Vis.
+        """
+        from copy import deepcopy
+
+        from pymat.vis._model import Vis
+
+        if not isinstance(vis, Vis):
+            raise TypeError(f"with_vis expects a Vis instance, got {type(vis).__name__}")
+        new = self.copy()
+        # Deep-copy the supplied vis so callers passing the registry's
+        # own ``m.vis`` don't re-alias the singleton. ``override`` already
+        # returns an independent Vis, but we cannot rely on the caller
+        # having gone through it.
+        new._vis = deepcopy(vis)
+        return new
+
     # =========================================================================
     # Information & Inspection
     # =========================================================================
