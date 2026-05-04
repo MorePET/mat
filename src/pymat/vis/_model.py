@@ -315,6 +315,78 @@ class Vis:
             super().__setattr__("_textures", {})
             super().__setattr__("_fetched", False)
 
+    def override(self, **deltas: Any) -> Vis:
+        """Return a new ``Vis`` with the given deltas applied; ``self``
+        is unchanged.
+
+        Use this when deriving a tweaked variant from a base Vis —
+        typically the registry instance returned by ``pymat["..."]``.
+        The registry instance is shared across all callers, so direct
+        mutation corrupts every other consumer of the same material::
+
+            steel = pymat["Stainless Steel 304"]
+            polished = steel.vis.override(roughness=0.3, finish="polished")
+            # steel.vis is unchanged; polished is independent.
+
+        The ``finishes`` dict is deep-copied so child mutations don't
+        propagate to the parent (matches ``merge_from_toml`` semantics
+        and closes the registry-mutation hazard that motivated this
+        method).
+
+        Identity deltas (``source`` / ``material_id`` / ``tier``) route
+        through :meth:`set_identity` for atomic invalidation. If
+        identity changes without an explicit ``finish=``, the inherited
+        ``_finish`` label is cleared — it would otherwise be stale,
+        pointing at a finish whose entry no longer matches the new
+        identity.
+
+        Unknown kwargs raise ``TypeError`` — catches typos like
+        ``roughnes=0.5`` that ``dataclasses.replace`` would accept
+        silently.
+        """
+        from copy import deepcopy
+        from dataclasses import fields
+
+        # Public dataclass fields (excludes _textures, _fetched, _finish)
+        # plus the ``finish`` property — the canonical override surface.
+        valid_fields = {f.name for f in fields(self) if not f.name.startswith("_")}
+        valid_keys = valid_fields | {"finish"}
+        unknown = set(deltas) - valid_keys
+        if unknown:
+            raise TypeError(
+                f"Vis.override() got unexpected kwargs: {sorted(unknown)}. "
+                f"Valid keys: {sorted(valid_keys)}"
+            )
+
+        new = deepcopy(self)
+
+        # ``finish`` is a property setter (not a field) and must be
+        # applied LAST so it resolves against the new instance's
+        # (deep-copied) finishes map.
+        finish_delta = deltas.pop("finish", None)
+
+        # Identity-pair updates: route through set_identity for atomic
+        # cache invalidation. Compute "changing" from the original
+        # values before pop so a no-op (same value) doesn't trigger
+        # the stale-_finish clear below.
+        identity_keys = {"source", "material_id", "tier"} & deltas.keys()
+        identity_changing = any(deltas[k] != getattr(new, k) for k in identity_keys)
+        if identity_keys:
+            new.set_identity(**{k: deltas.pop(k) for k in list(identity_keys)})
+
+        for k, v in deltas.items():
+            setattr(new, k, v)
+
+        # Identity moved without an explicit finish= → the inherited
+        # _finish label is now stale.
+        if identity_changing and finish_delta is None:
+            super(Vis, new).__setattr__("_finish", None)
+
+        if finish_delta is not None:
+            new.finish = finish_delta
+
+        return new
+
     @property
     def client(self) -> MatVisClient:
         """The shared ``mat-vis-client`` singleton.
