@@ -65,7 +65,7 @@ jobs:
 
       - name: Restore sync state (last synced timestamp)
         id: restore-state
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: .sync-state
           key: sync-issues-state-${{ github.repository }}
@@ -119,7 +119,7 @@ jobs:
 
       - name: Save sync state
         if: always()
-        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5.0.3
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: .sync-state
           key: sync-issues-state-${{ github.repository }}
