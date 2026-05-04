@@ -144,6 +144,39 @@ class TestListCategories:
             f"expected at least one of stainless/aluminum, got: {cats}"
         )
 
+    def test_works_as_first_tool_call(self, tmp_path):
+        """``list_categories`` must work in a fresh process where
+        nothing has primed the registry yet. Earlier tests in the
+        same session would silently mask a broken lazy-load by
+        leaving categories already-loaded. Spawn a clean subprocess
+        to pin the cold-start contract.
+        """
+        import json
+        import subprocess
+        import sys
+
+        script = tmp_path / "probe.py"
+        script.write_text(
+            "import json\n"
+            "from pymat_mcp import tools\n"
+            "out = tools.list_categories()\n"
+            "print(json.dumps(out))\n"
+        )
+        result = subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        out = json.loads(result.stdout)
+        assert out["categories"], (
+            "list_categories returned [] in a cold-start process — "
+            "lazy-load trigger is broken"
+        )
+        # And the known top-level categories should appear
+        assert "stainless" in out["categories"]
+        assert "aluminum" in out["categories"]
+
 
 # ── list_grades ───────────────────────────────────────────────
 

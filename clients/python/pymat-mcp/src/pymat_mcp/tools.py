@@ -215,15 +215,24 @@ def list_categories() -> dict[str, Any]:
     other material descends from one of these via ``parent``. Useful
     as a discovery starting point.
 
-    Implementation: force-load every category group, then walk the
-    registry for materials whose ``parent`` is None.
+    Implementation note: ``pymat`` lazy-loads category groups on first
+    attribute access. ``_CATEGORY_BASES`` maps group-names (``metals``,
+    ``scintillators``, …) to lists of *base material names*
+    (``aluminum``, ``stainless``, …). Group-names are NOT valid
+    pymat attributes; the base names are. We trigger the loader by
+    touching one base name per group, which loads the entire group
+    (and registers all parents under it).
     """
     import pymat
 
-    # Force-load all category groups so the registry is populated.
-    for group in pymat._CATEGORY_BASES:
+    for group, bases in pymat._CATEGORY_BASES.items():
+        if not bases:
+            continue
         try:
-            getattr(pymat, group)  # triggers __getattr__ → load
+            # Touching the first base name in each group fires the
+            # lazy loader for the whole group. ``pymat.aluminum``
+            # → loads metals; ``pymat.lyso`` → loads scintillators.
+            getattr(pymat, bases[0])
         except Exception:
             # Optional categories that fail to load shouldn't poison
             # the result; skip them.
