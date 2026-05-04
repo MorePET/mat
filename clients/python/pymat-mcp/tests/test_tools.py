@@ -273,6 +273,59 @@ class TestAdapterTools:
         # glTF material node has pbrMetallicRoughness
         assert "pbrMetallicRoughness" in out["gltf"]
 
+    def test_to_threejs_byte_budget(self):
+        """Closes #177. Pre-fix payload was 4.4 MB — agents would
+        choke on a single response. After stripping textures + adding
+        handles, payload must stay under 100 KB.
+        """
+        import json
+
+        out = tools.to_threejs("Stainless Steel 304", finish="polished")
+        size = len(json.dumps(out))
+        assert size < 100_000, f"to_threejs payload is {size} chars — texture bytes leaking again?"
+
+    def test_to_gltf_byte_budget(self):
+        import json
+
+        out = tools.to_gltf("Stainless Steel 304")
+        size = len(json.dumps(out))
+        assert size < 100_000, f"to_gltf payload is {size} chars — texture bytes leaking again?"
+
+    def test_to_threejs_replaces_textures_with_handles(self):
+        """Each *Map field is now a handle dict, not raw bytes."""
+        out = tools.to_threejs("Stainless Steel 304")
+        d = out["threejs"]
+        # Stainless steel ships with at least the color map (`map`)
+        assert "map" in d
+        handle = d["map"]
+        assert isinstance(handle, dict), f"map should be a handle dict, got {type(handle)}"
+        assert handle.get("_texture") is True
+        # Fetch handle includes the (source, material_id, tier) triple
+        assert set(handle.keys()) >= {"_texture", "bytes", "source", "material_id", "tier"}
+        # Bytes count is preserved as metadata
+        assert handle["bytes"] > 0
+
+    def test_to_gltf_replaces_data_uri_with_handle(self):
+        """glTF embeds textures as ``data:image/png;base64,…`` URIs;
+        we replace the URI string with a handle dict."""
+        out = tools.to_gltf("Stainless Steel 304")
+        # Walk to baseColorTexture.source.uri
+        pbr = out["gltf"].get("pbrMetallicRoughness", {})
+        base_color = pbr.get("baseColorTexture", {})
+        if not base_color:  # texture-less material — skip
+            pytest.skip("material has no baseColorTexture to check")
+        uri = base_color.get("source", {}).get("uri")
+        assert isinstance(uri, dict), f"data URI should be a handle, got {type(uri)}"
+        assert uri.get("_texture") is True
+
+    def test_handle_includes_material_identity(self):
+        """Top-level ``_handle`` shortcut: agents construct fetch URLs
+        from this triple without walking the full glTF tree."""
+        out = tools.to_threejs("Stainless Steel 304")
+        h = out["_handle"]
+        assert set(h.keys()) >= {"source", "material_id", "tier"}
+        assert h["source"] == "ambientcg"
+
     def test_finish_param_changes_output(self):
         """Passing ``finish="polished"`` should derive a variant with
         a different material_id (different texture identity) — proves
@@ -358,3 +411,34 @@ def test_every_tool_output_is_json_serializable(tool_call):
     fn = getattr(tools, name)
     out = fn(*args, **kwargs)
     json.dumps(out)
+
+
+@pytest.mark.parametrize(
+    "tool_call",
+    [
+        ("search_materials", ["stainless"], {}),
+        ("get_material", ["Stainless Steel 304"], {}),
+        ("list_categories", [], {}),
+        ("list_grades", ["stainless"], {}),
+        ("list_finishes", ["Stainless Steel 304"], {}),
+        ("compute_mass", ["Stainless Steel 304", 100.0], {}),
+        ("get_appearance", ["Stainless Steel 304"], {}),
+        ("to_threejs", ["Stainless Steel 304"], {}),
+        ("to_threejs", ["Stainless Steel 304"], {"finish": "polished"}),
+        ("to_gltf", ["Stainless Steel 304"], {}),
+        ("compare_materials", [["Stainless Steel 304"]], {}),
+    ],
+)
+def test_every_tool_output_under_byte_budget(tool_call):
+    """Hard 100 KB ceiling per tool response — keeps responses well
+    inside MCP's per-call context budget. Exists because pre-#177 the
+    threejs/gltf adapters silently emitted multi-MB texture-bytes
+    payloads. The sweep includes ``finish="polished"`` (the exact
+    case that surfaced the bug) so a regression can't sneak past by
+    only being broken in the override path.
+    """
+    name, args, kwargs = tool_call
+    fn = getattr(tools, name)
+    out = fn(*args, **kwargs)
+    size = len(json.dumps(out))
+    assert size < 100_000, f"{name}{args} payload is {size} chars — bytes-leak regression?"

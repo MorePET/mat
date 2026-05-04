@@ -320,8 +320,52 @@ def get_appearance(material: str) -> dict[str, Any]:
     return {"material": m.name, "vis": _vis_dict(m.vis)}
 
 
+# Texture-data heuristic: strings longer than this are treated as
+# embedded image bytes (base64 or data URIs) and replaced with handles.
+# 1 KiB is well above any realistic non-data string in either adapter
+# output (color hex codes, factor names, etc. are <100 chars) and well
+# below any meaningful PNG (smallest known mat-vis channels are several
+# KiB).
+_TEXTURE_BYTE_THRESHOLD = 1024
+
+
+def _strip_texture_bytes(value: Any, *, vis_handle: dict[str, Any]) -> Any:
+    """Recursively replace embedded texture data with light handles.
+
+    The upstream ``pymat.vis.to_threejs`` / ``to_gltf`` adapters embed
+    textures as base64 strings or ``data:image/png;base64,...`` URIs.
+    A single material's threejs dict can be 4+ MB — unusable across
+    the MCP transport.
+
+    We replace any string longer than ``_TEXTURE_BYTE_THRESHOLD`` with
+    a handle ``{"_texture": True, "bytes": <int>, ...vis_handle}``
+    that an agent can use to (a) know textures exist, and (b) fetch
+    them out-of-band via the mat-vis HTTP substrate (per-file URLs
+    since mat-vis 0.6.0).
+
+    ``vis_handle`` is the ``(source, material_id, tier)`` triple of
+    the resolved material — copied into every handle so the agent
+    has everything needed to construct a fetch URL without a second
+    tool call.
+    """
+    if isinstance(value, str) and len(value) >= _TEXTURE_BYTE_THRESHOLD:
+        return {"_texture": True, "bytes": len(value), **vis_handle}
+    if isinstance(value, dict):
+        return {k: _strip_texture_bytes(v, vis_handle=vis_handle) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_strip_texture_bytes(v, vis_handle=vis_handle) for v in value]
+    return value
+
+
 def to_threejs(material: str, finish: str | None = None) -> dict[str, Any]:
-    """Three.js ``MeshPhysicalMaterial`` init dict.
+    """Three.js ``MeshPhysicalMaterial`` init dict (textures stripped).
+
+    Texture-map fields (``map``, ``normalMap``, ``roughnessMap``,
+    ``metalnessMap``, ``displacementMap``) are replaced with light
+    handles ``{"_texture": True, "bytes": ..., "source": ...,
+    "material_id": ..., "tier": ..., "channel": ...}`` — agents fetch
+    the actual image bytes out-of-band via mat-vis URLs. Without this
+    a single material response is multiple MB.
 
     If ``finish`` is given, derives a polished/brushed/etc. variant
     via ``Vis.override`` + ``Material.with_vis`` (registry singleton
@@ -333,11 +377,26 @@ def to_threejs(material: str, finish: str | None = None) -> dict[str, Any]:
     if m is None:
         return _not_found(material)
     target = m.with_vis(m.vis.override(finish=finish)) if finish else m
-    return {"material": target.name, "threejs": _to_threejs(target)}
+    raw = _to_threejs(target)
+    handle = {
+        "source": target.vis.source,
+        "material_id": target.vis.material_id,
+        "tier": target.vis.tier,
+    }
+    return {
+        "material": target.name,
+        "threejs": _strip_texture_bytes(raw, vis_handle=handle),
+        "_handle": handle,
+    }
 
 
 def to_gltf(material: str, finish: str | None = None) -> dict[str, Any]:
-    """glTF 2.0 material node dict.
+    """glTF 2.0 material node dict (textures stripped).
+
+    Same handle-replacement semantics as :func:`to_threejs` —
+    embedded ``data:image/png;base64,…`` URIs are swapped for fetch
+    handles. PBR factors (``metallicFactor``, ``baseColorFactor``,
+    etc.) pass through unchanged.
 
     Args:
         material: Material key or name.
@@ -351,7 +410,17 @@ def to_gltf(material: str, finish: str | None = None) -> dict[str, Any]:
     if m is None:
         return _not_found(material)
     target = m.with_vis(m.vis.override(finish=finish)) if finish else m
-    return {"material": target.name, "gltf": _to_gltf(target)}
+    raw = _to_gltf(target)
+    handle = {
+        "source": target.vis.source,
+        "material_id": target.vis.material_id,
+        "tier": target.vis.tier,
+    }
+    return {
+        "material": target.name,
+        "gltf": _strip_texture_bytes(raw, vis_handle=handle),
+        "_handle": handle,
+    }
 
 
 def compare_materials(
