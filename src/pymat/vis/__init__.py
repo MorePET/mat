@@ -41,6 +41,10 @@ from mat_vis_client import (
 from mat_vis_client import get_client as _shared_client
 from mat_vis_client import search as _client_search
 
+# Domain types: re-exported so consumers can construct or type-hint
+# without reaching into the private ``_model`` module.
+from pymat.vis._model import FinishEntry, Vis, VisDeltas
+
 # Material-accepting adapters: Three.js / glTF / MaterialX.
 # Re-exported at top level so ``from pymat.vis import to_threejs`` works
 # and tab completion on ``pymat.vis.`` surfaces the main cross-tool
@@ -146,6 +150,10 @@ __all__ = [
     "get_manifest",
     "seed_indexes",
     "MatVisClient",
+    # Domain types — Vis dataclass + the override-kwargs TypedDict
+    "Vis",
+    "VisDeltas",
+    "FinishEntry",
     # Material → external-format adapters (the main cross-tool handoff)
     "to_threejs",
     "to_gltf",

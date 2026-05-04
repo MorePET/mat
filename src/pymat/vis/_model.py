@@ -42,7 +42,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, TypedDict
 
 if TYPE_CHECKING:
+    # ``Unpack`` is in stdlib ``typing`` from 3.11; pull from
+    # ``typing_extensions`` (transitive dep, always available in
+    # type-check contexts) so 3.10 type-checking also works.
     from mat_vis_client import MatVisClient, MtlxSource
+    from typing_extensions import Unpack
 
 
 class FinishEntry(TypedDict):
@@ -55,6 +59,49 @@ class FinishEntry(TypedDict):
 
     source: str
     id: str
+
+
+class VisDeltas(TypedDict, total=False):
+    """Typed kwargs accepted by :meth:`Vis.override`.
+
+    Used by static type checkers (pyright, mypy) via ``Unpack`` per PEP
+    692. Surfaces every valid override key as IDE completion and flags
+    typos like ``roughnes=`` at edit time, not runtime.
+
+    All keys are optional (``total=False``) — that's the override
+    contract. To "leave a field unchanged", *omit* the key. Runtime
+    validation of unknown kwargs lives in :meth:`Vis.override`; this
+    TypedDict is purely a typing layer and has no runtime effect.
+
+    Identity fields (``source``, ``material_id``, ``tier``) are typed
+    as bare ``str`` here even though the underlying ``Vis`` field is
+    ``str | None``. Reason: ``override`` routes identity through
+    :meth:`Vis.set_identity`, which interprets ``None`` as "leave
+    unchanged" rather than "clear" — so passing ``None`` would silently
+    no-op. Typing the kwarg as ``str`` enforces the kwargs idiom (omit
+    to leave alone) and keeps the type-checker contract honest.
+
+    Scalar fields (``roughness``, ``metallic``, …) keep the ``| None``
+    union — ``None`` is a legitimate reset value there (passes through
+    ``setattr`` directly).
+
+    The ``finish`` key is a sugar — not a Vis field but a property
+    setter that looks up in the ``finishes`` map and reassigns
+    identity. Treated separately by ``override``'s body.
+    """
+
+    source: str
+    material_id: str
+    tier: str
+    finishes: dict[str, FinishEntry]
+    roughness: float | None
+    metallic: float | None
+    base_color: tuple[float, float, float, float] | None
+    ior: float | None
+    transmission: float | None
+    clearcoat: float | None
+    emissive: tuple[float, float, float] | None
+    finish: str  # sugar — looks up in finishes map, reassigns identity
 
 
 # Identity fields whose mutation invalidates the lazy texture cache.
@@ -329,7 +376,7 @@ class Vis:
             super().__setattr__("_textures", {})
             super().__setattr__("_fetched", False)
 
-    def override(self, **deltas: Any) -> Vis:
+    def override(self, **deltas: "Unpack[VisDeltas]") -> Vis:  # noqa: F821 — TYPE_CHECKING only
         """Return a new ``Vis`` with the given deltas applied; ``self``
         is unchanged.
 
@@ -341,6 +388,10 @@ class Vis:
             steel = pymat["Stainless Steel 304"]
             polished = steel.vis.override(roughness=0.3, finish="polished")
             # steel.vis is unchanged; polished is independent.
+
+        For helper functions that build delta dicts at runtime, type
+        them as :class:`VisDeltas` (importable from ``pymat.vis``) —
+        IDE completion + mypy strict-mode static checks come for free.
 
         Note: ``override`` is the runtime mirror of TOML grade override
         (children inherit parent properties unless overridden). It is
@@ -395,7 +446,11 @@ class Vis:
         finish_invalidating_keys = identity_keys & {"source", "material_id"}
         finish_invalidating = any(deltas[k] != getattr(new, k) for k in finish_invalidating_keys)
         if identity_keys:
-            new.set_identity(**{k: deltas.pop(k) for k in list(identity_keys)})
+            # Pop identity values explicitly so each kwarg keeps its
+            # declared type (the comprehension form widens to ``object``
+            # because the TypedDict has heterogeneous field types).
+            id_kwargs: dict[str, Any] = {k: deltas.pop(k) for k in list(identity_keys)}
+            new.set_identity(**id_kwargs)
 
         for k, v in deltas.items():
             # Caller-supplied ``finishes=`` must be deep-copied — storing

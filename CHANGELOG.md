@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] - 2026-05-04
+
+Static-typing layer for `Vis.override` + PEP 561 marker so type
+checkers (mypy / pyright / Pylance) actually pick it up. Closes
+[#108](https://github.com/MorePET/mat/issues/108).
+
+### Added
+
+* **`pymat.vis.VisDeltas`** — `TypedDict(total=False)` enumerating every
+  valid kwarg accepted by `Vis.override`. Used via PEP 692 `Unpack` so
+  IDE completion surfaces every key and typos like `roughnes=` are
+  rejected at edit time, not runtime. Use it to type helper functions
+  that build delta dicts:
+
+  ```python
+  from pymat.vis import VisDeltas
+
+  def polished_steel_deltas() -> VisDeltas:
+      return {"roughness": 0.05, "finish": "polished"}
+
+  shiny = steel.with_vis(steel.vis.override(**polished_steel_deltas()))
+  ```
+
+* **`pymat.vis.Vis`** + **`pymat.vis.FinishEntry`** — re-exported from
+  the previously-private `_model` module. `Material.with_vis(vis: Vis)`
+  shipped in 3.7.0 already implicitly required `Vis` in type hints;
+  this ratifies the surface.
+
+* **`src/pymat/py.typed`** — PEP 561 marker. Without it, mypy strict
+  mode silently treated the whole package as untyped, nullifying every
+  annotation. Now mypy + pyright both honor the inline types.
+
+### Changed
+
+* **`Vis.override` signature**: `**deltas: Any` → `**deltas: Unpack
+  [VisDeltas]` (forward-ref; `Unpack` imported from `typing_extensions`
+  only inside `TYPE_CHECKING`, so 3.10/3.11 type-check too without a
+  runtime dep change). Backwards-compatible at runtime — same code
+  path, same kwargs, same `TypeError` on unknowns.
+
+### Notes
+
+* **`VisDeltas.source` / `material_id` typed as bare `str`** (not
+  `str | None`), even though the underlying `Vis` field is
+  `str | None`. Reason: `override` routes identity through
+  `set_identity`, which interprets `None` as "leave unchanged" rather
+  than "clear" — so a hypothetical `override(source=None)` would
+  silently no-op. Typing the kwarg as `str` enforces the kwargs idiom
+  ("omit to leave alone") and keeps the type-checker contract honest.
+  Caught by independent typing review before tagging.
+
+### Internal
+
+* Three independent reviews (typing correctness / API surface impact /
+  fresh-user DX) on the typed-kwarg surface. Two real fixes landed
+  before tagging: the `None`-semantics lie above, plus the missing
+  `py.typed` marker without which half the value evaporated.
+
 ## [3.7.0] - 2026-05-04
 
 Closes the registry-singleton mutation hazard end-to-end. 3.6.0
