@@ -170,8 +170,7 @@ class TestListCategories:
         )
         out = json.loads(result.stdout)
         assert out["categories"], (
-            "list_categories returned [] in a cold-start process — "
-            "lazy-load trigger is broken"
+            "list_categories returned [] in a cold-start process — lazy-load trigger is broken"
         )
         # And the known top-level categories should appear
         assert "stainless" in out["categories"]
