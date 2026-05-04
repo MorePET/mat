@@ -277,6 +277,92 @@ class TestEndToEnd:
                 assert rc.texture[:4] == b"\x89PNG"
 
 
+@pytest.mark.skipif(SKIP_LIVE, reason="MAT_VIS_SKIP_LIVE=1")
+class TestGpuopenNameLookup:
+    """Human-readable name access for gpuopen materials.
+
+    Bernhard (build123d#1270) flagged gpuopen UX as UUID-only — see
+    mat-vis#143. mat-vis-client 0.6.3 fixed this upstream:
+    ``MatVisClient._resolve_material_id`` accepts either canonical id
+    (UUID for gpuopen) or a normalized human-readable name from
+    ``mat_vis.name`` in the index, and ``fetch_all_textures`` / ``mtlx``
+    call into it.
+
+    These tests pin: ``Vis.material_id`` set to a human-readable name
+    flows through to fetch + mtlx without py-mat needing to know about
+    the resolution. If mat-vis-client ever drops name-based lookup,
+    these go red and we know the consumer-facing UX regressed.
+    """
+
+    PORTORO_NAME = "Portoro Green Marble"
+    PORTORO_UUID = "1f95c1cc-b0db-40b8-928c-775c0fc1228c"
+
+    def test_resolve_via_client(self):
+        """Direct upstream check — proves the index has the name."""
+        from mat_vis_client import get_client
+
+        c = get_client()
+        with _skip_on_upstream_outage():
+            canonical = c._resolve_material_id("gpuopen", self.PORTORO_NAME, "1k")
+        assert canonical == self.PORTORO_UUID
+
+    def test_vis_fetch_textures_by_name(self):
+        """Set ``vis.material_id`` to the human-readable name; texture
+        fetch resolves it transparently."""
+        from pymat import Material
+
+        m = Material(name="Portoro probe")
+        m.vis.source = "gpuopen"
+        m.vis.material_id = self.PORTORO_NAME
+        m.vis.tier = "1k"
+
+        with _skip_on_upstream_outage():
+            tx = m.vis.textures
+
+        assert tx, "no textures returned for gpuopen name lookup"
+        assert all(v[:4] == b"\x89PNG" for v in tx.values()), "non-PNG bytes"
+
+    def test_vis_mtlx_by_name(self):
+        """``Vis.mtlx`` resolves the name → MaterialX XML."""
+        from pymat import Material
+
+        m = Material(name="Portoro mtlx probe")
+        m.vis.source = "gpuopen"
+        m.vis.material_id = self.PORTORO_NAME
+        m.vis.tier = "1k"
+
+        with _skip_on_upstream_outage():
+            xml = m.vis.mtlx.xml()
+
+        assert isinstance(xml, str)
+        assert len(xml) > 200, f"suspiciously short MaterialX ({len(xml)} chars)"
+        assert "<materialx" in xml.lower() or xml.startswith("<?xml")
+
+    def test_unknown_name_raises_typed_error(self):
+        """Bad name → ``UnknownMaterialError``, not silent garbage."""
+        from mat_vis_client import UnknownMaterialError, get_client
+
+        c = get_client()
+        with _skip_on_upstream_outage():
+            with pytest.raises(UnknownMaterialError):
+                c._resolve_material_id("gpuopen", "Definitely Not A Material", "1k")
+
+    def test_canonical_uuid_still_works(self):
+        """Backwards-compat: existing UUID-based callers (and our TOML)
+        keep working unchanged."""
+        from pymat import Material
+
+        m = Material(name="Portoro UUID probe")
+        m.vis.source = "gpuopen"
+        m.vis.material_id = self.PORTORO_UUID
+        m.vis.tier = "1k"
+
+        with _skip_on_upstream_outage():
+            tx = m.vis.textures
+
+        assert tx, "UUID lookup broke"
+
+
 class TestSkipOnUpstreamOutage:
     """The flake-guard itself — tested without hitting the network."""
 

@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-05-04
+
+Responds to Bernhard's [build123d#1270](https://github.com/gumyr/build123d/pull/1270)
+design comment. Adds `Vis.override(...)` (immutable derive helper) and
+pins the gpuopen name-based lookup that landed in mat-vis-client 0.6.3,
+unblocking the workflow Bernhard's `VisProperties` wrapper was working
+around.
+
+### Added
+
+* **`Vis.override(**deltas) -> Vis`** — return a new Vis with the given
+  deltas applied; the original is unchanged. Use this when deriving a
+  tweaked variant from a registry instance (`pymat["..."]` returns the
+  shared singleton, so direct mutation corrupts every other consumer of
+  the same material). The `finishes` dict is deep-copied (matches
+  `merge_from_toml` semantics — closes the registry-mutation hazard).
+  Identity deltas route through `set_identity` for atomic invalidation;
+  `finish=` is special-cased and applied last against the deep-copied
+  finishes map; identity changes without an explicit `finish=` clear
+  the now-stale `_finish` label. Unknown kwargs raise `TypeError`
+  (catches `roughnes=` typos that `dataclasses.replace` accepts
+  silently). 27 tests pin the semantics in `test_vis_override.py`.
+
+  ```python
+  steel = pymat["Stainless Steel 304"]
+  polished = steel.vis.override(roughness=0.3, finish="polished")
+  # steel.vis is unchanged; polished is independent.
+  ```
+
+* **`tests/test_e2e_vis.py::TestGpuopenNameLookup`** (5 tests) — pins
+  human-readable name lookup for gpuopen materials. mat-vis-client
+  0.6.3's `_resolve_material_id` accepts either UUID or normalized
+  `mat_vis.name` from the index for `fetch_all_textures` and `mtlx`
+  ([mat-vis#143](https://github.com/MorePET/mat-vis/issues/143)), so
+  `vis.material_id = "Portoro Green Marble"` flows through without
+  py-mat needing a code change. Pinned because the typed errors
+  (`UnknownMaterialError`, `MaterialNotStagedError`,
+  `AmbiguousMaterialError`) are now part of the consumer-facing
+  contract.
+
+### Internal
+
+* Three independent design reviews (DX / implementation / boundary)
+  converged on `Vis.override` (ship it) and rejected `texture_scale`
+  on Vis (per-instance UV transform, not a material property —
+  belongs in the consumer's render-time layer). The `Material.create
+  (..., **pbr_kwargs)` shorthand was also rejected for re-smearing
+  visual concerns into the domain constructor; users should write
+  `pymat["aluminum"].vis.override(roughness=0.6)` instead.
+
 ## [3.5.0] - 2026-05-03
 
 Substrate compatibility release. mat-vis 0.6.0 moved data hosting from
