@@ -110,11 +110,20 @@ assert s304.vis.material_id == stainless.vis.material_id
 assert s304.vis.metallic == 1.0
 
 # %%
-# Finishes are copied in — switch appearance on a grade without touching parent
-s304.vis.finish = "polished"
-assert s304.vis.material_id != stainless.vis.material_id
-print(f"s304 polished: {s304.vis.source}/{s304.vis.material_id}")
-s304.vis.finish = "brushed"  # restore so downstream cells see consistent state
+# Derive a polished variant WITHOUT mutating the registry singleton.
+# `pymat[...]` returns the shared instance — `m.vis.finish = "polished"`
+# would corrupt the appearance for every other consumer of "Stainless
+# Steel 304" in the same Python process. The safe path:
+#
+#   1. ``Vis.override(**deltas)`` returns a new (deep-copied) Vis.
+#   2. ``Material.with_vis(new_vis)`` returns a new Material with that
+#      Vis attached, registry-detached.
+polished_vis = s304.vis.override(finish="polished")
+s304_polished = s304.with_vis(polished_vis)
+
+assert s304_polished.vis.material_id != stainless.vis.material_id
+assert s304.vis.material_id == stainless.vis.material_id  # registry untouched
+print(f"s304 polished: {s304_polished.vis.source}/{s304_polished.vis.material_id}")
 
 
 # %% [markdown]

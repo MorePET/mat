@@ -259,3 +259,208 @@ class TestRegistryMutationHazardFixed:
         assert "custom_b" in b.finishes and "custom_b" not in a.finishes
         assert "custom_a" not in steel.vis.finishes
         assert "custom_b" not in steel.vis.finishes
+
+
+# ── Bugs caught by independent review of 3.6.0 ─────────────────
+
+
+class TestTierOnlyChangePreservesFinish:
+    """Issue #103. ``tier`` is an identity field but doesn't affect
+    which finish-map entry is selected — clearing ``_finish`` on a
+    tier-only change is over-eager. The stale-finish guard should
+    only fire when ``source`` or ``material_id`` actually changes.
+    """
+
+    def test_tier_change_keeps_finish_label(self):
+        v = _base()
+        v.finish = "polished"
+        v2 = v.override(tier="2k")
+        assert v2._finish == "polished", (
+            "tier change must not clear _finish — finishes pin (source, material_id), not tier"
+        )
+        # Same (source, material_id) as the polished entry → finish remains valid
+        assert v2.source == "ambientcg"
+        assert v2.material_id == "Metal049A"
+        assert v2.tier == "2k"
+
+    def test_tier_change_still_invalidates_cache(self):
+        """Tier change must clear the texture cache (different bytes
+        for 1k vs 2k) but leave the finish *label* alone."""
+        v = _base()
+        v.finish = "polished"
+        v._textures = {"color": b"\x89PNG_1k_bytes"}
+        v._fetched = True
+        v2 = v.override(tier="2k")
+        assert v2._textures == {}
+        assert v2._fetched is False
+        assert v2._finish == "polished"
+
+
+class TestCallerSuppliedFinishesDeepCopied:
+    """Issue #104. Caller-supplied ``finishes=`` dict must be
+    deep-copied; storing by reference breaks the docstring promise
+    and diverges from ``merge_from_toml``.
+    """
+
+    def test_caller_dict_mutation_does_not_leak(self):
+        v = _base()
+        caller_dict = {"matte": {"source": "x", "id": "y"}}
+        v2 = v.override(finishes=caller_dict)
+        # Caller mutates their own dict after the call
+        caller_dict["matte"]["id"] = "TAMPERED"
+        caller_dict["another"] = {"source": "z", "id": "w"}
+        # Override result must be insulated
+        assert v2.finishes["matte"]["id"] == "y"
+        assert "another" not in v2.finishes
+
+    def test_caller_dict_top_level_isolated(self):
+        v = _base()
+        caller_dict = {"matte": {"source": "x", "id": "y"}}
+        v2 = v.override(finishes=caller_dict)
+        assert v2.finishes is not caller_dict
+
+    def test_finish_resolves_against_new_map(self):
+        """``finish=`` runs after ``finishes=`` is applied, so the
+        finish setter looks up in the *new* (deep-copied) map."""
+        v = _base()
+        new_map = {"matte": {"source": "polyhaven", "id": "metal_matte"}}
+        v2 = v.override(finishes=new_map, finish="matte")
+        assert v2._finish == "matte"
+        assert v2.source == "polyhaven"
+        assert v2.material_id == "metal_matte"
+
+    def test_finish_against_replaced_map_unknown_raises(self):
+        """If the new finishes map doesn't contain the requested
+        finish, the finish setter raises (not the inherited map)."""
+        v = _base()
+        new_map = {"matte": {"source": "x", "id": "y"}}
+        # 'polished' was in the original map but not in new_map
+        with pytest.raises(ValueError, match="Unknown finish 'polished'"):
+            v.override(finishes=new_map, finish="polished")
+
+
+# ── Coverage gaps from review (#105) ──────────────────────────
+
+
+class TestAdapterRoundTrip:
+    """Override must flow into the cross-tool adapters. Otherwise
+    a downstream consumer's tweaked variant is silently ignored."""
+
+    def test_to_threejs_picks_up_overridden_roughness(self):
+        from pymat import Material
+        from pymat.vis.adapters import to_threejs
+
+        m = Material(name="adapter probe")
+        m.vis.roughness = 0.3
+        m.vis.metallic = 1.0
+        m.vis.base_color = (0.5, 0.5, 0.5, 1.0)
+
+        # Mutate only the variant via override
+        m2 = Material(name="adapter probe variant")
+        new_vis = m.vis.override(roughness=0.7, metallic=0.0)
+        m2._vis = new_vis  # bypass property to keep test focused on adapter
+
+        d = to_threejs(m2)
+        assert d["roughness"] == 0.7
+        assert d["metalness"] == 0.0
+        # Original Material's adapter output unchanged
+        d_orig = to_threejs(m)
+        assert d_orig["roughness"] == 0.3
+        assert d_orig["metalness"] == 1.0
+
+    def test_to_gltf_picks_up_overridden_color(self):
+        from pymat import Material
+        from pymat.vis.adapters import to_gltf
+
+        m = Material(name="gltf probe")
+        m.vis.base_color = (1.0, 0.0, 0.0, 1.0)
+
+        v2 = m.vis.override(base_color=(0.0, 1.0, 0.0, 1.0))
+        m2 = Material(name="gltf probe variant")
+        m2._vis = v2
+
+        d = to_gltf(m2)
+        pbr = d.get("pbrMetallicRoughness", {})
+        assert pbr.get("baseColorFactor") == [0.0, 1.0, 0.0, 1.0]
+
+
+class TestScalarReset:
+    """Setting a scalar back to ``None`` via override is allowed —
+    consumer's way to undo an inherited value."""
+
+    def test_roughness_reset_to_none(self):
+        v = _base()
+        assert v.roughness == 0.3
+        v2 = v.override(roughness=None)
+        assert v2.roughness is None
+        # Other scalars untouched
+        assert v2.metallic == 1.0
+
+    def test_base_color_reset_to_none(self):
+        v = _base()
+        assert v.base_color is not None
+        v2 = v.override(base_color=None)
+        assert v2.base_color is None
+
+
+class TestErrorMessageQuality:
+    """Tighter assertions than the original 3.6.0 tests.
+
+    Loose original: ``test_typo_raises_typeerror`` only matched the
+    typo substring; didn't pin the fix-it hint. These pin both.
+    """
+
+    def test_typo_message_includes_typo_and_valid_keys(self):
+        v = _base()
+        with pytest.raises(TypeError) as exc:
+            v.override(roughnes=0.5)
+        msg = str(exc.value)
+        assert "roughnes" in msg
+        assert "Valid keys" in msg
+        assert "roughness" in msg  # the correct name appears in the hint
+
+    def test_internal_field_message_names_field(self):
+        v = _base()
+        with pytest.raises(TypeError, match="_textures"):
+            v.override(_textures={})
+
+
+class TestRegistryDataCoupling:
+    """Replace the ``pymat["Stainless Steel 304"]``-coupled tests
+    above with fixture-built Vises so the contract doesn't depend on
+    TOML data shape staying constant. The original tests still run
+    and still pass; these are an additional safety net."""
+
+    def test_finish_change_independent_of_registry(self):
+        v = _base()  # local fixture with brushed/polished
+        v.finish = "brushed"
+        v2 = v.override(finish="polished")
+        assert v.material_id == "Metal012"  # original untouched
+        assert v2.material_id == "Metal049A"
+
+    def test_scalar_override_independent_of_registry(self):
+        v = _base()
+        v2 = v.override(roughness=0.99)
+        assert v.roughness == 0.3  # local fixture's value
+        assert v2.roughness == 0.99
+
+
+class TestIdempotence:
+    """``v.override()`` chained twice produces an equivalent result —
+    confirms no hidden state accumulates."""
+
+    def test_double_no_op_override_equals_single(self):
+        v = _base()
+        once = v.override()
+        twice = once.override()
+        assert once == twice
+        assert once is not twice  # but distinct objects
+
+    def test_double_scalar_override_overlay(self):
+        v = _base()
+        a = v.override(roughness=0.5)
+        b = a.override(roughness=0.9)
+        assert b.roughness == 0.9
+        # Original and intermediate untouched
+        assert v.roughness == 0.3
+        assert a.roughness == 0.5

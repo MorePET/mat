@@ -196,6 +196,48 @@ class TestHierarchicalMaterials:
         assert "LYSO" in lyso_crystal.name
 
 
+class TestCustomizingAppearance:
+    """Examples for the safe pattern of customizing appearance without
+    corrupting the registry singleton."""
+
+    def test_safe_appearance_customization(self):
+        """
+        ## Customizing Appearance Safely
+
+        Materials reached via `pymat["..."]` or category imports
+        (`from pymat import stainless`) are *shared instances* — the
+        same object every caller in the process sees. Mutating
+        `m.vis.roughness = 0.6` or flipping `m.vis.finish` on those
+        leaks into every other consumer.
+
+        The safe pattern uses two methods that pair cleanly:
+        """
+        import pymat
+        from pymat.vis import to_threejs
+
+        steel = pymat["Stainless Steel 304"]  # registry singleton — DON'T mutate
+
+        # Derive an independent variant (1) and attach it to a fresh Material (2)
+        polished_vis = steel.vis.override(roughness=0.05, finish="polished")
+        shiny = steel.with_vis(polished_vis)
+
+        three = to_threejs(shiny)  # uses the polished values
+        assert three["roughness"] == 0.05
+        assert steel.vis.material_id == "Metal012"  # registry untouched
+
+        # ``Vis.override(**deltas) -> Vis``  → deep-copied Vis with deltas
+        #   (finishes deep-copied; identity changes invalidate the texture
+        #   cache atomically; unknown kwargs raise TypeError).
+        # ``Material.with_vis(vis) -> Material`` → registry-detached Material
+        #   with the supplied Vis attached. Equivalent to ``Material.copy()``
+        #   followed by slotting the new vis in.
+        # ``Material.copy() -> Material`` → generic detach if you need to
+        #   tweak more than just the Vis.
+
+        # Materials *you* construct directly (Material(name="custom",
+        # vis={...})) are not shared and can be mutated freely.
+
+
 class TestOpticalVsVisualization:
     """Examples showing separation of optical properties and visualization."""
 
