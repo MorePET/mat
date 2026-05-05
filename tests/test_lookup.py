@@ -44,6 +44,45 @@ class TestSubscriptBasic:
         assert m.grade == "304"
 
 
+class TestAlloyParentNaming:
+    """Pins the parent-vs-temper naming pattern in TOML.
+
+    The aluminum tree previously declared ``[aluminum.a6061]`` with
+    ``name = "Aluminum 6061-T6"`` — a temper-baked name on the parent
+    node. That made ``pymat["Aluminum 6061"]`` raise (only the T6 child
+    matched, but not at the parent name). Closes #178. The fix is data:
+    parent carries the alloy designation; the temper child carries the
+    composite name. Mirrors the long-shipped stainless pattern.
+    """
+
+    def test_aluminum_6061_resolves_to_parent(self):
+        m = pymat["Aluminum 6061"]
+        assert m.name == "Aluminum 6061"
+        assert m.grade == "6061"
+        # T6 is a child of the parent
+        assert "T6" in m._children
+
+    def test_aluminum_6061_t6_still_works(self):
+        m = pymat["Aluminum 6061-T6"]
+        assert m.name == "Aluminum 6061-T6"
+        assert m.temper == "T6"
+
+    def test_aluminum_7075_pattern_consistent(self):
+        """7075 already shipped correctly — pin so a future refactor
+        doesn't accidentally regress it the way 6061 was."""
+        m = pymat["Aluminum 7075"]
+        assert m.name == "Aluminum 7075"
+        assert m.grade == "7075"
+
+    def test_aluminum_6061_vs_t6_distinct(self):
+        """The two names are no longer an alias — they refer to
+        distinct nodes in the hierarchy."""
+        parent = pymat["Aluminum 6061"]
+        t6 = pymat["Aluminum 6061-T6"]
+        assert parent is not t6
+        assert t6.parent is parent
+
+
 class TestNormalization:
     def test_leading_trailing_whitespace(self):
         assert pymat["  Stainless Steel 304  "].name == "Stainless Steel 304"

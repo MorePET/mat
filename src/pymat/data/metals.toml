@@ -153,9 +153,9 @@ default = "smooth"
 smooth = { source = "ambientcg", id = "Metal049A" }
 machined = { source = "ambientcg", id = "Metal055A" }
 
-# Aluminum 6061-T6
+# Aluminum 6061 (parent alloy node — tempers hang below)
 [aluminum.a6061]
-name = "Aluminum 6061-T6"
+name = "Aluminum 6061"
 grade = "6061"
 composition = {Al = 0.972, Mg = 0.01, Si = 0.006, Cu = 0.004, Cr = 0.002, Fe = 0.003, Zn = 0.003}
 

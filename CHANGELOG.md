@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.0] - 2026-05-05
+
+Two UX fixes surfaced via live MCP testing of the new
+[`pymat-mcp`](https://pypi.org/project/pymat-mcp/) server (an agent
+hit both failures within minutes of being given access). One data
+fix, one search-engine rewrite.
+
+### Fixed
+
+* **`pymat["Aluminum 6061"]`** now resolves
+  ([#178](https://github.com/MorePET/mat/issues/178)). The
+  `[aluminum.a6061]` parent node was previously declared with
+  `name = "Aluminum 6061-T6"` — the parent lied about itself as the
+  already-tempered form, so subscript lookup of the bare alloy name
+  raised `KeyError`. By contrast `Aluminum 7075` (sibling alloy) had
+  always shipped correctly. Renamed the parent to `"Aluminum 6061"`;
+  the `[aluminum.a6061.T6]` child keeps `"Aluminum 6061-T6"`. Now
+  mirrors the long-shipped stainless pattern (`Stainless Steel 316L`
+  parent, `Stainless Steel 316L - Electropolished` children). Audit
+  swept all other categories — 6061 was the lone outlier.
+
+* **Heavy-typo search now works** ([#179](https://github.com/MorePET/mat/issues/179)).
+  `pymat.search("Stinless Stl 304")` previously returned `[]` —
+  agents who mistyped lost their recovery path. The matcher was
+  documented as "fuzzy" but actually did substring containment per
+  token (`if token in target`). Replaced with rapidfuzz
+  `partial_ratio >= 75` per token, weighted by similarity for
+  ranking. Catches one- and two-character typos; conjunctive contract
+  preserved (every token must clear threshold somewhere). Validated
+  cases in `tests/test_search.py::TestTypoTolerance`.
+
+### Changed
+
+* **New runtime dep: `rapidfuzz>=3.0`** — pure-Rust wheel, broad
+  platform support, no compile burden. Pulled in for #179. The
+  scoring change is backwards-compatible for queries that previously
+  matched: substring containment scores 100 under `partial_ratio`,
+  so the new path strictly widens the hit set without dropping
+  existing matches.
+
+### Tests
+
+* **+4 tests for #178** in `test_lookup.py::TestAlloyParentNaming`
+  pinning the parent/temper hierarchy and equality-of-pattern with
+  stainless.
+* **+4 tests for #179** in `test_search.py::TestTypoTolerance` —
+  one-char typo finds stainless 304, transposed-digit grade finds
+  6061, conjunctive contract holds with one fuzzy + one unrelated
+  token, single-char drop still resolves.
+* Existing `test_human_word_matches_name` widened to acknowledge that
+  fuzzy `aluminum` legitimately also surfaces `alumina` (related
+  ceramic) — pin only that the aluminum tree appears, not that hits
+  are exclusive.
+
+### Internal
+
+* Independent code review of the lookup + search surface (third agent
+  review of the session) traced both failures to their root causes:
+  data shape for #178, scorer algorithm for #179. Recommended Option
+  A (TOML rename) over Option B (lookup fallback) and Option C
+  (aliases), arguing that "the cause is data, the symptom is in
+  lookup" — fixes the *type* of bug, not the instance.
+
 ## [3.8.0] - 2026-05-04
 
 Static-typing layer for `Vis.override` + PEP 561 marker so type

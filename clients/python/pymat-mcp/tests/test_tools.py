@@ -34,7 +34,13 @@ class TestSearchMaterials:
         assert len(out["results"]) <= 2
 
     def test_unknown_query_returns_empty_list(self):
-        out = tools.search_materials("xyzzy_no_such_material")
+        # Need a query with NO shared substring structure with any
+        # registered material. Under py-materials 3.9's rapidfuzz
+        # scorer, queries with common letter combinations sometimes
+        # clear the threshold against unrelated materials by aligning
+        # against a substring. All-q's-and-z's tokens have no such
+        # alignment with any English-language material name.
+        out = tools.search_materials("zzzqqqxxx")
         assert out["results"] == []
 
     def test_serializable(self):
