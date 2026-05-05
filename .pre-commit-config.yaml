@@ -95,3 +95,12 @@ repos:
         language: python
         files: ^(tests/test_readme_examples\.py|docs/README_TEMPLATE\.md|README\.md|scripts/generate_readme\.py)$
         pass_filenames: false
+
+      # Validate _sources licenses across the data corpus (#174).
+      # Stdlib-only — needs no extra deps.
+      - id: check-licenses
+        name: validate _sources licenses
+        entry: python scripts/check_licenses.py
+        language: python
+        files: ^(src/pymat/data/.*\.toml|scripts/check_licenses\.py|\.github/license-ratchet\.txt)$
+        pass_filenames: false

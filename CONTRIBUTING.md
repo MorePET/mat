@@ -181,17 +181,46 @@ downloadable artifact for review.
 
 ### Provenance
 
-When a value comes from an external source, note it inline:
+Use the `[<material>._sources]` table to attach structured citations
+to property values. Every entry MUST include a `license` field
+([§ Allowed licenses](docs/data-policy.md#allowed-licenses)).
 
 ```toml
-# density: Wikidata Q663 (aluminium), 2.7 g/cm³ — CC0
-density_value = 2.7
+[aluminum.al6061.mechanical]
+density_value = 2.70
 density_unit = "g/cm^3"
+
+[aluminum.al6061._sources._default]
+citation = "asm_handbook_v2"
+kind = "handbook"
+ref = "ASM Handbook vol.2 p.62"
+license = "proprietary-reference-only"
+
+[aluminum.al6061._sources."mechanical.density"]
+citation = "wikidata_aluminum"
+kind = "qid"
+ref = "Q663"
+license = "CC0"
 ```
 
-This keeps the source visible next to the value and survives TOML
-reformatting. Don't fabricate provenance — if you measured it or
-took it from a datasheet, say so.
+`mat.cite("density")` then emits a BibTeX entry; `mat.source_of(...)`
+returns the `Source` record. The `_default` entry is the fallback
+when no per-property source is set. Inheritance: child material
+sources overlay parent sources.
+
+**Allowed `license` values**: `CC0`, `PD-USGov`, `CC-BY-4.0`,
+`CC-BY-SA-4.0`, `proprietary-reference-only`. The transitional
+value `unknown` is parseable but **blocked at merge** by
+`scripts/check_licenses.py` (CI gate).
+
+**Off-limits sources** and the full policy: see
+[docs/data-policy.md](docs/data-policy.md). Single-value citations
+from proprietary sources (vendor datasheets, ASM Handbook) are OK
+with `license = "proprietary-reference-only"`. **Bulk-pasting tables
+is never allowed** — see the off-limits list.
+
+Don't fabricate provenance — if you measured it or took it from a
+datasheet, say so.
 
 [request]: https://github.com/MorePET/mat/issues/new?template=material-request.yml
 [correction]: https://github.com/MorePET/mat/issues/new?template=material-correction.yml
