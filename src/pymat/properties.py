@@ -20,7 +20,28 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 if TYPE_CHECKING:
     from pint import Quantity
 
+from .curves import TempCurve
 from .units import ureg
+
+
+def _eval_curve_or_scalar(
+    curve: Optional[TempCurve], scalar: Optional[float], unit_str: Optional[str], temp: "Quantity"
+) -> Optional["Quantity"]:
+    """Shared evaluator: prefer curve, fall back to scalar.
+
+    Used by every `<prop>_at(T)` method (#148 ADR-0003). Returns a Pint
+    Quantity if a unit is known, otherwise the bare value.
+    """
+    if curve is None and scalar is None:
+        return None
+    try:
+        temp_k = temp.to(ureg.kelvin).magnitude
+    except Exception as e:
+        raise ValueError(f"Temperature must be in absolute units (Kelvin). Got {temp.units}: {e}")
+    raw = curve.interpolate(float(temp_k)) if curve is not None else scalar
+    if unit_str:
+        return raw * ureg(unit_str)
+    return raw
 
 
 @dataclass
@@ -45,6 +66,22 @@ class MechanicalProperties:
     hardness_rockwell: Optional[float] = None  # HR (Rockwell hardness)
     fracture_toughness: Optional[float] = None  # MPa·m^0.5
     fracture_toughness_unit: str = "MPa*m^0.5"
+
+    # T-dependent curves (#148). Sibling fields parallel to scalars.
+    youngs_modulus_curve: Optional[TempCurve] = None
+    yield_strength_curve: Optional[TempCurve] = None
+
+    def youngs_modulus_at(self, temp: "Quantity") -> Optional["Quantity"]:
+        """Young's modulus at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(
+            self.youngs_modulus_curve, self.youngs_modulus, self.youngs_modulus_unit, temp
+        )
+
+    def yield_strength_at(self, temp: "Quantity") -> Optional["Quantity"]:
+        """Yield strength at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(
+            self.yield_strength_curve, self.yield_strength, self.yield_strength_unit, temp
+        )
 
     # Quantity properties for unit-aware access
     @property
@@ -120,6 +157,11 @@ class ThermalProperties:
     min_service_temp_unit: str = "degC"
     thermal_shock_resistance: Optional[str] = None  # "excellent", "good", "fair", "poor"
 
+    # T-dependent curves (#148). Sibling fields parallel to scalars.
+    thermal_conductivity_curve: Optional[TempCurve] = None
+    specific_heat_curve: Optional[TempCurve] = None
+    thermal_expansion_curve: Optional[TempCurve] = None
+
     # Quantity properties for unit-aware access
     @property
     def melting_point_qty(self) -> Optional[Quantity]:
@@ -185,8 +227,8 @@ class ThermalProperties:
         """
         Calculate thermal conductivity at given temperature.
 
-        Uses linear temperature dependence:
-            k(T) = k(T_ref) * (1 + coeff * (T - T_ref))
+        Precedence (per ADR-0003): `_curve` (#148) > legacy `_ref_temp +
+        _coeff` linear > scalar.
 
         Args:
             temp: Temperature as Pint Quantity in Kelvin (e.g., 373.15 * ureg.kelvin)
@@ -198,6 +240,15 @@ class ThermalProperties:
         Raises:
             ValueError: If temperature is not in Kelvin or calculation fails
         """
+        # #148 curve takes precedence over legacy ref_temp+coeff.
+        if self.thermal_conductivity_curve is not None:
+            return _eval_curve_or_scalar(
+                self.thermal_conductivity_curve,
+                self.thermal_conductivity,
+                self.thermal_conductivity_unit,
+                temp,
+            )
+
         if self.thermal_conductivity is None:
             return None
 
@@ -227,6 +278,18 @@ class ThermalProperties:
         k_ref = self.thermal_conductivity * ureg(self.thermal_conductivity_unit)
         return k_ref * (1 + coeff * delta_t_k)
 
+    def specific_heat_at(self, temp: "Quantity") -> Optional["Quantity"]:
+        """Specific heat at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(
+            self.specific_heat_curve, self.specific_heat, self.specific_heat_unit, temp
+        )
+
+    def thermal_expansion_at(self, temp: "Quantity") -> Optional["Quantity"]:
+        """Thermal expansion at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(
+            self.thermal_expansion_curve, self.thermal_expansion, self.thermal_expansion_unit, temp
+        )
+
 
 @dataclass
 class ElectricalProperties:
@@ -242,6 +305,15 @@ class ElectricalProperties:
     breakdown_voltage_unit: str = "kV/mm"
     volume_resistivity: Optional[float] = None  # Ω·cm
     volume_resistivity_unit: str = "ohm*cm"
+
+    # T-dependent curve (#148).
+    resistivity_curve: Optional[TempCurve] = None
+
+    def resistivity_at(self, temp: "Quantity") -> Optional["Quantity"]:
+        """Resistivity at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(
+            self.resistivity_curve, self.resistivity, self.resistivity_unit, temp
+        )
 
     # Quantity properties for unit-aware access
     @property
@@ -300,6 +372,24 @@ class OpticalProperties:
     interaction_length: Optional[float] = None  # cm (λ for hadrons)
     moliere_radius: Optional[float] = None  # cm
     energy_resolution: Optional[float] = None  # % at 1 MeV (for detectors)
+
+    # T-dependent curves (#148). Refractive index, light yield, decay time
+    # are the dimensionless / unit-implicit ones — no `_unit` field exists.
+    refractive_index_curve: Optional[TempCurve] = None
+    light_yield_curve: Optional[TempCurve] = None
+    decay_time_curve: Optional[TempCurve] = None
+
+    def refractive_index_at(self, temp: "Quantity") -> Optional[float]:
+        """Refractive index at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(self.refractive_index_curve, self.refractive_index, None, temp)
+
+    def light_yield_at(self, temp: "Quantity") -> Optional[float]:
+        """Light yield at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(self.light_yield_curve, self.light_yield, None, temp)
+
+    def decay_time_at(self, temp: "Quantity") -> Optional[float]:
+        """Scintillator decay time at T. Curve > scalar fallback (#148)."""
+        return _eval_curve_or_scalar(self.decay_time_curve, self.decay_time, None, temp)
 
 
 @dataclass

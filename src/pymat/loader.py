@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 from . import registry
 from .core import Material
+from .curves import TempCurve
 from .properties import (
     AllProperties,
 )
@@ -158,6 +159,15 @@ def _build_properties_from_dict(
 
             # Skip processed value/unit/stddev siblings (handled separately)
             if key.endswith("_unit") or key.endswith("_stddev"):
+                continue
+
+            # T-curve sibling (#148): build a TempCurve and setattr on the
+            # `<base>_curve` field if it exists. Validation (sorted, equal
+            # lengths) raises in TempCurve.__post_init__ at load time.
+            if key.endswith("_curve") and isinstance(value, dict):
+                curve_field = key  # e.g. "thermal_conductivity_curve"
+                if hasattr(prop_obj, curve_field):
+                    setattr(prop_obj, curve_field, TempCurve.from_toml(value))
                 continue
 
             # Check if this is a value in a value/unit pair
