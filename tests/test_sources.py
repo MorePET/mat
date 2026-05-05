@@ -203,7 +203,7 @@ class TestCite:
 
 class TestSourcesInheritance:
     def test_child_overlays_parent(self, tmp_path):
-        p = tmp_path / "inh.toml"
+        p = tmp_path / "inheritance.toml"
         p.write_text(
             dedent("""
             [stainless]
