@@ -29,6 +29,14 @@ pngs = "pngs"
 # entry just stops the source-text typo checker from rewriting the
 # example out of existence.
 mechnical = "mechnical"
+# Deliberate typo fixtures used by ``TestTypoTolerance`` in
+# ``tests/test_search.py`` (3.9.0) — they exercise rapidfuzz scorer
+# tolerance for one-edit drops/transpositions. The typo checker
+# would otherwise rewrite the test inputs out of existence.
+Stinless = "Stinless"
+stinless = "stinless"
+Stainles = "Stainles"
+stainles = "stainles"
 
 [files]
 extend-exclude = [
