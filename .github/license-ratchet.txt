@@ -1,0 +1,9 @@
+# License ratchet — temporary exemptions during #175 audit window.
+#
+# Format: one repo-relative TOML path per line. Lines beginning with `#`
+# are comments. Paths listed here are SKIPPED by scripts/check_licenses.py.
+#
+# This file MUST be deleted as the final step of #175 (one-time audit).
+# After deletion, every TOML in src/pymat/data/ is subject to the gate.
+#
+# See docs/data-policy.md for policy details.

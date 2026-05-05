@@ -296,11 +296,36 @@ jobs:
       - name: Run tests
         run: .venv/bin/python -m pytest -v
 
+  check-licenses:
+    name: Validate _sources licenses
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      inputs.test-suite == 'all' ||
+      inputs.test-suite == 'lint'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run check_licenses.py
+        # Stdlib-only script — no install step needed. Validates every
+        # `_sources` entry in src/pymat/data/*.toml has a license in the
+        # allow-list. Honors .github/license-ratchet.txt during the #175
+        # audit window.
+        run: python scripts/check_licenses.py
+
   summary:
     name: CI Summary
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [lint, test, security, dependency-review, pr-hygiene, rust, pymat-mcp]
+    needs: [lint, test, security, dependency-review, pr-hygiene, rust, pymat-mcp, check-licenses]
     if: always()
 
     steps:
@@ -316,6 +341,7 @@ jobs:
           echo "PR Hygiene:        ${{ needs.pr-hygiene.result }}"
           echo "Rust (mat-rs):     ${{ needs.rust.result }}"
           echo "pymat-mcp:         ${{ needs.pymat-mcp.result }}"
+          echo "check-licenses:    ${{ needs.check-licenses.result }}"
           echo ""
 
           FAILED=false
@@ -352,6 +378,11 @@ jobs:
 
           if [ "${{ needs.pymat-mcp.result }}" = "failure" ]; then
             echo "ERROR: pymat-mcp tests failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.check-licenses.result }}" = "failure" ]; then
+            echo "ERROR: License validation failed (see docs/data-policy.md)"
             FAILED=true
           fi
 
