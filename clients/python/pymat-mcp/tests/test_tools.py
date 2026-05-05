@@ -35,11 +35,11 @@ class TestSearchMaterials:
 
     def test_unknown_query_returns_empty_list(self):
         # Need a query with NO shared substring structure with any
-        # registered material — under py-materials 3.9's rapidfuzz
-        # scorer, even nonsense like ``xyzzy_no_such_material`` clears
-        # the threshold against ``water`` (partial_ratio of long
-        # underscore-separated strings is 80 — finds 'ater' alignment).
-        # All-q's-and-z's tokens are guaranteed below threshold.
+        # registered material. Under py-materials 3.9's rapidfuzz
+        # scorer, queries with common letter combinations sometimes
+        # clear the threshold against unrelated materials by aligning
+        # against a substring. All-q's-and-z's tokens have no such
+        # alignment with any English-language material name.
         out = tools.search_materials("zzzqqqxxx")
         assert out["results"] == []
 
