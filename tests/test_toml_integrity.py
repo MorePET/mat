@@ -58,6 +58,8 @@ _KNOWN_LEAF_KEYS = {
     "treatment",
     "vendor",
 }
+# Underscore-prefixed reserved keys at material-node level (#150).
+# `_walk_unknown_groups` skips anything starting with `_`.
 
 # Separate regexes per field — the slashed form conflated the two
 # alphabets: source is lowercase-dashed (ambientcg, polyhaven, gpuopen),
@@ -220,6 +222,9 @@ def _walk_unknown_groups(node, prefix: str):
     for key, value in node.items():
         path = f"{prefix}.{key}"
         if not isinstance(value, dict):
+            continue
+        if key.startswith("_"):
+            # Reserved underscore-prefixed keys (#150 _sources, future _curve etc.)
             continue
         if _looks_like_material_node(value):
             # Child material — recurse without flagging

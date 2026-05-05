@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     pass
 
 from .properties import AllProperties
+from .sources import Source, resolve_path
 
 # Type variable for generic object application
 T = TypeVar("T")
@@ -133,6 +134,9 @@ class _MaterialInternal:
     parent: Optional[_MaterialInternal] = field(default=None, repr=False)
     _children: Dict[str, _MaterialInternal] = field(default_factory=dict, repr=False)
     _key: Optional[str] = field(default=None, repr=False)  # for registry
+
+    # Provenance (#150) — keyed by dotted property path; `_default` fallback.
+    _sources: Dict[str, Source] = field(default_factory=dict, repr=False)
 
     def __post_init__(self):
         """Apply convenience parameters and property groups to properties object."""
@@ -597,6 +601,39 @@ class _MaterialInternal:
         """Calculate mass in grams from volume in mm³."""
         return volume_mm3 * self.density_g_mm3
 
+    # =========================================================================
+    # Provenance API (#150) — see ADR-0003 and src/pymat/sources.py
+    # =========================================================================
+
+    def source_of(self, path: str) -> Optional[Source]:
+        """Return the `Source` for a property path, or `_default`, or None.
+
+        Accepts short aliases (`"density"`) or fully-qualified paths
+        (`"mechanical.density"`). Resolution order: exact path → `_default`
+        → None.
+        """
+        if not self._sources:
+            return None
+        qpath = resolve_path(path)
+        if qpath in self._sources:
+            return self._sources[qpath]
+        return self._sources.get("_default")
+
+    def cite(self, path: Optional[str] = None) -> str:
+        """Emit BibTeX. Without `path`: every source used by this material,
+        deduplicated by citation key. With `path`: just that one source.
+
+        Returns "" when nothing is cited (graceful, never raises)."""
+        if not self._sources:
+            return ""
+        if path is not None:
+            src = self.source_of(path)
+            return src.to_bibtex() if src is not None else ""
+        seen: Dict[str, Source] = {}
+        for src in self._sources.values():
+            seen.setdefault(src.citation, src)
+        return "\n\n".join(s.to_bibtex() for s in seen.values())
+
     def __repr__(self) -> str:
         """String representation showing path and density."""
         density_str = f"ρ={self.density} g/cm³" if self.density else "ρ=?"
@@ -683,6 +720,7 @@ class Material(_MaterialInternal):
         properties: Optional[AllProperties] = None,
         parent: Optional["Material"] = None,
         _key: Optional[str] = None,
+        _sources: Optional[Dict[str, Source]] = None,
     ):
         # Call parent init without density
         super().__init__(
@@ -704,6 +742,7 @@ class Material(_MaterialInternal):
             properties=properties or AllProperties(),
             parent=parent,
             _key=_key,
+            _sources=_sources or {},
         )
 
         # Apply density convenience param after parent init
