@@ -20,6 +20,20 @@ from typing import Any
 # ── Helpers ────────────────────────────────────────────────────────
 
 
+def _nominal(x: Any) -> Any:
+    """Coerce a possibly-ufloat value to a plain float for JSON.
+
+    py-materials values may be `uncertainties.UFloat` when authored
+    with `{nominal, stddev}` or `<prop>_stddev` sibling sugar (#149).
+    JSON can't serialize ufloats; we keep the nominal value and drop
+    uncertainty at the wire boundary.
+    """
+    if x is None:
+        return None
+    nominal = getattr(x, "nominal_value", None)
+    return float(nominal) if nominal is not None else x
+
+
 _ALL_DOMAINS = (
     "mechanical",
     "thermal",
@@ -68,6 +82,8 @@ def _props_dict(props: Any, domains: list[str] | None = None) -> dict[str, dict[
             # custom field) renders to its magnitude.
             if hasattr(value, "magnitude"):
                 value = value.magnitude
+            # ufloat → nominal at the JSON boundary (#149)
+            value = _nominal(value)
             group_out[field_name] = value
         if group_out:
             out[group_name] = group_out
@@ -107,7 +123,7 @@ def _brief(material: Any) -> dict[str, Any]:
         "name": material.name,
         "grade": material.grade,
         "category": _category_of(material),
-        "density": material.properties.mechanical.density,
+        "density": _nominal(material.properties.mechanical.density),
     }
 
 
@@ -290,7 +306,7 @@ def compute_mass(material: str, volume_mm3: float) -> dict[str, Any]:
     m = _resolve(material)
     if m is None:
         return _not_found(material)
-    density = m.properties.mechanical.density
+    density = _nominal(m.properties.mechanical.density)
     if density is None:
         return {
             "error": f"{m.name!r} has no curated density (mechanical.density is None)",

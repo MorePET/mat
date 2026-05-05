@@ -556,11 +556,17 @@ class _MaterialInternal:
 
     @property
     def density_g_mm3(self) -> float:
-        """Density in g/mm³ (for build123d calculations)."""
+        """Density in g/mm³ (for build123d calculations).
+
+        Always returns a plain float — if the underlying density is a
+        ufloat (#149), the nominal value is taken so build123d/JSON
+        boundaries don't see a ufloat they can't handle.
+        """
         mech_density = self.properties.mechanical.density
         if not mech_density:
             return 0.0
-        return mech_density / 1000
+        nominal = float(getattr(mech_density, "nominal_value", mech_density))
+        return nominal / 1000
 
     @property
     def molar_mass(self) -> Optional[float]:
