@@ -71,9 +71,17 @@ class TestNameMatch:
         assert any("Steel" in m.name for m in hits)
 
     def test_human_word_matches_name(self):
+        """Searching ``aluminum`` finds the aluminum tree.
+
+        Note: with the rapidfuzz scorer (3.9+), ``aluminum`` also clears
+        the similarity threshold against ``alumina`` (related ceramic).
+        That's correct fuzzy behavior — pin only that the aluminum tree
+        is included, not that hits are exclusively aluminum.
+        """
         hits = search("aluminum")
         assert hits
-        assert all("Aluminum" in m.name for m in hits)
+        names = [m.name for m in hits]
+        assert any("Aluminum" in n for n in names), f"aluminum tree missing from hits: {names}"
 
 
 class TestGradeMatch:
@@ -107,6 +115,46 @@ class TestMultiTokenConjunctive:
         even if other tokens match strongly."""
         hits = search("stainless unobtainium_xyz")
         assert hits == []
+
+
+class TestTypoTolerance:
+    """rapidfuzz partial_ratio scoring (3.9+, closes #179) catches
+    one- and two-character typos without auto-matching arbitrary
+    abbreviations. Pin both directions of the threshold:
+
+    - **Inside** (clears 75): mild typos surface their target.
+    - **Outside** (below 75): heavy abbreviations / unrelated words
+      stay rejected so the conjunctive contract holds.
+    """
+
+    def test_one_char_typo_finds_stainless(self):
+        """``Stinless`` (missing 'a') vs ``stainless`` is a single-edit
+        typo; partial_ratio is in the high 80s. Should surface
+        stainless candidates — the exact failure mode that returned
+        ``[]`` in 3.8 and surfaced via live MCP testing."""
+        hits = search("Stinless 304")
+        assert hits, "one-char typo should surface stainless 304"
+        assert any("304" in m.name for m in hits)
+
+    def test_one_char_typo_in_grade(self):
+        """Grade typos are short strings — ``6016`` for ``6061`` is
+        a single-edit transposition. Should still find 6061."""
+        hits = search("6016")
+        assert hits, "transposed-digit grade should still find a match"
+        assert any("6061" in m.name for m in hits)
+
+    def test_substring_substitution_passes(self):
+        """``Stainles`` (one trailing char dropped) is a one-edit
+        substitution — exactly the case partial_ratio is tuned to
+        catch."""
+        hits = search("Stainles 304")
+        assert hits, "one-edit drop should still find stainless 304"
+
+    def test_unrelated_token_still_rejects(self):
+        """The conjunctive contract holds: a single typo-passing
+        token doesn't rescue a query with an unrelated token."""
+        hits = search("stinless quasarium")
+        assert hits == [], "unrelated 'quasarium' should still reject"
 
     def test_tokens_across_name_and_hierarchy(self):
         """Tokens can match different targets on the same Material —

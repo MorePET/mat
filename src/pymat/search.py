@@ -6,15 +6,25 @@ instances whose registry key, name, grade, or hierarchy path matches
 the query tokens. Complements ``pymat.vis.search(...)`` (visual
 catalog): two axes, same verb, no namespace collision.
 
-Algorithm: tokenize query on whitespace; every token must match at
-least one weighted target on a candidate Material for it to be
-included. Score is the sum of per-token best-target weights.
+Algorithm: tokenize query on whitespace; every token must clear a
+similarity threshold against at least one weighted target on a
+candidate Material for it to be included. Score is the sum of
+per-token best-target weights, scaled by similarity ratio.
+
+Similarity is ``rapidfuzz.fuzz.partial_ratio`` — finds the best-aligned
+substring of the longer target whose length equals the token, then
+scores edit distance there. Catches one- and two-character typos
+(``"stinless"`` vs ``"stainless"``, ``"6016"`` vs ``"6061"``) without
+matching arbitrary abbreviations (``"stl"`` won't auto-match
+``"steel"`` — that requires an explicit alias). Closes #179.
 """
 
 from __future__ import annotations
 
 import unicodedata
 from typing import TYPE_CHECKING
+
+from rapidfuzz import fuzz
 
 if TYPE_CHECKING:
     from .core import Material
@@ -36,6 +46,15 @@ _WEIGHT_KEY = 10  # registry key — "s316L"
 _WEIGHT_NAME = 5  # Material.name — "Stainless Steel 316L"
 _WEIGHT_GRADE = 5  # Material.grade — "316L"
 _WEIGHT_PATH = 3  # hierarchy parent names
+
+# Per-token similarity threshold (0-100 scale, rapidfuzz convention).
+# 75 catches one-edit and most two-edit typos in 6-10 char strings
+# (Levenshtein-bounded partial alignments) while rejecting arbitrary
+# abbreviations like "stl" → "steel" (~67) that would auto-match too
+# many materials. Calibrated against the existing search corpus —
+# see tests/test_search.py for the pinned cases on both sides of
+# the threshold.
+_SIMILARITY_THRESHOLD = 75
 
 
 def _targets(key: str, material: Material) -> list[tuple[str, int]]:
@@ -63,22 +82,33 @@ def _targets(key: str, material: Material) -> list[tuple[str, int]]:
     return pairs
 
 
-def _score(tokens: list[str], targets: list[tuple[str, int]]) -> int:
+def _score(tokens: list[str], targets: list[tuple[str, int]]) -> float:
     """Score a Material against the query tokens.
 
-    Every token must substring-match at least one target. Returns 0
-    (rejected) if any token misses. Otherwise returns the sum of
-    best-per-token weights — so a token matching the high-weight key
-    beats a token matching only the low-weight path.
+    Every token must clear ``_SIMILARITY_THRESHOLD`` against at least
+    one target. Returns 0 (rejected) if any token misses. Otherwise
+    returns the sum of per-token best ``weight × (similarity / 100)``
+    — so a perfect key match (10 × 1.0) outranks a fuzzy key match
+    (10 × 0.8), which still outranks a perfect path match (3 × 1.0).
+
+    Token matching uses ``rapidfuzz.fuzz.partial_ratio``: finds the
+    best-aligned substring of the target of the token's length, then
+    scores Levenshtein-equivalent similarity. This is the natural
+    extension of the previous ``token in target`` (substring) check —
+    a perfect substring scores 100; a one-edit typo on a short word
+    typically scores in the high 80s / low 90s.
     """
-    total = 0
+    total = 0.0
     for token in tokens:
-        best = 0
+        best = 0.0
         for target, weight in targets:
-            if token in target and weight > best:
-                best = weight
-        if best == 0:
-            return 0  # token didn't match anywhere → reject
+            ratio = fuzz.partial_ratio(token, target)
+            if ratio >= _SIMILARITY_THRESHOLD:
+                token_score = weight * (ratio / 100.0)
+                if token_score > best:
+                    best = token_score
+        if best == 0.0:
+            return 0.0  # token didn't clear threshold anywhere → reject
         total += best
     return total
 
@@ -129,7 +159,7 @@ def search(query: str, *, exact: bool = False, limit: int = 10) -> list[Material
     load_all()
     all_materials = registry.list_all()
 
-    scored: list[tuple[int, int, str, Material]] = []
+    scored: list[tuple[float, int, str, Material]] = []
 
     if exact:
         # Full-string equality against key / name / grade. Same three
@@ -141,7 +171,7 @@ def search(query: str, *, exact: bool = False, limit: int = 10) -> list[Material
                 candidates.append(str(grade))
             if any(_normalize(c) == normalized for c in candidates):
                 # Single-match: tie-break by shorter key for determinism.
-                scored.append((0, len(key), key, material))
+                scored.append((0.0, len(key), key, material))
     else:
         tokens = normalized.split()
         for key, material in all_materials.items():

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-materials"
-version = "3.8.0"
+version = "3.9.0"
 description = "Hierarchical material library for CAD applications with build123d integration"
 readme = "README.md"
 license = "MIT"
@@ -32,6 +32,10 @@ dependencies = [
     "periodictable>=1.6.0",
     "uncertainties>=3.2",
     "mat-vis-client>=0.6.3",
+    # rapidfuzz: typo-tolerant scoring in pymat.search. Pure-Rust
+    # wheel, broad platform support, no compile burden. Replaces the
+    # 3.8.0-and-prior substring-containment matcher (#179).
+    "rapidfuzz>=3.0",
     "tomli>=1.0.0; python_version == '3.10'",
 ]
 
