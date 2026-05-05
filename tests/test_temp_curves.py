@@ -68,7 +68,9 @@ class TestLoaderParsesCurves:
             [aluminum.thermal]
             thermal_conductivity_value = 167
             thermal_conductivity_unit = "W/(m*K)"
-            thermal_conductivity_curve = { temps_K = [77, 200, 293, 400], values = [105, 150, 167, 180] }
+            [aluminum.thermal.thermal_conductivity_curve]
+            temps_K = [77, 200, 293, 400]
+            values = [105, 150, 167, 180]
             """)
         )
         al = load_toml(p)["aluminum"]
