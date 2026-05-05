@@ -19,7 +19,7 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
-from uncertainties import ufloat
+from uncertainties import UFloat, ufloat
 
 if TYPE_CHECKING:
     from .core import Material
@@ -115,7 +115,37 @@ def _build_properties_from_dict(
 
     # Helper to safely get and update nested properties
     def update_properties(prop_obj, prop_dict, prop_name):
-        """Update property object from dictionary, handling both legacy and new formats."""
+        """Update property object from dictionary, handling both legacy and new formats.
+
+        Supports (#149) sibling `<base>_stddev` siblings as sugar — folded into
+        a ufloat with the base value at parse time. Double-spec (in-value
+        `{nominal, stddev}` AND sibling `_stddev`) is a hard error.
+        """
+        # Pass 1: collect _stddev siblings into {base_key: stddev}.
+        stddev_map = {}
+        for key, value in prop_dict.items():
+            if key.endswith("_stddev") and not key.startswith("_"):
+                stddev_map[key[:-7]] = value  # strip "_stddev"
+
+        # Track which stddev siblings we actually consumed; orphans raise.
+        consumed_stddev = set()
+
+        def assign(base_key: str, raw_value):
+            """Parse a value (possibly a {nominal, stddev} dict), fold sibling
+            stddev if present, and setattr on prop_obj."""
+            parsed = _parse_value(raw_value) if isinstance(raw_value, dict) else raw_value
+            sibling = stddev_map.get(base_key)
+            if sibling is not None:
+                consumed_stddev.add(base_key)
+                if isinstance(parsed, UFloat):
+                    raise ValueError(
+                        f"{prop_name}.{base_key}: double-specification — "
+                        f"both in-value stddev and sibling {base_key}_stddev are set"
+                    )
+                parsed = ufloat(float(parsed), float(sibling))
+            if hasattr(prop_obj, base_key):
+                setattr(prop_obj, base_key, parsed)
+
         for key, value in prop_dict.items():
             if value is None:
                 continue
@@ -126,8 +156,8 @@ def _build_properties_from_dict(
             if key.startswith("_"):
                 continue
 
-            # Skip processed value/unit pairs
-            if key.endswith("_unit"):
+            # Skip processed value/unit/stddev siblings (handled separately)
+            if key.endswith("_unit") or key.endswith("_stddev"):
                 continue
 
             # Check if this is a value in a value/unit pair
@@ -151,15 +181,14 @@ def _build_properties_from_dict(
                         unit = None
 
                 # Set both value and unit
-                if hasattr(prop_obj, base_key):
-                    setattr(prop_obj, base_key, value)
+                assign(base_key, value)
                 if unit and hasattr(prop_obj, unit_key):
                     setattr(prop_obj, unit_key, unit)
 
             # Legacy format: single value (not a value/unit pair)
-            elif not key.endswith("_unit"):
+            else:
                 if hasattr(prop_obj, key):
-                    setattr(prop_obj, key, value)
+                    assign(key, value)
                     # Try to set default unit
                     unit_key = f"{key}_unit"
                     if hasattr(prop_obj, unit_key):
@@ -172,6 +201,12 @@ def _build_properties_from_dict(
                                 key,
                                 default_unit,
                             )
+
+        # Orphan stddev siblings (no matching base value) are a typo signal.
+        orphans = set(stddev_map) - consumed_stddev
+        if orphans:
+            names = ", ".join(f"{prop_name}.{n}_stddev" for n in sorted(orphans))
+            raise ValueError(f"orphan stddev sibling(s) with no matching base value: {names}")
 
     # Parse each property group
     if "mechanical" in data:

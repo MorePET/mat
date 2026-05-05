@@ -242,6 +242,26 @@ class TestComputeMass:
         out = tools.compute_mass("not_real", 100.0)
         assert "error" in out
 
+    def test_ufloat_density_returns_plain_floats(self):
+        """If a curated density is a ufloat (#149), the JSON payload must
+        still be plain floats — agents/JSON can't handle ufloats."""
+        import json
+
+        from uncertainties import ufloat
+
+        import pymat
+
+        steel = pymat["Stainless Steel 304"]
+        original = steel.properties.mechanical.density
+        steel.properties.mechanical.density = ufloat(7.99, 0.05)
+        try:
+            out = tools.compute_mass("Stainless Steel 304", 1000.0)
+            assert isinstance(out["mass_g"], float)
+            assert isinstance(out["density_g_per_cm3"], float)
+            json.dumps(out)  # must be JSON-serializable end-to-end
+        finally:
+            steel.properties.mechanical.density = original
+
 
 # ── get_appearance ────────────────────────────────────────────
 
