@@ -29,6 +29,7 @@ from .core import Material
 from .properties import (
     AllProperties,
 )
+from .sources import Source, merge_sources, parse_sources_table
 from .units import STANDARD_UNITS
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,12 @@ def _build_properties_from_dict(
         """Update property object from dictionary, handling both legacy and new formats."""
         for key, value in prop_dict.items():
             if value is None:
+                continue
+
+            # Underscore-prefixed keys are reserved (e.g. _sources, _comment).
+            # Skipped explicitly — without this, hasattr() would silently no-op
+            # and swallow real bugs.
+            if key.startswith("_"):
                 continue
 
             # Skip processed value/unit pairs
@@ -242,6 +249,20 @@ def _resolve_material_node(
         parent_props,
     )
 
+    # Provenance (#150). Parse `[<material>._sources]` and overlay on parent.
+    parent_sources: Dict[str, Source] = (
+        parent_material._sources if parent_material is not None else {}
+    )
+    raw_sources = data.get("_sources")
+    if raw_sources is not None:
+        if not isinstance(raw_sources, dict):
+            kind = type(raw_sources).__name__
+            raise ValueError(f"{key}._sources must be a TOML table, got {kind}")
+        own_sources = parse_sources_table(raw_sources)
+        sources = merge_sources(parent_sources, own_sources)
+    else:
+        sources = dict(parent_sources)
+
     # Create material
     material = Material(
         name=name,
@@ -254,6 +275,7 @@ def _resolve_material_node(
         properties=properties,
         parent=parent_material,
         _key=key,
+        _sources=sources,
     )
 
     # Populate vis — inherit from parent, overlay any TOML overrides (#88).
