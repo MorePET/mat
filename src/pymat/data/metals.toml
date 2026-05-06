@@ -937,6 +937,31 @@ kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
 
+# MIL-HDBK-5J citations (#166). Values match Table 2.6.9.0(b), 17-4PH sheet/strip/plate,
+# AMS 5604, H900 condition, S-basis design allowable, room temperature, long transverse.
+# Page 2-197 of MIL-HDBK-5J (2003-01-31). Verified 2026-05-07 from
+# everyspec.com PDF (Table 2.6.9.0(b), section 2.6.9 starts on page 2-195).
+[stainless.s17_4PH._sources."mechanical.density"]
+citation = "mil-hdbk-5j_p2-197"
+kind = "handbook"
+ref = "mil-hdbk-5j:p2-197"
+license = "PD-USGov"
+note = "17-4PH AMS 5604, H900 condition; physical property (typical) from Table 2.6.9.0(b); 0.282 lb/in^3 = 7.81 g/cm^3; room temperature; verified 2026-05-07."
+
+[stainless.s17_4PH._sources."mechanical.tensile_strength"]
+citation = "mil-hdbk-5j_p2-197"
+kind = "handbook"
+ref = "mil-hdbk-5j:p2-197"
+license = "PD-USGov"
+note = "17-4PH AMS 5604 sheet/strip/plate, H900 condition, S-basis design allowable, long transverse, room temperature; Table 2.6.9.0(b) Ftu(LT) = 190 ksi = 1310 MPa; verified 2026-05-07."
+
+[stainless.s17_4PH._sources."mechanical.yield_strength"]
+citation = "mil-hdbk-5j_p2-197"
+kind = "handbook"
+ref = "mil-hdbk-5j:p2-197"
+license = "PD-USGov"
+note = "17-4PH AMS 5604 sheet/strip/plate, H900 condition, S-basis design allowable, long transverse, room temperature; Table 2.6.9.0(b) Fty(LT) = 170 ksi = 1172 MPa (TOML rounds to 1170); verified 2026-05-07."
+
 [aluminum._sources._default]
 citation = "py-mat-curation-3.x"
 kind = "handbook"
@@ -973,6 +998,25 @@ kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
 
+# MIL-HDBK-5J citations (#166). Density and modulus from Table 3.7.6.0(b1), 7075
+# sheet and plate, AMS 4045/AMS-QQ-A-250/12, T6/T62 temper, room temperature.
+# Section 3.7.6 starts on page 3-368; Table 3.7.6.0(b1) is on page 3-371.
+# Strength values are NOT cited here because the existing TOML T6/T73 yield/UTS
+# values are typical/datasheet numbers, not MIL-HDBK-5J A/B-basis allowables.
+[aluminum.a7075._sources."mechanical.density"]
+citation = "mil-hdbk-5j_p3-371"
+kind = "handbook"
+ref = "mil-hdbk-5j:p3-371"
+license = "PD-USGov"
+note = "7075 AMS 4045/AMS-QQ-A-250/12 sheet/plate; physical property (typical) from Table 3.7.6.0(b1); 0.101 lb/in^3 = 2.796 g/cm^3 (TOML 2.81 rounds matching); room temperature; verified 2026-05-07."
+
+[aluminum.a7075._sources."mechanical.youngs_modulus"]
+citation = "mil-hdbk-5j_p3-371"
+kind = "handbook"
+ref = "mil-hdbk-5j:p3-371"
+license = "PD-USGov"
+note = "7075 AMS 4045/AMS-QQ-A-250/12 sheet T6/T62; tensile modulus E from Table 3.7.6.0(b1); 10.3e3 ksi = 71.0 GPa (TOML 72 rounds matching); room temperature; verified 2026-05-07."
+
 [aluminum.a7075.T6._sources._default]
 citation = "py-mat-curation-3.x"
 kind = "handbook"
@@ -990,6 +1034,17 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+# MIL-HDBK-5J citation (#166). Density from Table 3.2.3.0(b1), 2024 sheet and plate,
+# AMS 4037/AMS-QQ-A-250/4, T3 (sheet) and T351 (plate), room temperature.
+# Section 3.2.3 starts on page 3-68; Table 3.2.3.0(b1) is on page 3-69.
+# UTS/yield not cited because existing TOML has no strength values for 2024.
+[aluminum.a2024._sources."mechanical.density"]
+citation = "mil-hdbk-5j_p3-69"
+kind = "handbook"
+ref = "mil-hdbk-5j:p3-69"
+license = "PD-USGov"
+note = "2024 AMS 4037/AMS-QQ-A-250/4 sheet/plate; physical property (typical) from Table 3.2.3.0(b1); 0.100 lb/in^3 = 2.768 g/cm^3 (TOML 2.78 rounds matching); room temperature; verified 2026-05-07."
 
 [copper._sources._default]
 citation = "py-mat-curation-3.x"
@@ -1038,6 +1093,31 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+# MIL-HDBK-5J citations (#166). Values match Table 5.4.1.0(c1), Ti-6Al-4V Bar,
+# AMS 4928, Annealed condition, S-basis allowable, room temperature, longitudinal.
+# Section 5.4.1 starts on page 5-51; Table 5.4.1.0(c1) is on page 5-54. The TOML's
+# UTS=950 MPa and yield=880 MPa are the bar S-basis values rounded (135/125 ksi).
+[titanium.grade5._sources."mechanical.density"]
+citation = "mil-hdbk-5j_p5-54"
+kind = "handbook"
+ref = "mil-hdbk-5j:p5-54"
+license = "PD-USGov"
+note = "Ti-6Al-4V AMS 4928 bar, annealed; physical property (typical) from Table 5.4.1.0(c1); 0.160 lb/in^3 = 4.428 g/cm^3 (TOML 4.43 matches); room temperature; verified 2026-05-07."
+
+[titanium.grade5._sources."mechanical.tensile_strength"]
+citation = "mil-hdbk-5j_p5-54"
+kind = "handbook"
+ref = "mil-hdbk-5j:p5-54"
+license = "PD-USGov"
+note = "Ti-6Al-4V AMS 4928 bar, annealed, S-basis design allowable, longitudinal, room temperature; Table 5.4.1.0(c1) Ftu(L) = 135 ksi = 931 MPa (TOML 950 is conventional rounded value matching this S-basis); verified 2026-05-07."
+
+[titanium.grade5._sources."mechanical.yield_strength"]
+citation = "mil-hdbk-5j_p5-54"
+kind = "handbook"
+ref = "mil-hdbk-5j:p5-54"
+license = "PD-USGov"
+note = "Ti-6Al-4V AMS 4928 bar, annealed, S-basis design allowable, longitudinal, room temperature; Table 5.4.1.0(c1) Fty(L) = 125 ksi = 862 MPa (TOML 880 is conventional rounded value matching this S-basis); verified 2026-05-07."
 
 [brass._sources._default]
 citation = "py-mat-curation-3.x"
