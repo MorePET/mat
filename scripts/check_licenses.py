@@ -39,6 +39,12 @@ ALLOWED = {
     "PD-USGov",
     "CC-BY-4.0",
     "CC-BY-SA-4.0",
+    # Geant4 Software License — BSD-like, attribution required. Added in
+    # #167 for the G4NistMaterialBuilder mirror. Sits between CC-BY and
+    # `proprietary-reference-only`: redistributable in any form provided
+    # the upstream copyright/attribution travels with the values. See
+    # docs/data-policy.md and https://geant4.web.cern.ch/download/license.html.
+    "Geant4-SL",
     "proprietary-reference-only",
 }
 # `unknown` is parseable but rejected — transitional value, blocked at merge.

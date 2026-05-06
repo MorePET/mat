@@ -44,9 +44,17 @@ LICENSE_ALLOWLIST = frozenset(
         "PD-USGov",
         "CC-BY-4.0",
         "CC-BY-SA-4.0",
+        "Geant4-SL",
         "proprietary-reference-only",
     }
 )
+# `Geant4-SL`: the Geant4 Software License — BSD-like with attribution.
+# Added for #167 (Geant4 G4NistMaterialBuilder mirror). The Geant4
+# collaboration's tabulated NIST constants ride on this license; it's
+# strictly more permissive than `proprietary-reference-only` and
+# distinguishing it makes the attribution requirement explicit. See
+# https://geant4.web.cern.ch/download/license.html and
+# docs/data-policy.md (Allowed-licenses section).
 
 SOURCE_KIND_ALLOWLIST = frozenset({"doi", "qid", "handbook", "vendor", "measured"})
 
