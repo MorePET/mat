@@ -760,3 +760,162 @@ print_bed_temp_unit = "degC"
 [pc.compliance]
 food_safe = true
 recycling_symbol = 7
+
+# ============================================================================
+# Provenance (#175 audit)
+# ----------------------------------------------------------------------------
+# Default _sources entries attached during the one-time #175 audit. These
+# placeholder citations point at py-mat's aggregate curation history; future
+# per-source PRs (#158-#173) overwrite individual entries with proper
+# citations (Wikidata QIDs, NIST datasets, vendor URLs, etc.).
+# ============================================================================
+
+[peek._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[peek.unfilled._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[peek.GF30._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[peek.CF30._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[peek.victrex._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[peek.victrex.v450G._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[delrin._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[ultem._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[ptfe._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[ptfe.reflector._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[esr._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[nylon._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pla._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[abs._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[petg._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[tpu._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[vespel._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[torlon._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pctfe._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pmma._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pe._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pe.hdpe._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pe.ldpe._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pe.uhmwpe._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pc._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
