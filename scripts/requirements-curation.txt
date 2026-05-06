@@ -14,3 +14,6 @@ playwright>=1.40
 # tomlkit: roundtrip-safe TOML for scripts/_curation.writeback. Preserves
 # comments and formatting when enrichers patch values into data TOMLs.
 tomlkit>=0.12
+# pyyaml: refractiveindex.info ships its database as YAML 1.1 files;
+# used by scripts/enrich_from_refractiveindex.py (#164). NOT a runtime dep.
+pyyaml>=6.0

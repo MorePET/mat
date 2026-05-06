@@ -125,6 +125,51 @@ def cached_get(
     return body
 
 
+def cached_get_text(
+    url: str,
+    params: dict[str, Any] | None = None,
+    *,
+    ttl_days: int = 30,
+    source: str,
+    suffix: str = ".txt",
+    headers: dict[str, str] | None = None,
+    timeout: int = 20,
+) -> str:
+    """Fetch a text/yaml/xml response, caching on disk under `scripts/.cache/<source>/`.
+
+    Sibling of `cached_get` for sources that ship non-JSON payloads
+    (refractiveindex.info ships YAML 1.1 files; NIST sometimes serves
+    plain-text tables). Returns the raw response body as a string. On a
+    cache hit within TTL, no network call is made.
+
+    `suffix` controls the on-disk extension (default `.txt`; pass
+    `.yaml`/`.xml` for clarity when browsing the cache). The cache key
+    is derived from `(url, params)` so two callers using different
+    suffixes won't collide unless the URL is identical — which is the
+    correct behaviour: same URL = same payload.
+    """
+    key = _cache_key(url, {**(params or {}), "method": "GET-text"})
+    path = _cache_path(source, key, suffix)
+    ttl_seconds = ttl_days * 86400
+
+    if path.exists():
+        age = time.time() - path.stat().st_mtime
+        if age < ttl_seconds:
+            return path.read_text(encoding="utf-8")
+
+    merged_headers = {"User-Agent": USER_AGENT}
+    if headers:
+        merged_headers.update(headers)
+
+    resp = requests.get(url, params=params, headers=merged_headers, timeout=timeout)
+    resp.raise_for_status()
+    body = resp.text
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+    return body
+
+
 # --------------------------------------------------------------------------- #
 # 2. UnitNormalizer — source unit string → py-mat canonical                  #
 # --------------------------------------------------------------------------- #
@@ -390,6 +435,7 @@ __all__ = [
     "UnitNormalizer",
     "build_source_row",
     "cached_get",
+    "cached_get_text",
     "default_normalizer",
     "fmt_delta",
     "load_material_keys",

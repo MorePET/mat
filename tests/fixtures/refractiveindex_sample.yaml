@@ -1,0 +1,22 @@
+# this file is part of refractiveindex.info database
+# refractiveindex.info database is in the public domain
+# copyright and related rights waived via CC0 1.0
+#
+# Synthetic fixture for tests/test_refractiveindex_enrichment.py — NOT a
+# real material. Designed to exercise the parser's `tabulated nk` path
+# end-to-end (4 rows, both n and k populated, wavelengths in micrometres
+# so the µm→nm conversion matters).
+
+REFERENCES: |
+    Test Author.
+    Synthetic fixture for refractiveindex.info enricher tests.
+    <a href="https://doi.org/10.0000/test"><i>Fixture J.</i> <b>1</b>, 1-2 (2026)</a>
+COMMENTS: |
+    Synthetic test data — not a real material.
+DATA:
+  - type: tabulated nk
+    data: |
+        0.300 1.50 0.001
+        0.500 1.55 0.002
+        0.700 1.52 0.003
+        0.900 1.50 0.004
