@@ -6,4 +6,11 @@ Do not edit by hand — re-run the script and commit the result.
 This file lists every CC-BY and CC-BY-SA source whose values appear in the
 py-materials data corpus. Per the licenses, attribution is required.
 
-_(no CC-BY sources currently in use)_
+| Citation | License | Reference |
+|---|---|---|
+| `Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Beryllium |
+| `Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Beryllium |
+| `Wikipedia: Copper (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Copper |
+| `Wikipedia: Kovar (Carpenter datasheet, CC-BY-SA-4.0)` | CC-BY-SA-4.0 | wikipedia:Kovar |
+| `Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Tantalum |
+| `Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Tantalum |

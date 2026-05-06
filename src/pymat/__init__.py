@@ -98,6 +98,11 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "brass",
         "inconel625",
         "inconel718",
+        "kovar",
+        "mu_metal",
+        "OFHC",
+        "beryllium",
+        "tantalum",
     ],
     "scintillators": [
         "lyso",
