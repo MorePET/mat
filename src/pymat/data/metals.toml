@@ -799,6 +799,77 @@ metallic = 1.0
 roughness = 0.3
 transmission = 0.0
 
+# Inconel 625 — Ni-Cr-Mo-Nb solid-solution superalloy (#125)
+# MIL-HDBK-5J §6.3.3, p.6-34 to 6-44. Sheet/plate values from Table 6.3.3.0(b),
+# AMS 5599, annealed, A-basis, longitudinal, room temperature.
+[nickel.inconel625]
+name = "Inconel 625"
+grade = "alloy 625"
+# Nominal composition (Special Metals technical bulletin SMC-063, mass fractions).
+composition = {Ni = 0.62, Cr = 0.215, Mo = 0.09, Nb = 0.038, Fe = 0.025, Co = 0.005, Mn = 0.003, Si = 0.003, Al = 0.002, Ti = 0.002}
+
+[nickel.inconel625.mechanical]
+density_value = 8.44
+density_unit = "g/cm^3"
+youngs_modulus_value = 205
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.28
+yield_strength_value = 379
+yield_strength_unit = "MPa"
+tensile_strength_value = 820
+tensile_strength_unit = "MPa"
+elongation = 30
+
+[nickel.inconel625.thermal]
+melting_point_value = 1350
+melting_point_unit = "degC"
+thermal_conductivity_value = 9.8
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 410
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 12.8e-6
+thermal_expansion_unit = "1/K"
+
+[nickel.inconel625.electrical]
+resistivity_value = 1.29e-6
+resistivity_unit = "ohm*m"
+
+# Inconel 718 — Ni-Cr-Fe precipitation-hardenable superalloy (#126)
+# MIL-HDBK-5J §6.3.5, p.6-51 to 6-76. Sheet/plate STA values from Table
+# 6.3.5.0(b), AMS 5596, solution-treated and aged per spec, A-basis, long
+# transverse (LT), room temperature.
+[nickel.inconel718]
+name = "Inconel 718"
+grade = "alloy 718"
+# Nominal composition (Special Metals technical bulletin SMC-045, mass fractions).
+composition = {Ni = 0.525, Fe = 0.182, Cr = 0.19, Nb = 0.05, Mo = 0.03, Ti = 0.009, Al = 0.005, Co = 0.005, Mn = 0.002, Si = 0.002}
+
+[nickel.inconel718.mechanical]
+density_value = 8.22
+density_unit = "g/cm^3"
+youngs_modulus_value = 203
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.29
+yield_strength_value = 1014
+yield_strength_unit = "MPa"
+tensile_strength_value = 1241
+tensile_strength_unit = "MPa"
+elongation = 12
+
+[nickel.inconel718.thermal]
+melting_point_value = 1336
+melting_point_unit = "degC"
+thermal_conductivity_value = 11.1
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 435
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 13.0e-6
+thermal_expansion_unit = "1/K"
+
+[nickel.inconel718.electrical]
+resistivity_value = 1.25e-6
+resistivity_unit = "ohm*m"
+
 
 # ============================================================================
 # IRON
@@ -1190,6 +1261,188 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+# Inconel 625 (#125). Mechanical values from MIL-HDBK-5J Table 6.3.3.0(b), p.6-35,
+# AMS 5599 sheet/plate, annealed, A-basis design allowable, longitudinal,
+# room temperature. Density also published in Table 6.3.3.0(b) and (c) as
+# typical physical property. Thermal/electrical values come from the Special
+# Metals INCONEL alloy 625 technical bulletin (SMC-063) — RT entries from
+# Table 2 (Physical Constants) and Table 3 (Thermal & Electrical Properties).
+# Verified 2026-05-07 from everyspec.com PDF and specialmetals.com bulletin.
+[nickel.inconel625._sources._default]
+citation = "MIL-HDBK-5J p.6-35 + Special Metals SMC-063"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed; mechanical values from MIL-HDBK-5J Table 6.3.3.0(b), A-basis, room temperature; thermal/electrical values from Special Metals Inc. SMC-063 bulletin (proprietary-reference-only); see per-property entries for precise sourcing; verified 2026-05-07."
+
+[nickel.inconel625._sources."mechanical.density"]
+citation = "MIL-HDBK-5J p.6-35"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed; physical property (typical) from Table 6.3.3.0(b); 0.305 lb/in^3 = 8.44 g/cm^3; room temperature; verified 2026-05-07."
+
+[nickel.inconel625._sources."mechanical.tensile_strength"]
+citation = "MIL-HDBK-5J p.6-35"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed, A-basis design allowable, longitudinal, thickness 0.063-0.109 in, room temperature; Table 6.3.3.0(b) Ftu(L) = 119 ksi = 820.4 MPa (TOML rounds to 820); verified 2026-05-07."
+
+[nickel.inconel625._sources."mechanical.yield_strength"]
+citation = "MIL-HDBK-5J p.6-35"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed, A-basis design allowable, longitudinal, 0.2% offset, thickness 0.063-0.109 in, room temperature; Table 6.3.3.0(b) Fty(L) = 55 ksi = 379.2 MPa (TOML rounds to 379); verified 2026-05-07."
+
+[nickel.inconel625._sources."mechanical.youngs_modulus"]
+citation = "MIL-HDBK-5J p.6-35"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed; tensile modulus E from Table 6.3.3.0(b); 29.8e3 ksi = 205.4 GPa (TOML rounds to 205); room temperature; verified 2026-05-07."
+
+[nickel.inconel625._sources."mechanical.poissons_ratio"]
+citation = "MIL-HDBK-5J p.6-35"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed; Poisson's ratio from Table 6.3.3.0(b); mu = 0.28; room temperature; verified 2026-05-07."
+
+[nickel.inconel625._sources."mechanical.elongation"]
+citation = "MIL-HDBK-5J p.6-35"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-35"
+license = "PD-USGov"
+note = "Inconel 625 AMS 5599 sheet/plate, annealed; elongation (S-basis), long-transverse direction, from Table 6.3.3.0(b); 30%; room temperature; verified 2026-05-07."
+
+[nickel.inconel625._sources."thermal.melting_point"]
+citation = "Special Metals Inc. INCONEL alloy 625 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-625"
+license = "proprietary-reference-only"
+note = "Inconel 625 melting range 1290-1350 degC from Table 2 (Physical Constants), SMC-063; TOML stores liquidus 1350 degC; pub. SMC-063 (2013); verified 2026-05-07."
+
+[nickel.inconel625._sources."thermal.thermal_conductivity"]
+citation = "Special Metals Inc. INCONEL alloy 625 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-625"
+license = "proprietary-reference-only"
+note = "Inconel 625 annealed 2100F/1hr; Table 3 (Thermal & Electrical Properties), SMC-063; k at 21 degC = 9.8 W/(m*K) (interpolated cell at 21 degC); pub. SMC-063 (2013); verified 2026-05-07."
+
+[nickel.inconel625._sources."thermal.specific_heat"]
+citation = "Special Metals Inc. INCONEL alloy 625 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-625"
+license = "proprietary-reference-only"
+note = "Inconel 625 specific heat from Table 2 (Physical Constants), SMC-063; calculated value 410 J/(kg*K) at 21 degC (70 degF); pub. SMC-063 (2013); verified 2026-05-07."
+
+[nickel.inconel625._sources."thermal.thermal_expansion"]
+citation = "Special Metals Inc. INCONEL alloy 625 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-625"
+license = "proprietary-reference-only"
+note = "Inconel 625 mean linear expansion 70 degF to 200 degF (21-93 degC) from Table 3, SMC-063; 7.1e-6 in/in/degF = 12.8e-6 1/K; pub. SMC-063 (2013); verified 2026-05-07."
+
+[nickel.inconel625._sources."electrical.resistivity"]
+citation = "Special Metals Inc. INCONEL alloy 625 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-625"
+license = "proprietary-reference-only"
+note = "Inconel 625 annealed 2100F/1hr electrical resistivity at 70 degF (21 degC) from Table 3, SMC-063; 776 ohm-circ-mil/ft = 129 microohm-cm = 1.29e-6 ohm*m; pub. SMC-063 (2013); verified 2026-05-07."
+
+# Inconel 718 (#126). Mechanical values from MIL-HDBK-5J Table 6.3.5.0(b),
+# p.6-52, AMS 5596 sheet/plate, solution-treated and aged (per spec),
+# A-basis design allowable, long-transverse, room temperature. Density is
+# the typical physical property listed in the same table. Thermal/electrical
+# values come from the Special Metals INCONEL alloy 718 technical bulletin
+# (SMC-045) — RT entries from Table 2 (Physical Constants) and Table 5
+# (Thermal Properties). Verified 2026-05-07.
+[nickel.inconel718._sources._default]
+citation = "MIL-HDBK-5J p.6-52 + Special Metals SMC-045"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, solution-treated and aged per spec; mechanical values from MIL-HDBK-5J Table 6.3.5.0(b), A-basis, long-transverse, room temperature; thermal/electrical values from Special Metals Inc. SMC-045 bulletin (proprietary-reference-only); see per-property entries for precise sourcing; verified 2026-05-07."
+
+[nickel.inconel718._sources."mechanical.density"]
+citation = "MIL-HDBK-5J p.6-52"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, STA; physical property (typical) from Table 6.3.5.0(b); 0.297 lb/in^3 = 8.22 g/cm^3; room temperature; verified 2026-05-07."
+
+[nickel.inconel718._sources."mechanical.tensile_strength"]
+citation = "MIL-HDBK-5J p.6-52"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, STA, A-basis design allowable, long-transverse, thickness 0.010-0.187 in, room temperature; Table 6.3.5.0(b) Ftu(LT) = 180 ksi = 1241.1 MPa (TOML rounds to 1241); verified 2026-05-07."
+
+[nickel.inconel718._sources."mechanical.yield_strength"]
+citation = "MIL-HDBK-5J p.6-52"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, STA, A-basis design allowable, long-transverse, 0.2% offset, thickness 0.010-0.187 in, room temperature; Table 6.3.5.0(b) Fty(LT) = 147 ksi = 1013.5 MPa (TOML rounds to 1014); verified 2026-05-07."
+
+[nickel.inconel718._sources."mechanical.youngs_modulus"]
+citation = "MIL-HDBK-5J p.6-52"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, STA; tensile modulus E from Table 6.3.5.0(b); 29.4e3 ksi = 202.7 GPa (TOML rounds to 203); room temperature; verified 2026-05-07."
+
+[nickel.inconel718._sources."mechanical.poissons_ratio"]
+citation = "MIL-HDBK-5J p.6-52"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, STA; Poisson's ratio from Table 6.3.5.0(b); mu = 0.29; room temperature; verified 2026-05-07."
+
+[nickel.inconel718._sources."mechanical.elongation"]
+citation = "MIL-HDBK-5J p.6-52"
+kind = "handbook"
+ref = "mil-hdbk-5j:p6-52"
+license = "PD-USGov"
+note = "Inconel 718 AMS 5596 sheet/plate, STA; elongation (S-basis), long-transverse direction, from Table 6.3.5.0(b); 12%; room temperature; verified 2026-05-07."
+
+[nickel.inconel718._sources."thermal.melting_point"]
+citation = "Special Metals Inc. INCONEL alloy 718 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-718"
+license = "proprietary-reference-only"
+note = "Inconel 718 melting range 1260-1336 degC from Table 2 (Physical Constants), SMC-045; TOML stores liquidus 1336 degC; pub. SMC-045 (2007); verified 2026-05-07."
+
+[nickel.inconel718._sources."thermal.thermal_conductivity"]
+citation = "Special Metals Inc. INCONEL alloy 718 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-718"
+license = "proprietary-reference-only"
+note = "Inconel 718 annealed 1800F/1hr; Table 5 (Thermal Properties), SMC-045; k at 70 degF (21 degC) = 77 BTU*in/(ft^2*h*degF) = 11.1 W/(m*K); pub. SMC-045 (2007); verified 2026-05-07."
+
+[nickel.inconel718._sources."thermal.specific_heat"]
+citation = "Special Metals Inc. INCONEL alloy 718 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-718"
+license = "proprietary-reference-only"
+note = "Inconel 718 specific heat from Table 2 (Physical Constants), SMC-045; 0.104 BTU/(lb*degF) at 70 degF (21 degC) = 435 J/(kg*K); pub. SMC-045 (2007); verified 2026-05-07."
+
+[nickel.inconel718._sources."thermal.thermal_expansion"]
+citation = "Special Metals Inc. INCONEL alloy 718 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-718"
+license = "proprietary-reference-only"
+note = "Inconel 718 mean linear expansion 70 degF to 200 degF (21-93 degC) from Table 5, SMC-045; 7.31e-6 in/in/degF = 13.16e-6 1/K (TOML rounds to 13.0e-6 1/K, conventional 718 RT alpha); pub. SMC-045 (2007); verified 2026-05-07."
+
+[nickel.inconel718._sources."electrical.resistivity"]
+citation = "Special Metals Inc. INCONEL alloy 718 Technical Bulletin"
+kind = "vendor"
+ref = "specialmetals.com:inconel-alloy-718"
+license = "proprietary-reference-only"
+note = "Inconel 718 annealed 1800F/1hr electrical resistivity at 70 degF (21 degC) from Table 5, SMC-045; 753 ohm-circ-mil/ft = 125 microohm-cm = 1.25e-6 ohm*m; pub. SMC-045 (2007); verified 2026-05-07."
 
 [iron._sources._default]
 citation = "py-mat-curation-3.x"
