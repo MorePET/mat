@@ -135,6 +135,34 @@ Holding a TOML with the old 3.0 slashed-string form
 raises `ValueError` on the old form since 3.1 — see
 [docs/migration/v2-to-v3.md](docs/migration/v2-to-v3.md).
 
+## Nuclear data (optional extra)
+
+`[<material>.nuclear]` holds scalar identity (`radiation_length`,
+`interaction_length`, `moliere_radius`, `Z_eff`,
+`mean_excitation_energy_eV`, `intrinsic_activity_Bq_per_g`).
+
+Cross-section tables, neutron data, decay chains, activation products,
+and stopping-power tables live in the
+[`nucl-parquet`](https://pypi.org/project/nucl-parquet/) package — not
+in py-mat. The `mat.properties.nuclear.mu_rho(energy_keV=511)` accessor
+imports `nucl_parquet` lazily on first call.
+
+To enable:
+
+```bash
+pip install 'py-materials[nuclear]'
+```
+
+Without the extra installed, `mu_rho()` raises `ImportError` with a
+hint. The core schema (the scalar fields) works either way.
+
+> Note: `nucl-parquet` requires Python 3.11+. On 3.10 the extra resolves
+> to nothing and `mu_rho()` is unavailable; the scalar fields still work.
+
+The 3 length fields previously lived on `[<material>.optical]` (in
+3.x and earlier). They moved to `[nuclear]` in this release for
+semantic accuracy. In-tree TOMLs migrated automatically.
+
 ## Curation tools
 
 Curation-time utilities live in `scripts/` and are **not** runtime
