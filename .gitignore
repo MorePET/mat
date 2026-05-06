@@ -230,3 +230,6 @@ tests/visual_output/
 
 # Local script-output scratch (not shipped)
 examples/output/
+
+# Curation HTTP cache (Phase 4 prep) — populated by scripts/_curation.cached_get
+scripts/.cache/
