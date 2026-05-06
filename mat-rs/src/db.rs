@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use crate::error::MatError;
-use crate::material::{Material, OpticalProperties};
+use crate::material::{Material, NuclearProperties, OpticalProperties};
 
 /// Embedded TOML data files (compiled into the binary).
 const BUILTIN_TOML: &[(&str, &str)] = &[
@@ -211,6 +211,7 @@ fn build_material(
     let density = extract_density(table).or_else(|| parent_table.and_then(extract_density));
 
     let optical = extract_optical(table, parent_table);
+    let nuclear = extract_nuclear(table, parent_table);
 
     Material {
         key: full_key.to_string(),
@@ -219,6 +220,7 @@ fn build_material(
         composition,
         density,
         optical,
+        nuclear,
     }
 }
 
@@ -267,7 +269,32 @@ fn extract_optical(
         light_yield: get("light_yield"),
         decay_time: get("decay_time"),
         emission_peak: get("emission_peak"),
+    })
+}
+
+fn extract_nuclear(
+    table: &toml::Table,
+    parent_table: Option<&toml::Table>,
+) -> Option<NuclearProperties> {
+    let nuc_table = table.get("nuclear").and_then(|v| v.as_table());
+    let parent_nuc = parent_table
+        .and_then(|p| p.get("nuclear"))
+        .and_then(|v| v.as_table());
+
+    if nuc_table.is_none() && parent_nuc.is_none() {
+        return None;
+    }
+
+    let get = |key: &str| -> Option<f64> {
+        nuc_table
+            .and_then(|t| t.get(key))
+            .or_else(|| parent_nuc.and_then(|t| t.get(key)))
+            .and_then(|v| v.as_float().or_else(|| v.as_integer().map(|i| i as f64)))
+    };
+
+    Some(NuclearProperties {
         radiation_length: get("radiation_length"),
         interaction_length: get("interaction_length"),
+        moliere_radius: get("moliere_radius"),
     })
 }

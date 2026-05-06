@@ -388,6 +388,12 @@ class ElectricalProperties:
     breakdown_voltage_unit: str = "kV/mm"
     volume_resistivity: Optional[float] = None  # Ω·cm
     volume_resistivity_unit: str = "ohm*cm"
+    # Surface resistivity, distinct from volume_resistivity (#154)
+    surface_resistivity: Optional[float] = None  # Ω/sq
+    surface_resistivity_unit: str = "ohm"
+    # Arc resistance for HV detector feedthroughs (#154)
+    arc_resistance: Optional[float] = None  # seconds
+    arc_resistance_unit: str = "s"
 
     # T-dependent curve (#148).
     resistivity_curve: Optional[TempCurve] = None
@@ -427,6 +433,18 @@ class ElectricalProperties:
             return None
         return self.volume_resistivity * ureg(self.volume_resistivity_unit)
 
+    @property
+    def surface_resistivity_qty(self) -> Optional[Quantity]:
+        if self.surface_resistivity is None:
+            return None
+        return self.surface_resistivity * ureg(self.surface_resistivity_unit)
+
+    @property
+    def arc_resistance_qty(self) -> Optional[Quantity]:
+        if self.arc_resistance is None:
+            return None
+        return self.arc_resistance * ureg(self.arc_resistance_unit)
+
 
 @dataclass
 class OpticalProperties:
@@ -450,10 +468,9 @@ class OpticalProperties:
     emission_peak: Optional[float] = None  # nm (peak emission wavelength)
     emission_range: Optional[tuple] = None  # (min_nm, max_nm)
 
-    # Radiation interaction (detector/shielding physics)
-    radiation_length: Optional[float] = None  # cm (X₀ for photons)
-    interaction_length: Optional[float] = None  # cm (λ for hadrons)
-    moliere_radius: Optional[float] = None  # cm
+    # NOTE: radiation_length / interaction_length / moliere_radius moved
+    # to NuclearProperties in #157 — they're nuclear/radiation physics, not
+    # optical. Existing TOMLs migrated in the same PR.
     energy_resolution: Optional[float] = None  # % at 1 MeV (for detectors)
 
     # Geant4 photon transport — both currently missing in schema (#153)
@@ -555,6 +572,69 @@ class VacuumProperties:
     permeation_he: Optional[float] = None
     # Operational class hint: "UHV" | "HV" | "rough"
     vacuum_class: Optional[str] = None
+
+
+@dataclass
+class NuclearProperties:
+    """Nuclear / radiation-physics scalars (#157).
+
+    Identity-only here — cross-section tables, neutron data, decay chains,
+    activation products, and stopping-power tables live in the optional
+    `py-mat[nuclear]` extra (wired to `nucl-parquet`). The `mu_rho()`
+    accessor below imports `nucl_parquet` lazily on first call so the
+    core package stays dependency-light.
+
+    Fields previously on OpticalProperties (radiation_length,
+    interaction_length, moliere_radius) moved here per ADR-0003 §1.
+    """
+
+    # Detector/shielding lengths (moved from OpticalProperties)
+    radiation_length: Optional[float] = None  # cm (X₀ for photons)
+    radiation_length_unit: str = "cm"
+    interaction_length: Optional[float] = None  # cm (λ for hadrons)
+    interaction_length_unit: str = "cm"
+    moliere_radius: Optional[float] = None  # cm
+    moliere_radius_unit: str = "cm"
+
+    # Effective Z and Geant4 mean-excitation-energy
+    Z_eff: Optional[float] = None  # dimensionless
+    mean_excitation_energy_eV: Optional[float] = None  # eV
+    # LYSO has 176Lu intrinsic activity ≈ 39 Bq/g
+    intrinsic_activity_Bq_per_g: Optional[float] = None
+
+    @property
+    def radiation_length_qty(self) -> Optional["Quantity"]:
+        if self.radiation_length is None:
+            return None
+        return self.radiation_length * ureg(self.radiation_length_unit)
+
+    @property
+    def interaction_length_qty(self) -> Optional["Quantity"]:
+        if self.interaction_length is None:
+            return None
+        return self.interaction_length * ureg(self.interaction_length_unit)
+
+    @property
+    def moliere_radius_qty(self) -> Optional["Quantity"]:
+        if self.moliere_radius is None:
+            return None
+        return self.moliere_radius * ureg(self.moliere_radius_unit)
+
+    def mu_rho(self, energy_keV: float) -> float:
+        """Mass attenuation coefficient (cm²/g) at a photon energy.
+
+        Lazy-imports `nucl_parquet`. Install via `pip install py-mat[nuclear]`.
+        """
+        try:
+            import nucl_parquet  # type: ignore[import-not-found]
+        except ImportError as e:
+            raise ImportError(
+                "mu_rho() requires the optional `py-mat[nuclear]` extra. "
+                "Install with: pip install 'py-mat[nuclear]'"
+            ) from e
+        # Real implementation will dispatch on Z_eff or composition; for now,
+        # stub the integration so the API contract is locked in. Tracked by #157.
+        return nucl_parquet.mu_rho(z=self.Z_eff, energy_keV=energy_keV)  # pragma: no cover
 
 
 @dataclass
@@ -687,6 +767,7 @@ class AllProperties:
     optical: OpticalProperties = field(default_factory=OpticalProperties)
     magnetic: MagneticProperties = field(default_factory=MagneticProperties)
     vacuum: VacuumProperties = field(default_factory=VacuumProperties)
+    nuclear: NuclearProperties = field(default_factory=NuclearProperties)
     manufacturing: ManufacturingProperties = field(default_factory=ManufacturingProperties)
     compliance: ComplianceProperties = field(default_factory=ComplianceProperties)
     sourcing: SourcingProperties = field(default_factory=SourcingProperties)

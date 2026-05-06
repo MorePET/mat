@@ -45,6 +45,7 @@ _KNOWN_GROUPS = {
     "optical",
     "magnetic",
     "vacuum",
+    "nuclear",
     "manufacturing",
     "compliance",
     "sourcing",
