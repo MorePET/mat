@@ -82,7 +82,12 @@ fn lyso_properties() {
     assert_eq!(opt.light_yield, Some(32000.0));
     assert_eq!(opt.decay_time, Some(41.0));
     assert_eq!(opt.emission_peak, Some(420.0));
-    assert_eq!(opt.radiation_length, Some(1.14));
+
+    // radiation_length / interaction_length / moliere_radius moved from
+    // optical → nuclear in #157.
+    let nuc = lyso.nuclear().expect("LYSO should have nuclear properties");
+    assert_eq!(nuc.radiation_length, Some(1.14));
+    assert_eq!(nuc.interaction_length, Some(25.0));
 }
 
 #[test]
