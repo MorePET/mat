@@ -235,7 +235,7 @@ def _parse_sparql_bindings(payload: dict) -> dict[str, dict]:
     """Parse a SPARQL JSON payload into our `{qid: {...}}` shape.
 
     Each key in the returned dict yields normalized scalar values where
-    possible. Unparseable units are silently dropped — they surface as
+    possible. Unparsable units are silently dropped — they surface as
     `None` and the report logs them as missing rather than wrong.
     """
     out: dict[str, dict] = {}
