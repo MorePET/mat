@@ -13,10 +13,20 @@ pub struct OpticalProperties {
     pub decay_time: Option<f64>,
     /// Peak emission wavelength (nm).
     pub emission_peak: Option<f64>,
+}
+
+/// Nuclear / radiation-physics scalars (#157).
+///
+/// Moved here from `OpticalProperties` to mirror the Python schema —
+/// `radiation_length` and friends are nuclear physics, not optics.
+#[derive(Debug, Clone, Default)]
+pub struct NuclearProperties {
     /// Radiation length X₀ (cm).
     pub radiation_length: Option<f64>,
     /// Nuclear interaction length λ (cm).
     pub interaction_length: Option<f64>,
+    /// Molière radius (cm).
+    pub moliere_radius: Option<f64>,
 }
 
 /// A material with its physical properties.
@@ -37,6 +47,8 @@ pub struct Material {
     pub density: Option<f64>,
     /// Optical / scintillator properties.
     pub optical: Option<OpticalProperties>,
+    /// Nuclear / radiation-physics scalars.
+    pub nuclear: Option<NuclearProperties>,
 }
 
 impl Material {
@@ -61,5 +73,10 @@ impl Material {
     /// Return the optical properties, if any.
     pub fn optical(&self) -> Option<&OpticalProperties> {
         self.optical.as_ref()
+    }
+
+    /// Return the nuclear / radiation-physics scalars, if any.
+    pub fn nuclear(&self) -> Option<&NuclearProperties> {
+        self.nuclear.as_ref()
     }
 }

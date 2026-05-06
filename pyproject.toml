@@ -45,6 +45,16 @@ dev = [
     "pytest-cov>=4.0.0",
     "build123d>=0.7.0; python_version<'3.13'",
 ]
+# Nuclear data tables — wires `mat.properties.nuclear.mu_rho()` and
+# friends to the nucl-parquet package (cross-sections, stopping powers,
+# decay chains). Lazy-imported in src/pymat/properties.py:NuclearProperties
+# so the core install stays dependency-light. Install with:
+#   pip install py-materials[nuclear]
+# nucl-parquet requires Python 3.11+; on 3.10 the extra resolves to nothing
+# and `mu_rho()` will surface the same ImportError it does without the extra.
+nuclear = [
+    "nucl-parquet>=0.1.0; python_version >= '3.11'",
+]
 
 [project.urls]
 Homepage = "https://github.com/MorePet/py-mat"

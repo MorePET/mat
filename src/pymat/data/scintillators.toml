@@ -14,9 +14,10 @@ refractive_index = 1.82
 light_yield = 32000
 decay_time = 41
 emission_peak = 420
+
+[lyso.nuclear]
 radiation_length = 1.14
 interaction_length = 25
-
 [lyso.vis]
 base_color = [0.0, 1.0, 1.0, 0.85]
 metallic = 0.0
@@ -79,9 +80,10 @@ refractive_index = 2.15
 light_yield = 8500
 decay_time = 300
 emission_peak = 480
+
+[bgo.nuclear]
 radiation_length = 1.12
 interaction_length = 11
-
 [bgo.vis]
 base_color = [0.58, 0.44, 0.86, 0.8]
 metallic = 0.0
@@ -111,9 +113,10 @@ refractive_index = 1.85
 light_yield = 38000
 decay_time = 230
 emission_peak = 410
+
+[nai.nuclear]
 radiation_length = 2.59
 interaction_length = 27
-
 [nai.vis]
 base_color = [1.0, 0.9, 0.7, 0.7]
 metallic = 0.0
@@ -156,9 +159,10 @@ density_unit = "g/cm^3"
 [csi.optical]
 refractive_index = 1.95
 emission_peak = 420
+
+[csi.nuclear]
 radiation_length = 1.86
 interaction_length = 15
-
 [csi.vis]
 base_color = [0.9, 0.9, 0.7, 0.75]
 metallic = 0.0
@@ -206,9 +210,10 @@ refractive_index = 1.9
 light_yield = 63000
 decay_time = 26
 emission_peak = 380
+
+[labr3.nuclear]
 radiation_length = 2.0
 interaction_length = 20
-
 [labr3.vis]
 base_color = [0.8, 0.7, 0.9, 0.8]
 metallic = 0.0
@@ -234,9 +239,10 @@ refractive_index = 2.26
 light_yield = 8500
 decay_time = 6
 emission_peak = 420
+
+[pwo.nuclear]
 radiation_length = 0.89
 interaction_length = 10.7
-
 [pwo.vis]
 base_color = [0.4, 0.4, 0.45, 0.85]
 metallic = 0.0
