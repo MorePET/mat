@@ -1,0 +1,486 @@
+{
+  "property": {
+    "PropertyTable": {
+      "Properties": [
+        {
+          "CID": 962,
+          "MolecularFormula": "H2O",
+          "MolecularWeight": "18.015",
+          "Title": "Water"
+        }
+      ]
+    }
+  },
+  "density": {
+    "Record": {
+      "RecordType": "CID",
+      "RecordNumber": 962,
+      "RecordTitle": "Water",
+      "Section": [
+        {
+          "TOCHeading": "Chemical and Physical Properties",
+          "Description": "Various chemical and physical properties that are experimentally determined for this compound.  See also the Safety and Hazard Properties section (if available), which has additional properties pertinent to chemical safety and hazards.",
+          "Section": [
+            {
+              "TOCHeading": "Experimental Properties",
+              "Description": "Various experimentally determined properties for this compound.  See also the Safety and Hazard Properties section (if available), which has additional properties pertinent to chemical safety and hazards.",
+              "Section": [
+                {
+                  "TOCHeading": "Density",
+                  "Description": "This section provides information on the density (with unit) and specific gravity (without unit) of a compound. Density is mass of a unit volume of a compound and commonly expressed in units of kg/m3 or g/cm3. Specific gravity, also known as relative density, is a unit-less quantity, defined as the ratio of the density of a compound to that of a standard reference material (typically, water at 4 \u00b0C for liquids and air at room temperature [20 \u00b0C or 68 \u00b0F] for gases).",
+                  "URL": "https://chem.libretexts.org/Bookshelves/Introductory_Chemistry/Map%3A_Fundamentals_of_General_Organic_and_Biological_Chemistry_(McMurry_et_al.)/01%3A_Matter_and_Measurements/1.12%3A_Density_and_Specific_Gravity",
+                  "Information": [
+                    {
+                      "ReferenceNumber": 3,
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "1"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868",
+                          "Matched": {
+                            "PCLID": 900124132,
+                            "Citation": "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "0.9950 g/cu cm at 25 \u00b0C"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "Morgan JJ et al; Kirk-Othmer Encyclopedia of Chemical Technology. (1999-2014). New York, NY: John Wiley & Sons. Online Posting Date: 16 Jun 2006"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "Morgan JJ et al; Kirk-Othmer Encyclopedia of Chemical Technology. (1999-2014). New York, NY: John Wiley & Sons. Online Posting Date: 16 Jun 2006",
+                          "Matched": {
+                            "PCLID": 900120466,
+                            "Citation": "Morgan JJ et al; Kirk-Othmer Encyclopedia of Chemical Technology. (1999-2014). New York, NY: John Wiley & Sons. Online Posting Date: 16 Jun 2006"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "Chemical and physical properties[Table#8152]",
+                            "Markup": [
+                              {
+                                "Start": 32,
+                                "Length": 12,
+                                "Type": "Inline Table",
+                                "Extra": "[Table#8152]"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Name": "[Table#8152]",
+                      "Value": {
+                        "Binary": [
+                          "IlByb3BlcnR5IiwiQ29tcGFyaXNvbiB3L290aGVyIHN1YnN0YW5jZXMiLCJJbXBvcnRhbmNlIHRvIHRoZSBlbnZpcm9ubWVudCIKImRlbnNpdHkiLCJtYXggYXQgNCCwQywgbm90IGF0IGZyZWV6aW5nIHB0OyBleHBhbmRzIHVwb24gZnJlZXppbmciLCJpbiBsYWtlcyBwcmV2ZW50cyBmcmVlemluZyB1cCBhbmQgY2F1c2VzIHNlYXNvbmFsIHN0cmF0aWZpY2F0aW9uIgoiTVAgYW5kIEJQIiwiYWJub3JtYWxseSBoaWdoIiwicGVybWl0cyB3YXRlciB0byBleGlzdCBhcyBhIGxpcXVpZCBhdCBlYXJ0aCdzIHN1cmZhY2UiCiJoZWF0IGNhcGFjaXR5IiwiaGlnaGVzdCBvZiBhbnkgbGlxdWlkIGV4Y2VwdCBhbW1vbmlhIiwibW9kZXJhdGVzIHRlbXBlcmF0dXJlIGJ5IHByZXZlbnRpbmcgZXh0cmVtZXMiCiJoZWF0IG9mIHZhcG9yaXphdGlvbiIsIm9uZSBvZiB0aGUgaGlnaGVzdCBrbm93biIsImltcG9ydGFudCB0byBoZWF0IHRyYW5zZmVyIGluIGF0bW9zcGhlcmUgYW5kIG9jZWFuczsgbW9kZXJhdGVzIHRlbXBlcmF0dXJlIGV4dHJlbWVzIgoic3VyZmFjZSB0ZW5zaW9uIiwidmVyeSBoaWdoIiwicmVndWxhdGVzIGRyb3AgZm9ybWF0aW9uIGluIGNsb3VkcyBhbmQgcmFpbiIKImFic29ycHRpb24gb2YgcmFkaWF0aW9uIiwibGFyZ2UgSVIgYW5kIFVWIHJlZ2lvbnM7IGxlc3MgaW4gdmlzaWJsZSByZWdpb25zIiwiaW1wb3J0YW50IGNvbnRyb2wgb24gYmlvbG9naWNhbCBhY3Rpdml0eSAocGhvdG9zeW50aGVzaXMpIGluIHdhdGVyIGJvZGllcyBhbmQgb24gYXRtb3NwaGVyaWMgdGVtcGVyYXR1cmUiCiJzb2x2ZW50IHByb3BlcnRpZXMiLCJleGNlbGxlbnQgc29sdmVudCBmb3IgaW9uaWMgc2FsdHMgYW5kIHBvbGFyIG1vbGVjdWxlcyBiZWNhdXNlIG9mIGRpcG9sYXIgbmF0dXJlIiwiaW1wb3J0YW50IGluIHRyYW5zZmVyIG9mIGRpc3NvbHZlZCBzdWJzdGFuY2VzIGluIGh5ZHJvbG9naWNhbCBjeWNsZSBhbmQgaW4gYmlvbG9naWNhbCBzeXN0ZW1zIgo="
+                        ],
+                        "MimeType": "text/csv"
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868",
+                          "Matched": {
+                            "PCLID": 900124132,
+                            "Citation": "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "Expands on freezing. Temp of max density 3.98 \u00b0C. density: 1.000000g/mL at 3.98 \u00b0C; 0.917 g/cc at 0 \u00b0C (ice); 0.999868 at 0 \u00b0C/4 \u00b0C (liquid)"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "van der Leeden et al; The Water Encyclopedia. 2nd ed., Geraghty & Miller Ground-Water Series., Chelsea MI: Lewis Pub pp. 808 (1990)"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "van der Leeden et al; The Water Encyclopedia. 2nd ed., Geraghty & Miller Ground-Water Series., Chelsea MI: Lewis Pub pp. 808 (1990)",
+                          "Matched": {
+                            "PCLID": 900006816,
+                            "Citation": "van der Leeden et al; The Water Encyclopedia. 2nd ed., Geraghty & Miller Ground-Water Series., Chelsea MI: Lewis Pub pp. 808 (1990)"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "Weight of sea water: approximately 63.93 lb/cu ft at 15 \u00b0C; density of sea water: approximately 1.025 g/cu cm at 25 \u00b0C",
+                            "Markup": [
+                              {
+                                "Start": 14,
+                                "Length": 5,
+                                "URL": "https://pubchem.ncbi.nlm.nih.gov/compound/water",
+                                "Type": "PubChem Internal Link",
+                                "Extra": "CID-962"
+                              },
+                              {
+                                "Start": 75,
+                                "Length": 5,
+                                "URL": "https://pubchem.ncbi.nlm.nih.gov/compound/water",
+                                "Type": "PubChem Internal Link",
+                                "Extra": "CID-962"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "Morgan JJ et al; Kirk-Othmer Encyclopedia of Chemical Technology. (1999-2014). New York, NY: John Wiley & Sons. Online Posting Date: 16 Jun 2006"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "Morgan JJ et al; Kirk-Othmer Encyclopedia of Chemical Technology. (1999-2014). New York, NY: John Wiley & Sons. Online Posting Date: 16 Jun 2006",
+                          "Matched": {
+                            "PCLID": 900120466,
+                            "Citation": "Morgan JJ et al; Kirk-Othmer Encyclopedia of Chemical Technology. (1999-2014). New York, NY: John Wiley & Sons. Online Posting Date: 16 Jun 2006"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "Ice Properties[Table#8154]",
+                            "Markup": [
+                              {
+                                "Start": 14,
+                                "Length": 12,
+                                "Type": "Inline Table",
+                                "Extra": "[Table#8154]"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Reference": [
+        {
+          "ReferenceNumber": 3,
+          "SourceName": "CAMEO Chemicals",
+          "SourceID": "30024",
+          "Name": "WATER",
+          "Description": "CAMEO Chemicals is a chemical database designed for people who are involved in hazardous material incident response and planning. CAMEO Chemicals contains a library with thousands of datasheets containing response-related information and recommendations for hazardous materials that are commonly transported, used, or stored in the United States. CAMEO Chemicals was developed by the National Oceanic and Atmospheric Administration's Office of Response and Restoration in partnership with the Environmental Protection Agency's Office of Emergency Management.",
+          "URL": "https://cameochemicals.noaa.gov/chemical/30024",
+          "LicenseNote": "CAMEO Chemicals and all other CAMEO products are available at no charge to those organizations and individuals (recipients) responsible for the safe handling of chemicals. However, some of the chemical data itself is subject to the copyright restrictions of the companies or organizations that provided the data.",
+          "LicenseURL": "https://cameochemicals.noaa.gov/help/reference/terms_and_conditions.htm?d_f=false",
+          "ANID": 761458
+        },
+        {
+          "ReferenceNumber": 78,
+          "SourceName": "Hazardous Substances Data Bank (HSDB)",
+          "SourceID": "8183",
+          "Name": "Water",
+          "Description": "The Hazardous Substances Data Bank (HSDB) is a toxicology database that focuses on the toxicology of potentially hazardous chemicals. It provides information on human exposure, industrial hygiene, emergency handling procedures, environmental fate, regulatory requirements, nanomaterials, and related areas. The information in HSDB has been assessed by a Scientific Review Panel.",
+          "URL": "https://pubchem.ncbi.nlm.nih.gov/source/hsdb/8183",
+          "LicenseURL": "https://www.nlm.nih.gov/web_policies.html",
+          "IsToxnet": true,
+          "ANID": 5696
+        }
+      ]
+    }
+  },
+  "melting": {
+    "Record": {
+      "RecordType": "CID",
+      "RecordNumber": 962,
+      "RecordTitle": "Water",
+      "Section": [
+        {
+          "TOCHeading": "Chemical and Physical Properties",
+          "Description": "Various chemical and physical properties that are experimentally determined for this compound.  See also the Safety and Hazard Properties section (if available), which has additional properties pertinent to chemical safety and hazards.",
+          "Section": [
+            {
+              "TOCHeading": "Experimental Properties",
+              "Description": "Various experimentally determined properties for this compound.  See also the Safety and Hazard Properties section (if available), which has additional properties pertinent to chemical safety and hazards.",
+              "Section": [
+                {
+                  "TOCHeading": "Melting Point",
+                  "Description": "This section provides the melting point and/or freezing point. The melting point is the temperature at which a substance changes state from solid to liquid at atmospheric pressure. When considered as the temperature of the reverse change (from liquid to solid), it is referred to as the freezing point.",
+                  "URL": "https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Organic_Chemistry_Lab_Techniques_(Nichols)/06%3A_Miscellaneous_Techniques/6.01%3A_Melting_Point",
+                  "Information": [
+                    {
+                      "ReferenceNumber": 3,
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "32 \u00b0F"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 45,
+                      "Reference": [
+                        "MSDS"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "MSDS",
+                          "Matched": {
+                            "PCLID": 900289440,
+                            "Citation": "MSDS"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "Number": [
+                          0
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868",
+                          "Matched": {
+                            "PCLID": 900124132,
+                            "Citation": "O'Neil, M.J. (ed.). The Merck Index - An Encyclopedia of Chemicals, Drugs, and Biologicals. Cambridge, UK:  Royal Society of Chemistry, 2013., p. 1868"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "0 \u00b0C"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 79,
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "0 \u00b0C"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Reference": [
+        {
+          "ReferenceNumber": 3,
+          "SourceName": "CAMEO Chemicals",
+          "SourceID": "30024",
+          "Name": "WATER",
+          "Description": "CAMEO Chemicals is a chemical database designed for people who are involved in hazardous material incident response and planning. CAMEO Chemicals contains a library with thousands of datasheets containing response-related information and recommendations for hazardous materials that are commonly transported, used, or stored in the United States. CAMEO Chemicals was developed by the National Oceanic and Atmospheric Administration's Office of Response and Restoration in partnership with the Environmental Protection Agency's Office of Emergency Management.",
+          "URL": "https://cameochemicals.noaa.gov/chemical/30024",
+          "LicenseNote": "CAMEO Chemicals and all other CAMEO products are available at no charge to those organizations and individuals (recipients) responsible for the safe handling of chemicals. However, some of the chemical data itself is subject to the copyright restrictions of the companies or organizations that provided the data.",
+          "LicenseURL": "https://cameochemicals.noaa.gov/help/reference/terms_and_conditions.htm?d_f=false",
+          "ANID": 761458
+        },
+        {
+          "ReferenceNumber": 45,
+          "SourceName": "DrugBank",
+          "SourceID": "DB09145",
+          "Name": "Water",
+          "Description": "The DrugBank database is a unique bioinformatics and cheminformatics resource that combines detailed drug (i.e. chemical, pharmacological and pharmaceutical) data with comprehensive drug target (i.e. sequence, structure, and pathway) information.",
+          "URL": "https://www.drugbank.ca/drugs/DB09145",
+          "LicenseNote": "Creative Common's Attribution-NonCommercial 4.0 International License (http://creativecommons.org/licenses/by-nc/4.0/legalcode)",
+          "LicenseURL": "https://www.drugbank.ca/legal/terms_of_use",
+          "ANID": 3625686
+        },
+        {
+          "ReferenceNumber": 78,
+          "SourceName": "Hazardous Substances Data Bank (HSDB)",
+          "SourceID": "8183",
+          "Name": "Water",
+          "Description": "The Hazardous Substances Data Bank (HSDB) is a toxicology database that focuses on the toxicology of potentially hazardous chemicals. It provides information on human exposure, industrial hygiene, emergency handling procedures, environmental fate, regulatory requirements, nanomaterials, and related areas. The information in HSDB has been assessed by a Scientific Review Panel.",
+          "URL": "https://pubchem.ncbi.nlm.nih.gov/source/hsdb/8183",
+          "LicenseURL": "https://www.nlm.nih.gov/web_policies.html",
+          "IsToxnet": true,
+          "ANID": 5696
+        },
+        {
+          "ReferenceNumber": 79,
+          "SourceName": "Human Metabolome Database (HMDB)",
+          "SourceID": "HMDB0002111",
+          "Name": "Water",
+          "Description": "The Human Metabolome Database (HMDB) is a freely available electronic database containing detailed information about small molecule metabolites found in the human body.",
+          "URL": "http://www.hmdb.ca/metabolites/HMDB0002111",
+          "LicenseNote": "HMDB is offered to the public as a freely available resource. Use and re-distribution of the data, in whole or in part, for commercial purposes requires explicit permission of the authors and explicit acknowledgment of the source material (HMDB) and the original publication (see the HMDB citing page). We ask that users who download significant portions of the database cite the HMDB paper in any resulting publications.",
+          "LicenseURL": "https://www.hmdb.ca/citing",
+          "ANID": 2143582
+        }
+      ]
+    }
+  },
+  "boiling": {
+    "Record": {
+      "RecordType": "CID",
+      "RecordNumber": 962,
+      "RecordTitle": "Water",
+      "Section": [
+        {
+          "TOCHeading": "Chemical and Physical Properties",
+          "Description": "Various chemical and physical properties that are experimentally determined for this compound.  See also the Safety and Hazard Properties section (if available), which has additional properties pertinent to chemical safety and hazards.",
+          "Section": [
+            {
+              "TOCHeading": "Experimental Properties",
+              "Description": "Various experimentally determined properties for this compound.  See also the Safety and Hazard Properties section (if available), which has additional properties pertinent to chemical safety and hazards.",
+              "Section": [
+                {
+                  "TOCHeading": "Boiling Point",
+                  "Description": "The temperature at which this compound changes state from liquid to gas at a given atmospheric pressure.",
+                  "URL": "https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Organic_Chemistry_Lab_Techniques_(Nichols)/06%3A_Miscellaneous_Techniques/6.02%3A_Boiling_Point",
+                  "Information": [
+                    {
+                      "ReferenceNumber": 3,
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "212 \u00b0F at 760 mmHg"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 45,
+                      "Reference": [
+                        "MSDS"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "MSDS",
+                          "Matched": {
+                            "PCLID": 900289440,
+                            "Citation": "MSDS"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "Number": [
+                          100
+                        ]
+                      }
+                    },
+                    {
+                      "ReferenceNumber": 78,
+                      "Description": "PEER REVIEWED",
+                      "Reference": [
+                        "Haynes, W.M. (ed.). CRC Handbook of Chemistry and Physics. 94th Edition. CRC Press LLC, Boca Raton: FL 2013-2014, p. 4-98"
+                      ],
+                      "ExtendedReference": [
+                        {
+                          "Citation": "Haynes, W.M. (ed.). CRC Handbook of Chemistry and Physics. 94th Edition. CRC Press LLC, Boca Raton: FL 2013-2014, p. 4-98",
+                          "Matched": {
+                            "PCLID": 900091256,
+                            "Citation": "Haynes, W.M. (ed.). CRC Handbook of Chemistry and Physics. 94th Edition. CRC Press LLC, Boca Raton: FL 2013-2014, p. 4-98"
+                          }
+                        }
+                      ],
+                      "Value": {
+                        "StringWithMarkup": [
+                          {
+                            "String": "99.974 \u00b0C"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "Reference": [
+        {
+          "ReferenceNumber": 3,
+          "SourceName": "CAMEO Chemicals",
+          "SourceID": "30024",
+          "Name": "WATER",
+          "Description": "CAMEO Chemicals is a chemical database designed for people who are involved in hazardous material incident response and planning. CAMEO Chemicals contains a library with thousands of datasheets containing response-related information and recommendations for hazardous materials that are commonly transported, used, or stored in the United States. CAMEO Chemicals was developed by the National Oceanic and Atmospheric Administration's Office of Response and Restoration in partnership with the Environmental Protection Agency's Office of Emergency Management.",
+          "URL": "https://cameochemicals.noaa.gov/chemical/30024",
+          "LicenseNote": "CAMEO Chemicals and all other CAMEO products are available at no charge to those organizations and individuals (recipients) responsible for the safe handling of chemicals. However, some of the chemical data itself is subject to the copyright restrictions of the companies or organizations that provided the data.",
+          "LicenseURL": "https://cameochemicals.noaa.gov/help/reference/terms_and_conditions.htm?d_f=false",
+          "ANID": 761458
+        },
+        {
+          "ReferenceNumber": 45,
+          "SourceName": "DrugBank",
+          "SourceID": "DB09145",
+          "Name": "Water",
+          "Description": "The DrugBank database is a unique bioinformatics and cheminformatics resource that combines detailed drug (i.e. chemical, pharmacological and pharmaceutical) data with comprehensive drug target (i.e. sequence, structure, and pathway) information.",
+          "URL": "https://www.drugbank.ca/drugs/DB09145",
+          "LicenseNote": "Creative Common's Attribution-NonCommercial 4.0 International License (http://creativecommons.org/licenses/by-nc/4.0/legalcode)",
+          "LicenseURL": "https://www.drugbank.ca/legal/terms_of_use",
+          "ANID": 3625686
+        },
+        {
+          "ReferenceNumber": 78,
+          "SourceName": "Hazardous Substances Data Bank (HSDB)",
+          "SourceID": "8183",
+          "Name": "Water",
+          "Description": "The Hazardous Substances Data Bank (HSDB) is a toxicology database that focuses on the toxicology of potentially hazardous chemicals. It provides information on human exposure, industrial hygiene, emergency handling procedures, environmental fate, regulatory requirements, nanomaterials, and related areas. The information in HSDB has been assessed by a Scientific Review Panel.",
+          "URL": "https://pubchem.ncbi.nlm.nih.gov/source/hsdb/8183",
+          "LicenseURL": "https://www.nlm.nih.gov/web_policies.html",
+          "IsToxnet": true,
+          "ANID": 5696
+        }
+      ]
+    }
+  }
+}
