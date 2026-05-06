@@ -69,6 +69,15 @@ from mat_vis_client import search as _client_search
 # without reaching into the private ``_model`` module.
 from pymat.vis._model import FinishEntry, Vis, VisDeltas
 
+# Material-accepting adapters: Three.js / glTF / MaterialX.
+# Re-exported at top level so ``from pymat.vis import to_threejs`` works
+# and tab completion on ``pymat.vis.`` surfaces the main cross-tool
+# handoff. Note: ``pymat.vis.adapters`` resolves to the local submodule
+# (Material signatures). Users who want mat-vis-client's primitive-
+# signature adapters (``(scalars_dict, textures_dict)``) should import
+# them explicitly: ``from mat_vis_client import adapters``.
+from pymat.vis.adapters import export_mtlx, to_gltf, to_threejs
+
 # Rewrite ``__module__`` to the public path. Without this,
 # ``type(m.vis)``, ``repr``, IDE auto-import, and Sphinx all surface
 # ``pymat.vis._model.Vis`` — the underscore-prefixed location reads as
@@ -79,15 +88,6 @@ from pymat.vis._model import FinishEntry, Vis, VisDeltas
 Vis.__module__ = "pymat.vis"
 VisDeltas.__module__ = "pymat.vis"
 FinishEntry.__module__ = "pymat.vis"
-
-# Material-accepting adapters: Three.js / glTF / MaterialX.
-# Re-exported at top level so ``from pymat.vis import to_threejs`` works
-# and tab completion on ``pymat.vis.`` surfaces the main cross-tool
-# handoff. Note: ``pymat.vis.adapters`` resolves to the local submodule
-# (Material signatures). Users who want mat-vis-client's primitive-
-# signature adapters (``(scalars_dict, textures_dict)``) should import
-# them explicitly: ``from mat_vis_client import adapters``.
-from pymat.vis.adapters import export_mtlx, to_gltf, to_threejs
 
 
 def fetch(

@@ -747,7 +747,6 @@ class TestVisModuleApi:
         assert hasattr(vis, "rowmap_entry")
         assert hasattr(vis, "get_manifest")
 
-
     def test_get_manifest_returns_dict(self):
         from pymat import vis
 
