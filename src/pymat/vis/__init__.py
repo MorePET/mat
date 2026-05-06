@@ -24,6 +24,30 @@ Public API — all functions importable from ``pymat.vis`` directly::
 
 Powered by ``mat-vis-client`` (separate PyPI package). ``Material.vis``
 wires into this module for lazy texture loading; see ADR-0002.
+
+Public API contract
+-------------------
+The following names are part of the public API. Import them from
+``pymat.vis`` (not from any underscore-prefixed submodule) — the
+canonical module path is rewritten on the classes themselves so that
+``type(m.vis)``, ``repr``, IDE auto-imports, and Sphinx all surface
+``pymat.vis.Vis`` rather than the private ``_model`` location:
+
+- **Types**: ``Vis``, ``VisDeltas``, ``FinishEntry``
+- **Adapters**: ``to_threejs``, ``to_gltf``, ``export_mtlx``
+- **Discovery / fetch**: ``search``, ``fetch``, ``prefetch``,
+  ``rowmap_entry``, ``get_manifest``, ``seed_indexes``, ``client``,
+  ``MatVisClient``
+
+Stability promise: field names and constructor signatures of the public
+types follow semver — additive changes (new optional fields with
+defaults) are minor; renames or removals require a major bump with a
+deprecation cycle. The ``Vis`` field set mirrors the glTF 2.0 /
+Three.js MeshPhysicalMaterial spec, so it is intentionally stable.
+
+Underscore-prefixed names (``Vis._finish``, ``Vis._textures``,
+``pymat.vis._model``, ``pymat.vis._client``, etc.) remain private and
+may change without notice.
 """
 
 from typing import Any
@@ -53,6 +77,17 @@ from pymat.vis._model import FinishEntry, Vis, VisDeltas
 # signature adapters (``(scalars_dict, textures_dict)``) should import
 # them explicitly: ``from mat_vis_client import adapters``.
 from pymat.vis.adapters import export_mtlx, to_gltf, to_threejs
+
+# Rewrite ``__module__`` to the public path. Without this,
+# ``type(m.vis)``, ``repr``, IDE auto-import, and Sphinx all surface
+# ``pymat.vis._model.Vis`` — the underscore-prefixed location reads as
+# private and pushes downstream code (build123d, mat-vis #282, py-mat
+# #98) toward an import path we don't want to support. Public API
+# contract: import from ``pymat.vis``; the type's own metadata now
+# agrees.
+Vis.__module__ = "pymat.vis"
+VisDeltas.__module__ = "pymat.vis"
+FinishEntry.__module__ = "pymat.vis"
 
 
 def fetch(
