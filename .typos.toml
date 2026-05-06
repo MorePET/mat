@@ -37,6 +37,11 @@ Stinless = "Stinless"
 stinless = "stinless"
 Stainles = "Stainles"
 stainles = "stainles"
+# Scintillator material acronyms — LSO is "lutetium oxyorthosilicate"
+# (Lu2SiO5), the historical parent of LYSO. Typos otherwise rewrites
+# every instance of "LSO" to "ALSO" (#170).
+LSO = "LSO"
+lso = "lso"
 
 [files]
 extend-exclude = [

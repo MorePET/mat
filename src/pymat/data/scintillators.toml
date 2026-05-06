@@ -297,24 +297,74 @@ light_yield = 12000
 decay_time = 2.1
 
 # ============================================================================
-# Provenance (#175 audit)
+# Provenance (#170 — primary-paper citations)
 # ----------------------------------------------------------------------------
-# Default _sources entries attached during the one-time #175 audit. These
-# placeholder citations point at py-mat's aggregate curation history; future
-# per-source PRs (#158-#173) overwrite individual entries with proper
-# citations (Wikidata QIDs, NIST datasets, vendor URLs, etc.).
+# Primary measurement papers attached to scintillator entries. The LBNL
+# Scintillator Library (https://scintillator.lbl.gov/) was used as a
+# *discovery index* to locate these papers — see issue #170 — but is never
+# itself cited in `_sources.ref` (license unclear; treat as discovery only).
+# The LBNL group's own database overview (Shook, Laplace, Boswell, Bourret,
+# Derenzo, Goldblum 2025, NIM A) is included as `optical._review` for the
+# modern scintillators it covers.
+#
+# Vendor- and handbook-specific values (Saint-Gobain, Hamamatsu, Eljen,
+# SICCAS, Epic, Crystals catalogue) retain the `_default` placeholder from
+# the #175 audit — primary papers don't constrain vendor variants.
 # ============================================================================
 
-[lyso._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+# --- LSO/LYSO (lyso parent: nominally LSO Lu2SiO5; values match Melcher 1992) -
+
+[lyso._sources."optical.light_yield"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
+license = "proprietary-reference-only"
+note = "LSO:Ce discovery paper — Melcher & Schweitzer 1992, IEEE Trans. Nucl. Sci. 39(4), 502."
+
+[lyso._sources."optical.decay_time"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
 license = "proprietary-reference-only"
 
-[lyso.Ce._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+[lyso._sources."optical.emission_peak"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
+license = "proprietary-reference-only"
+
+[lyso._sources."mechanical.density"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
+license = "proprietary-reference-only"
+
+[lyso._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
+license = "proprietary-reference-only"
+note = "LBNL Scintillator Library overview — Shook, Laplace, Boswell, Bourret, Derenzo, Goldblum 2025, NIM A 1075, 170389. Cited as a review; values are not extracted from this paper."
+
+# --- LYSO:Ce (lyso.Ce) -------------------------------------------------------
+
+[lyso.Ce._sources."optical.light_yield"]
+citation = "cooke_2000"
+kind = "doi"
+ref = "10.1063/1.1328775"
+license = "proprietary-reference-only"
+note = "LYSO:Ce (Lu1.8Y0.2SiO5:Ce) Czochralski growth + scintillation — Cooke et al. 2000, J. Appl. Phys. 88, 7360."
+
+[lyso.Ce._sources."optical.decay_time"]
+citation = "cooke_2000"
+kind = "doi"
+ref = "10.1063/1.1328775"
+license = "proprietary-reference-only"
+
+[lyso.Ce._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
 license = "proprietary-reference-only"
 
 [lyso.Ce.saint_gobain._sources._default]
@@ -341,22 +391,58 @@ kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
 
-[bgo._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+# --- BGO ---------------------------------------------------------------------
+
+[bgo._sources."optical.light_yield"]
+citation = "weber_monchamp_1973"
+kind = "doi"
+ref = "10.1063/1.1662183"
+license = "proprietary-reference-only"
+note = "BGO (Bi4Ge3O12) luminescence — Weber & Monchamp 1973, J. Appl. Phys. 44, 5495. Discovery of BGO scintillation."
+
+[bgo._sources."optical.decay_time"]
+citation = "weber_monchamp_1973"
+kind = "doi"
+ref = "10.1063/1.1662183"
 license = "proprietary-reference-only"
 
-[nai._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+[bgo._sources."optical.emission_peak"]
+citation = "weber_monchamp_1973"
+kind = "doi"
+ref = "10.1063/1.1662183"
 license = "proprietary-reference-only"
 
-[nai.Tl._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+# --- NaI / NaI:Tl ------------------------------------------------------------
+
+[nai._sources."optical.light_yield"]
+citation = "hofstadter_1948"
+kind = "doi"
+ref = "10.1103/PhysRev.74.100"
+license = "proprietary-reference-only"
+note = "NaI:Tl as a scintillation counter — Hofstadter 1948, Phys. Rev. 74, 100. Discovery of NaI(Tl) scintillation."
+
+[nai._sources."optical.decay_time"]
+citation = "hofstadter_1948"
+kind = "doi"
+ref = "10.1103/PhysRev.74.100"
+license = "proprietary-reference-only"
+
+[nai._sources."optical.emission_peak"]
+citation = "hofstadter_1948"
+kind = "doi"
+ref = "10.1103/PhysRev.74.100"
+license = "proprietary-reference-only"
+
+[nai.Tl._sources."optical.light_yield"]
+citation = "hofstadter_1948"
+kind = "doi"
+ref = "10.1103/PhysRev.74.100"
+license = "proprietary-reference-only"
+
+[nai.Tl._sources."optical.decay_time"]
+citation = "hofstadter_1948"
+kind = "doi"
+ref = "10.1103/PhysRev.74.100"
 license = "proprietary-reference-only"
 
 [nai.Tl.saint_gobain._sources._default]
@@ -371,35 +457,93 @@ kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
 
-[csi._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+# --- CsI / CsI:Tl / CsI:Na ---------------------------------------------------
+
+[csi._sources."optical.light_yield"]
+citation = "holl_lorenz_mageras_1988"
+kind = "doi"
+ref = "10.1109/23.12684"
+license = "proprietary-reference-only"
+note = "Light yield of common inorganic scintillators (NaI, CsI, BGO) — Holl, Lorenz, Mageras 1988, IEEE Trans. Nucl. Sci. 35, 105."
+
+[csi._sources."optical.emission_peak"]
+citation = "holl_lorenz_mageras_1988"
+kind = "doi"
+ref = "10.1109/23.12684"
 license = "proprietary-reference-only"
 
-[csi.Tl._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+[csi.Tl._sources."optical.light_yield"]
+citation = "holl_lorenz_mageras_1988"
+kind = "doi"
+ref = "10.1109/23.12684"
 license = "proprietary-reference-only"
 
+[csi.Tl._sources."optical.decay_time"]
+citation = "holl_lorenz_mageras_1988"
+kind = "doi"
+ref = "10.1109/23.12684"
+license = "proprietary-reference-only"
+
+# CsI:Na — Holl 1988 covered CsI(Tl), not CsI(Na). No verified primary cite at
+# this time; keep the audit placeholder. TODO(#170): locate primary CsI:Na
+# scintillation paper (Hofstadter et al. 1950s era? Brinckmann?) and replace.
 [csi.Na._sources._default]
 citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
 
-[labr3._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+# --- LaBr3:Ce ----------------------------------------------------------------
+
+[labr3._sources."optical.light_yield"]
+citation = "van_loef_2001"
+kind = "doi"
+ref = "10.1063/1.1385342"
+license = "proprietary-reference-only"
+note = "LaBr3:Ce high-energy-resolution scintillator discovery — van Loef, Dorenbos, van Eijk, Krämer, Güdel 2001, Appl. Phys. Lett. 79, 1573."
+
+[labr3._sources."optical.decay_time"]
+citation = "van_loef_2001"
+kind = "doi"
+ref = "10.1063/1.1385342"
 license = "proprietary-reference-only"
 
-[pwo._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+[labr3._sources."optical.emission_peak"]
+citation = "van_loef_2001"
+kind = "doi"
+ref = "10.1063/1.1385342"
 license = "proprietary-reference-only"
+
+[labr3._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
+license = "proprietary-reference-only"
+
+# --- PWO (PbWO4) -------------------------------------------------------------
+
+[pwo._sources."optical.light_yield"]
+citation = "kobayashi_1993"
+kind = "doi"
+ref = "10.1016/0168-9002(93)91187-R"
+license = "proprietary-reference-only"
+note = "PbWO4 single-crystal scintillation at room temperature — Kobayashi, Ishii, Usuki, Yahagi 1993, NIM A 333, 429."
+
+[pwo._sources."optical.decay_time"]
+citation = "kobayashi_1993"
+kind = "doi"
+ref = "10.1016/0168-9002(93)91187-R"
+license = "proprietary-reference-only"
+
+[pwo._sources."optical.emission_peak"]
+citation = "kobayashi_1993"
+kind = "doi"
+ref = "10.1016/0168-9002(93)91187-R"
+license = "proprietary-reference-only"
+
+# --- Plastic scintillators ---------------------------------------------------
+# Generic plastic + Eljen vendor variants — no single primary paper; values
+# are vendor datasheet aggregates. Keep the audit placeholder.
 
 [plastic_scint._sources._default]
 citation = "py-mat-curation-3.x"
