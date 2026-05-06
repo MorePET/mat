@@ -533,6 +533,31 @@ class MagneticProperties:
 
 
 @dataclass
+class VacuumProperties:
+    """UHV detector enclosure + Geant4 vacuum modeling (#156).
+
+    Particularly relevant for PEEK, Delrin (notably bad in UHV), Viton,
+    Kapton, all elastomers, and epoxies. Test methods: ASTM E595 / NASA
+    SP-R-0022 for TML/CVCM; outgassing rate via throughput method after
+    1h and 10h pump-down.
+    """
+
+    # Outgassing rate snapshots in torr·L/(s·cm²) — sparse, named beats list
+    outgassing_rate_1h: Optional[float] = None
+    outgassing_rate_10h: Optional[float] = None
+    # ASTM E595 / NASA SP-R-0022 — total mass loss + collected volatile
+    # condensable material, both in % at 125 °C / 24h / 5e-5 torr
+    tml_pct: Optional[float] = None
+    cvcm_pct: Optional[float] = None
+    # Maximum bakeout temperature (°C) before degradation
+    bakeout_temp_max_C: Optional[float] = None
+    # He permeation in cm³·mm/(cm²·s·atm)
+    permeation_he: Optional[float] = None
+    # Operational class hint: "UHV" | "HV" | "rough"
+    vacuum_class: Optional[str] = None
+
+
+@dataclass
 class ManufacturingProperties:
     """Machinability, weldability, printability."""
 
@@ -661,6 +686,7 @@ class AllProperties:
     electrical: ElectricalProperties = field(default_factory=ElectricalProperties)
     optical: OpticalProperties = field(default_factory=OpticalProperties)
     magnetic: MagneticProperties = field(default_factory=MagneticProperties)
+    vacuum: VacuumProperties = field(default_factory=VacuumProperties)
     manufacturing: ManufacturingProperties = field(default_factory=ManufacturingProperties)
     compliance: ComplianceProperties = field(default_factory=ComplianceProperties)
     sourcing: SourcingProperties = field(default_factory=SourcingProperties)

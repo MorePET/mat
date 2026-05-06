@@ -40,6 +40,7 @@ _ALL_DOMAINS = (
     "electrical",
     "optical",
     "magnetic",
+    "vacuum",
     "manufacturing",
     "compliance",
     "sourcing",
