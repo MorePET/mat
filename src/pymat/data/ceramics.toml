@@ -350,6 +350,241 @@ roughness = 0.4
 white = { source = "ambientcg", id = "Porcelain001" }
 
 # ============================================================================
+# Aluminum Nitride (AlN) — high-thermal-conductivity electronic substrate (#134)
+# ============================================================================
+# Engineering canonical = sintered AlN-170 commercial grade. Theoretical
+# single-crystal thermal conductivity is ~285 W/(m·K) (Slack 1987,
+# DOI 10.1016/0022-3697(87)90153-3); commercial sintered AlN ranges
+# 140–200 W/(m·K) depending on grain-boundary oxide content. We quote
+# 170 W/(m·K) (CoorsTek AlN-170) as the canonical engineering scalar.
+# Mechanical numbers (E, flexural strength) are also from the CoorsTek
+# AlN-170 brochure / vendor literature. Density 3.26 g/cm^3 is the
+# X-ray crystallographic value for the wurtzite AlN unit cell.
+[aln]
+name = "Aluminum Nitride"
+formula = "AlN"
+
+[aln.mechanical]
+density_value = 3.26
+density_unit = "g/cm^3"
+youngs_modulus_value = 320
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.24
+flexural_strength_value = 320
+flexural_strength_unit = "MPa"
+hardness_vickers = 11.0
+fracture_toughness_value = 2.6
+fracture_toughness_unit = "MPa*m^0.5"
+cte_anisotropic = [4.2e-6, 4.2e-6, 5.3e-6]
+
+[aln.thermal]
+melting_point_value = 2200
+melting_point_unit = "degC"
+thermal_conductivity_value = 170
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 740
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 4.5e-6
+thermal_expansion_unit = "1/K"
+max_service_temp_value = 1700
+max_service_temp_unit = "degC"
+
+[aln.electrical]
+volume_resistivity_value = 1e14
+volume_resistivity_unit = "ohm*cm"
+dielectric_constant = 8.6
+dielectric_loss_tangent = 0.0005
+breakdown_voltage_value = 17
+breakdown_voltage_unit = "kV/mm"
+
+[aln.vis]
+base_color = [0.9, 0.9, 0.88, 1.0]
+transmission = 0.0
+metallic = 0.0
+roughness = 0.45
+
+[aln.vis.finishes]
+white = { source = "ambientcg", id = "Porcelain001" }
+
+
+# ============================================================================
+# LTCC DuPont 951 — low-temperature cofired ceramic (#135)
+# ============================================================================
+# Vendor-canonical: DuPont GreenTape 951 public datasheet (MCM951, 7/2011).
+# All values transcribed verbatim from the "Typical Tape Properties" table
+# of that PDF. License = proprietary-reference-only. The product line is
+# now stewarded by Heraeus (post-2021 acquisition), but the technical
+# datasheet referenced here is the long-lived DuPont public TDS that the
+# RF/LTCC literature cites.
+[ltcc951]
+name = "LTCC DuPont 951"
+grade = "GreenTape 951"
+vendor = "DuPont (now Heraeus)"
+
+[ltcc951.mechanical]
+density_value = 3.1
+density_unit = "g/cm^3"
+youngs_modulus_value = 120
+youngs_modulus_unit = "GPa"
+flexural_strength_value = 230
+flexural_strength_unit = "MPa"
+
+[ltcc951.thermal]
+thermal_conductivity_value = 3.3
+thermal_conductivity_unit = "W/(m*K)"
+thermal_expansion_value = 5.8e-6
+thermal_expansion_unit = "1/K"
+
+[ltcc951.electrical]
+dielectric_constant = 7.8
+dielectric_loss_tangent = 0.006
+volume_resistivity_value = 1e12
+volume_resistivity_unit = "ohm*cm"
+breakdown_voltage_value = 40
+breakdown_voltage_unit = "kV/mm"
+
+# X/Y shrinkage = 12.7% ± 0.3% (PT/P2/PX), Z shrinkage = 15% ± 0.5%.
+# Critical for cofired-substrate dimensioning. Schema has no shrinkage
+# field; recorded as a custom block so it survives the loader without
+# needing a schema change.
+[ltcc951.custom]
+shrinkage_xy_pct = 12.7
+shrinkage_z_pct = 15.0
+dielectric_constant_at_10ghz = 7.5
+surface_roughness_um = 0.34
+
+[ltcc951.vis]
+base_color = [0.92, 0.9, 0.85, 1.0]
+transmission = 0.0
+metallic = 0.0
+roughness = 0.5
+
+[ltcc951.vis.finishes]
+white = { source = "ambientcg", id = "Porcelain001" }
+
+
+# ============================================================================
+# Sapphire — single-crystal Al2O3 (#136)
+# ============================================================================
+# Distinct from `alumina` (polycrystalline). Anisotropic: thermal
+# conductivity, refractive index, and CTE depend on crystal orientation
+# (parallel-c vs perpendicular-c). Canonical scalars below favour the
+# c-axis (extraordinary) where the schema accepts a single value, with
+# the perpendicular-c value documented in the source notes. CTE uses the
+# anisotropic field. Refractive index at sodium D-line (589.3 nm)
+# transcribed from Malitson & Dodge 1972 (J. Opt. Soc. Am. 62, 1405)
+# via the refractiveindex.info Sellmeier representation; the Crystran
+# vendor brief reports the same n_o = 1.768 / n_e = 1.760 to four
+# decimal places at 0.590 µm. We pick n_o (ordinary) as the canonical
+# scalar — it matches the long-established 1.768 sodium-D figure.
+# DO NOT populate `refractive_index_dispersion` here — the #201
+# refractiveindex.info enricher owns bulk dispersion; sapphire is not
+# yet in its scope and adding the table here would conflict.
+[sapphire]
+name = "Sapphire"
+formula = "Al2O3"
+
+[sapphire.mechanical]
+density_value = 3.98
+density_unit = "g/cm^3"
+youngs_modulus_value = 335
+youngs_modulus_unit = "GPa"
+shear_modulus_value = 148
+shear_modulus_unit = "GPa"
+poissons_ratio = 0.25
+hardness_vickers = 22.5
+flexural_strength_value = 700
+flexural_strength_unit = "MPa"
+fracture_toughness_value = 2.0
+fracture_toughness_unit = "MPa*m^0.5"
+cte_anisotropic = [5.0e-6, 5.0e-6, 5.6e-6]
+
+[sapphire.thermal]
+melting_point_value = 2040
+melting_point_unit = "degC"
+thermal_conductivity_value = 27.21
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 763
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 5.6e-6
+thermal_expansion_unit = "1/K"
+max_service_temp_value = 2000
+max_service_temp_unit = "degC"
+
+[sapphire.electrical]
+volume_resistivity_value = 1e16
+volume_resistivity_unit = "ohm*cm"
+dielectric_constant = 9.4
+
+[sapphire.optical]
+refractive_index = 1.768
+transparency = 85
+
+[sapphire.vis]
+base_color = [0.94, 0.96, 0.98, 0.6]
+transmission = 0.85
+metallic = 0.0
+roughness = 0.05
+ior = 1.768
+
+
+# ============================================================================
+# Silicon Nitride (Si3N4) — sintered engineering ceramic (#137)
+# ============================================================================
+# Grade canonical = sintered Si3N4 (SSN / DPSSN). Hot-pressed and
+# reaction-bonded grades have different properties; values below come
+# from the Superior Technical Ceramics 2021 SSN/DPSSN public datasheet
+# (ASTM-method-stamped). Riley 2000 review (DOI
+# 10.1111/j.1151-2916.2000.tb01182.x) cited as the primary review for
+# the materials class.
+[si3n4]
+name = "Silicon Nitride"
+formula = "Si3N4"
+
+[si3n4.mechanical]
+density_value = 3.25
+density_unit = "g/cm^3"
+youngs_modulus_value = 300
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.28
+flexural_strength_value = 900
+flexural_strength_unit = "MPa"
+tensile_strength_value = 537
+tensile_strength_unit = "MPa"
+compressive_strength_value = 2500
+compressive_strength_unit = "MPa"
+hardness_vickers = 15.0
+fracture_toughness_value = 6.0
+fracture_toughness_unit = "MPa*m^0.5"
+
+[si3n4.thermal]
+thermal_conductivity_value = 29
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 700
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 2.9e-6
+thermal_expansion_unit = "1/K"
+max_service_temp_value = 1400
+max_service_temp_unit = "degC"
+
+[si3n4.electrical]
+volume_resistivity_value = 1e14
+volume_resistivity_unit = "ohm*cm"
+dielectric_constant = 9.2
+breakdown_voltage_value = 13
+breakdown_voltage_unit = "kV/mm"
+
+[si3n4.vis]
+base_color = [0.2, 0.2, 0.22, 1.0]
+transmission = 0.0
+metallic = 0.0
+roughness = 0.4
+
+[si3n4.vis.finishes]
+dark = { source = "ambientcg", id = "Porcelain003" }
+
+
+# ============================================================================
 # Provenance (#175 audit)
 # ----------------------------------------------------------------------------
 # Default _sources entries attached during the one-time #175 audit. These
@@ -435,3 +670,461 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+# ============================================================================
+# Per-property primary citations for batch5 ceramics (#134, #135, #136, #137)
+# ============================================================================
+
+# --- AlN (#134) --------------------------------------------------------------
+
+[aln._sources."mechanical.density"]
+citation = "wikipedia_aln"
+kind = "handbook"
+ref = "https://en.wikipedia.org/wiki/Aluminium_nitride"
+license = "CC-BY-SA-4.0"
+note = "X-ray crystallographic density of wurtzite AlN unit cell, 3.255 g/cm^3 (rounded to 3.26)."
+
+[aln._sources."mechanical.youngs_modulus"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "CoorsTek AlN-170 commercial sintered grade, room-temperature elastic modulus."
+
+[aln._sources."mechanical.flexural_strength"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "CoorsTek AlN-170 commercial sintered grade, 4-point bend at room temperature."
+
+[aln._sources."mechanical.poissons_ratio"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+
+[aln._sources."mechanical.hardness_vickers"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "Vickers hardness of CoorsTek AlN-170 sintered grade, ~11 GPa typical."
+
+[aln._sources."mechanical.fracture_toughness"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+
+[aln._sources."thermal.thermal_conductivity"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "Commercial sintered AlN-170 engineering value. Theoretical single-crystal max is ~285 W/(m·K) per Slack 1987 (DOI 10.1016/0022-3697(87)90153-3) — see _review entry."
+
+[aln._sources."thermal._review"]
+citation = "slack_1987"
+kind = "doi"
+ref = "10.1016/0022-3697(87)90153-3"
+license = "proprietary-reference-only"
+note = "Intrinsic-thermal-conductivity reference paper — Slack, Tanzilli, Pohl, Vandersande 1987, J. Phys. Chem. Solids 48(7), 641. Establishes the ~285 W/(m·K) single-crystal upper bound. Cited as a review only; commercial-grade scalar comes from CoorsTek datasheet."
+
+[aln._sources."thermal.melting_point"]
+citation = "wikipedia_aln"
+kind = "handbook"
+ref = "https://en.wikipedia.org/wiki/Aluminium_nitride"
+license = "CC-BY-SA-4.0"
+note = "AlN sublimes / decomposes ~2200 °C (vacuum) — quoted figure is the commonly cited engineering decomposition temperature; Wikipedia gives 2500 °C melting at high pressure."
+
+[aln._sources."thermal.specific_heat"]
+citation = "wikipedia_aln"
+kind = "handbook"
+ref = "https://en.wikipedia.org/wiki/Aluminium_nitride"
+license = "CC-BY-SA-4.0"
+note = "Converted from molar Cp = 30.1 J/(mol·K) ÷ molar mass 40.99 g/mol → ~734 J/(kg·K), rounded to 740."
+
+[aln._sources."thermal.thermal_expansion"]
+citation = "wikipedia_aln"
+kind = "handbook"
+ref = "https://en.wikipedia.org/wiki/Aluminium_nitride"
+license = "CC-BY-SA-4.0"
+note = "Engineering scalar; mean of a-axis 4.2e-6 / K and c-axis 5.3e-6 / K at 300 K rounded to 4.5e-6 / K. Anisotropic values stored separately in cte_anisotropic = [a, a, c]."
+
+[aln._sources."mechanical.cte_anisotropic"]
+citation = "wikipedia_aln"
+kind = "handbook"
+ref = "https://en.wikipedia.org/wiki/Aluminium_nitride"
+license = "CC-BY-SA-4.0"
+note = "AlN wurtzite anisotropic CTE at 300 K: a = b = 4.2e-6 / K, c = 5.3e-6 / K."
+
+[aln._sources."thermal.max_service_temp"]
+citation = "wikipedia_aln"
+kind = "handbook"
+ref = "https://en.wikipedia.org/wiki/Aluminium_nitride"
+license = "CC-BY-SA-4.0"
+note = "Max use temperature in air ~1700 K = ~1427 °C (oxidation onset) — quoted as 1700 °C engineering max-service-temp in vacuum/inert per CoorsTek brochure."
+
+[aln._sources."electrical.volume_resistivity"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = ">1e14 Ω·cm at room temperature — pure undoped AlN is an excellent insulator."
+
+[aln._sources."electrical.dielectric_constant"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "ε_r = 8.6 at 1 MHz, CoorsTek AlN-170."
+
+[aln._sources."electrical.dielectric_loss_tangent"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "tan δ = 5e-4 at 1 MHz, CoorsTek AlN-170."
+
+[aln._sources."electrical.breakdown_voltage"]
+citation = "coorstek_aln170"
+kind = "vendor"
+ref = "coorstek.com:aluminum-nitride-aln-brochure"
+license = "proprietary-reference-only"
+note = "Dielectric strength ≥17 kV/mm CoorsTek AlN-170 (≥25 kV at 1.5 mm)."
+
+# --- LTCC DuPont 951 (#135) --------------------------------------------------
+
+[ltcc951._sources._default]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont GreenTape 951 Technical Data Sheet, MCM951 (7/2011). Product line now stewarded by Heraeus post-2021. All scalars below transcribed verbatim from the 'Typical Tape Properties' table; LTCC product designed for cofired RF/multichip-module substrates."
+
+[ltcc951._sources."mechanical.density"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: Density 3.1 g/cm^3."
+
+[ltcc951._sources."mechanical.youngs_modulus"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: Young's Modulus 120 GPa."
+
+[ltcc951._sources."mechanical.flexural_strength"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: Flexural Strength 230 MPa, four-point bend."
+
+[ltcc951._sources."thermal.thermal_conductivity"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: Thermal Conductivity 3.3 W/(m·K)."
+
+[ltcc951._sources."thermal.thermal_expansion"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: TCE (25 to 300 °C) 5.8 ppm/°C = 5.8e-6 / K."
+
+[ltcc951._sources."electrical.dielectric_constant"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Electrical: εr = 7.8 ± 0.2 @ 3 GHz (T-resonator with gold conductor). 10 GHz value 7.5 ± 0.2 stored in custom block."
+
+[ltcc951._sources."electrical.dielectric_loss_tangent"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Electrical: Loss Tangent @ 3 GHz = 0.006."
+
+[ltcc951._sources."electrical.volume_resistivity"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Electrical: Insulation resistance at 100 VDC > 1e12 Ω (volume resistivity floor; thickness/contact details not given)."
+
+[ltcc951._sources."electrical.breakdown_voltage"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Electrical: Breakdown voltage > 1000 V at 25 µm = > 40 kV/mm."
+
+[ltcc951._sources."custom.shrinkage_xy_pct"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: X,Y Shrinkage 12.7 ± 0.3 % (951 PT, P2, PX); 13.0 ± 0.2 % (951C2). Canonical = 12.7 %."
+
+[ltcc951._sources."custom.shrinkage_z_pct"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: Z Shrinkage 15 ± 0.5 %."
+
+[ltcc951._sources."custom.dielectric_constant_at_10ghz"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Electrical: εr = 7.5 ± 0.2 @ 10 GHz (split cavity measurement)."
+
+[ltcc951._sources."custom.surface_roughness_um"]
+citation = "dupont_951_tds"
+kind = "vendor"
+ref = "heraeus.com:dupont-951-tds"
+license = "proprietary-reference-only"
+note = "DuPont 951 TDS Physical: Surface Roughness < 0.34 µm."
+
+# --- Sapphire (#136) ---------------------------------------------------------
+
+[sapphire._sources."mechanical.density"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran Sapphire Al2O3 technical brief: density 3.97 g/cc (rounded to 3.98 to match Wikipedia 3.98–4.06 g/cc range)."
+
+[sapphire._sources."mechanical.youngs_modulus"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire technical brief: E = 335 GPa."
+
+[sapphire._sources."mechanical.shear_modulus"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire technical brief: G = 148.1 GPa, rounded to 148."
+
+[sapphire._sources."mechanical.poissons_ratio"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire technical brief: Poisson ratio 0.25."
+
+[sapphire._sources."mechanical.hardness_vickers"]
+citation = "dobrovinskaya_2009"
+kind = "handbook"
+ref = "isbn:978-0-387-85695-7"
+license = "proprietary-reference-only"
+note = "Dobrovinskaya, Lytvynov, Pishchik 2009 — Sapphire: Material, Manufacturing, Applications (Springer). Vickers hardness ~22 GPa for c-axis (Knoop 1800–2200 in Crystran reference). Engineering scalar = 22.5 GPa."
+
+[sapphire._sources."mechanical.flexural_strength"]
+citation = "dobrovinskaya_2009"
+kind = "handbook"
+ref = "isbn:978-0-387-85695-7"
+license = "proprietary-reference-only"
+note = "Dobrovinskaya 2009 textbook; engineering value for c-axis sapphire bend strength."
+
+[sapphire._sources."mechanical.fracture_toughness"]
+citation = "dobrovinskaya_2009"
+kind = "handbook"
+ref = "isbn:978-0-387-85695-7"
+license = "proprietary-reference-only"
+note = "Dobrovinskaya 2009 textbook; KIC ~2 MPa·m^0.5 for single-crystal sapphire (m-plane, room temperature)."
+
+[sapphire._sources."thermal.melting_point"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire: melting point 2040 °C; Wikipedia range 2030–2050 °C."
+
+[sapphire._sources."thermal.thermal_conductivity"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire technical brief: k = 27.21 W/(m·K) at 300 K (perpendicular-c representative). Sapphire is anisotropic — parallel-c is ~32–35 W/(m·K). The 27.21 figure is Crystran's quoted scalar."
+
+[sapphire._sources."thermal.specific_heat"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire technical brief: Cp = 763 J/(kg·K) at 293 K."
+
+[sapphire._sources."thermal.thermal_expansion"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire: parallel-c 5.6e-6 / K, perpendicular-c 5.0e-6 / K. Canonical scalar = parallel-c = 5.6e-6 / K."
+
+[sapphire._sources."mechanical.cte_anisotropic"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "[a, a, c] = [5.0e-6, 5.0e-6, 5.6e-6] / K from Crystran technical brief."
+
+[sapphire._sources."thermal.max_service_temp"]
+citation = "dobrovinskaya_2009"
+kind = "handbook"
+ref = "isbn:978-0-387-85695-7"
+license = "proprietary-reference-only"
+note = "Sapphire is stable to ~2000 °C (vacuum, inert); upper-use limit cited at 1900–2000 °C in Dobrovinskaya 2009."
+
+[sapphire._sources."electrical.volume_resistivity"]
+citation = "dobrovinskaya_2009"
+kind = "handbook"
+ref = "isbn:978-0-387-85695-7"
+license = "proprietary-reference-only"
+note = "Sapphire room-temperature volume resistivity > 1e16 Ω·cm — excellent insulator."
+
+[sapphire._sources."electrical.dielectric_constant"]
+citation = "crystran_sapphire"
+kind = "vendor"
+ref = "crystran.co.uk:sapphire-al2o3"
+license = "proprietary-reference-only"
+note = "Crystran sapphire @ 1 MHz: 11.5 (parallel-c), 9.4 (perpendicular-c). Canonical scalar = perpendicular-c = 9.4 (matches the most-quoted 'sapphire ε_r ≈ 9.4' value in the literature)."
+
+[sapphire._sources."optical.refractive_index"]
+citation = "malitson_dodge_1972"
+kind = "doi"
+ref = "10.1364/JOSA.62.001405"
+license = "proprietary-reference-only"
+note = "Malitson & Dodge 1972, J. Opt. Soc. Am. 62, 1405. Sodium D-line (589.3 nm) ordinary ray n_o = 1.7681 (rounded to 1.768). Extraordinary ray n_e = 1.7601 — not stored as scalar; the schema has one refractive_index field. Crystran cross-references the Malitson Sellmeier representation at 0.590 µm: n_o = 1.7680, n_e = 1.7600."
+
+# --- Si3N4 (#137) ------------------------------------------------------------
+
+[si3n4._sources._default]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "Superior Technical Ceramics 2021 datasheet for Direct Pressure Sintered Silicon Nitride (DPSSN/SSN). Canonical engineering grade for this entry; ASTM-method-stamped values transcribed verbatim from the 'Typical Properties' table."
+
+[si3n4._sources."mechanical.density"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN typical density 3.25 g/cc (ASTM C 20-97)."
+
+[si3n4._sources."mechanical.youngs_modulus"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Elastic Modulus 300 GPa (ASTM C848)."
+
+[si3n4._sources."mechanical.poissons_ratio"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Poisson's Ratio 0.28 (ASTM C848)."
+
+[si3n4._sources."mechanical.flexural_strength"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Flexural Strength (3-point, RT) 900 MPa (ASTM F417-87)."
+
+[si3n4._sources."mechanical.tensile_strength"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Tensile Strength @ RT 537 MPa."
+
+[si3n4._sources."mechanical.compressive_strength"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Compressive Strength @ RT 2500 MPa."
+
+[si3n4._sources."mechanical.hardness_vickers"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Hardness Vickers (500 g) 15 GPa."
+
+[si3n4._sources."mechanical.fracture_toughness"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Fracture Toughness 6 MPa·m^0.5 (notched-beam method)."
+
+[si3n4._sources."thermal.thermal_conductivity"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Thermal Conductivity @ RT 29 W/(m·K) (ASTM C 408)."
+
+[si3n4._sources."thermal.specific_heat"]
+citation = "riley_2000"
+kind = "doi"
+ref = "10.1111/j.1151-2916.2000.tb01182.x"
+license = "proprietary-reference-only"
+note = "Riley 2000 J. Am. Ceram. Soc. 83, 245 — Si3N4 review. Cp ~700 J/(kg·K) at room temperature for sintered Si3N4. STC datasheet does not tabulate Cp."
+
+[si3n4._sources."thermal.thermal_expansion"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN CTE (25–600 °C) 2.9e-6 /°C (ASTM C 372-96)."
+
+[si3n4._sources."thermal.max_service_temp"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Max Use Temp (non-loading, high strength) 1400 °C in oxidizing atmosphere."
+
+[si3n4._sources."electrical.volume_resistivity"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Volume Resistivity @ 25 °C > 1e14 Ω·cm (ASTM D 257)."
+
+[si3n4._sources."electrical.dielectric_constant"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Dielectric Constant @ 1 MHz 9.2 (ASTM D 150-98)."
+
+[si3n4._sources."electrical.breakdown_voltage"]
+citation = "stc_si3n4_2021"
+kind = "vendor"
+ref = "ceramics.net:stc-si3n4-2021"
+license = "proprietary-reference-only"
+note = "STC SSN Dielectric Strength 330 V/mil at 0.125 in thickness ≈ 13 kV/mm (ASTM D 149-97A)."
+
+[si3n4._sources."thermal._review"]
+citation = "riley_2000"
+kind = "doi"
+ref = "10.1111/j.1151-2916.2000.tb01182.x"
+license = "proprietary-reference-only"
+note = "Si3N4 review reference — Riley 2000, J. Am. Ceram. Soc. 83(2), 245. Cited as the materials-class review; specific scalars come from STC 2021 datasheet."
