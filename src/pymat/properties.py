@@ -15,7 +15,7 @@ Organized by physical/engineering domain:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from pint import Quantity
@@ -66,6 +66,22 @@ class MechanicalProperties:
     hardness_rockwell: Optional[float] = None  # HR (Rockwell hardness)
     fracture_toughness: Optional[float] = None  # MPa·m^0.5
     fracture_toughness_unit: str = "MPa*m^0.5"
+
+    # Plastics & ceramics flexural performance (#151)
+    flexural_modulus: Optional[float] = None  # MPa
+    flexural_modulus_unit: str = "MPa"
+    flexural_strength: Optional[float] = None  # MPa
+    flexural_strength_unit: str = "MPa"
+    # Cyclic-load endurance (#151)
+    fatigue_limit: Optional[float] = None  # MPa
+    fatigue_limit_unit: str = "MPa"
+    # Comparative tracking index for PCB substrates (#151)
+    cti: Optional[float] = None  # V
+    cti_unit: str = "V"
+    # Anisotropic CTE for non-cubic crystals like sapphire/quartz (#151)
+    cte_anisotropic: Optional[List[float]] = None  # [a, b, c] in ppm/K
+    # Sparse creep-rate measurements: list of {temp_K, stress_MPa, strain_per_hr} (#151)
+    creep_rate: Optional[List[Dict[str, float]]] = None
 
     # T-dependent curves (#148). Sibling fields parallel to scalars.
     youngs_modulus_curve: Optional[TempCurve] = None
@@ -133,6 +149,30 @@ class MechanicalProperties:
             return None
         return self.fracture_toughness * ureg(self.fracture_toughness_unit)
 
+    @property
+    def flexural_modulus_qty(self) -> Optional[Quantity]:
+        if self.flexural_modulus is None:
+            return None
+        return self.flexural_modulus * ureg(self.flexural_modulus_unit)
+
+    @property
+    def flexural_strength_qty(self) -> Optional[Quantity]:
+        if self.flexural_strength is None:
+            return None
+        return self.flexural_strength * ureg(self.flexural_strength_unit)
+
+    @property
+    def fatigue_limit_qty(self) -> Optional[Quantity]:
+        if self.fatigue_limit is None:
+            return None
+        return self.fatigue_limit * ureg(self.fatigue_limit_unit)
+
+    @property
+    def cti_qty(self) -> Optional[Quantity]:
+        if self.cti is None:
+            return None
+        return self.cti * ureg(self.cti_unit)
+
 
 @dataclass
 class ThermalProperties:
@@ -156,6 +196,23 @@ class ThermalProperties:
     min_service_temp: Optional[float] = None  # °C
     min_service_temp_unit: str = "degC"
     thermal_shock_resistance: Optional[str] = None  # "excellent", "good", "fair", "poor"
+
+    # Cryogenic radiation-shielding budgets (#152) — polished Al ≈ 0.04, anodized ≈ 0.8
+    emissivity: Optional[float] = None  # 0–1, dimensionless
+    # Heat-pulse propagation (#152)
+    thermal_diffusivity: Optional[float] = None  # mm²/s
+    thermal_diffusivity_unit: str = "mm^2/s"
+    # Cryogenic embrittlement boundary (#152) — Delrin/PEEK get brittle below ~-50 °C
+    min_use_temp_K: Optional[float] = None
+    cryogenic_compatible: Optional[bool] = None
+    # NIST-style ∫k dT for cryogenic heat-leak (#152)
+    integrated_thermal_conductivity: Optional[float] = None  # W/m
+    integrated_thermal_conductivity_unit: str = "W/m"
+    # Phase-change enthalpies for liquids/coolants (#152)
+    latent_heat_fusion: Optional[float] = None  # kJ/kg
+    latent_heat_fusion_unit: str = "kJ/kg"
+    latent_heat_vaporization: Optional[float] = None  # kJ/kg
+    latent_heat_vaporization_unit: str = "kJ/kg"
 
     # T-dependent curves (#148). Sibling fields parallel to scalars.
     thermal_conductivity_curve: Optional[TempCurve] = None
@@ -222,6 +279,32 @@ class ThermalProperties:
         if self.min_service_temp_unit == "degC":
             return (self.min_service_temp + 273.15) * ureg.kelvin
         return self.min_service_temp * ureg(self.min_service_temp_unit)
+
+    @property
+    def thermal_diffusivity_qty(self) -> Optional[Quantity]:
+        if self.thermal_diffusivity is None:
+            return None
+        return self.thermal_diffusivity * ureg(self.thermal_diffusivity_unit)
+
+    @property
+    def integrated_thermal_conductivity_qty(self) -> Optional[Quantity]:
+        if self.integrated_thermal_conductivity is None:
+            return None
+        return self.integrated_thermal_conductivity * ureg(
+            self.integrated_thermal_conductivity_unit
+        )
+
+    @property
+    def latent_heat_fusion_qty(self) -> Optional[Quantity]:
+        if self.latent_heat_fusion is None:
+            return None
+        return self.latent_heat_fusion * ureg(self.latent_heat_fusion_unit)
+
+    @property
+    def latent_heat_vaporization_qty(self) -> Optional[Quantity]:
+        if self.latent_heat_vaporization is None:
+            return None
+        return self.latent_heat_vaporization * ureg(self.latent_heat_vaporization_unit)
 
     def thermal_conductivity_at(self, temp: Quantity) -> Optional[Quantity]:
         """
