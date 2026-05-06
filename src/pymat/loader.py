@@ -239,6 +239,10 @@ def _build_properties_from_dict(
         update_properties(props.electrical, data["electrical"], "electrical")
     if "optical" in data:
         update_properties(props.optical, data["optical"], "optical")
+    if "magnetic" in data:
+        update_properties(props.magnetic, data["magnetic"], "magnetic")
+    if "vacuum" in data:
+        update_properties(props.vacuum, data["vacuum"], "vacuum")
     if "pbr" in data:
         raise ValueError(
             "TOML [pbr] section is no longer supported in 3.0. "
@@ -296,6 +300,8 @@ def _resolve_material_node(
                 "thermal",
                 "electrical",
                 "optical",
+                "magnetic",
+                "vacuum",
                 "pbr",
                 "manufacturing",
                 "compliance",
@@ -363,6 +369,8 @@ def _resolve_material_node(
                 "thermal",
                 "electrical",
                 "optical",
+                "magnetic",
+                "vacuum",
                 "pbr",
                 "manufacturing",
                 "compliance",

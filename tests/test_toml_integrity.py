@@ -43,6 +43,8 @@ _KNOWN_GROUPS = {
     "thermal",
     "electrical",
     "optical",
+    "magnetic",
+    "vacuum",
     "manufacturing",
     "compliance",
     "sourcing",
