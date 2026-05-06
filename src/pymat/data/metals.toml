@@ -885,3 +885,246 @@ base_color = [0.85, 0.85, 0.83, 1.0]
 metallic = 1.0
 roughness = 0.3
 transmission = 0.0
+
+# ============================================================================
+# Provenance (#175 audit)
+# ----------------------------------------------------------------------------
+# Default _sources entries attached during the one-time #175 audit. These
+# placeholder citations point at py-mat's aggregate curation history; future
+# per-source PRs (#158-#173) overwrite individual entries with proper
+# citations (Wikidata QIDs, NIST datasets, vendor URLs, etc.).
+# ============================================================================
+
+[stainless._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[stainless.s304._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[stainless.s316L._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[stainless.s316L.electropolished._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[stainless.s316L.passivated._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[stainless.s303._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[stainless.s17_4PH._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a6061._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a6061.T6._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a6061.T6.anodized._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a6063._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a7075._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a7075.T6._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a7075.T73._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[aluminum.a2024._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[copper._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[copper.OFHC._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[tungsten._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[tungsten.pure._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[tungsten.W90._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[lead._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[titanium._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[titanium.grade5._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[brass._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[havar._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[niobium._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[silver._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[gold._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[molybdenum._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[gallium._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[bismuth._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[rhodium._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[yttrium._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[radium._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[nickel._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[iron._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[zinc._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[tin._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"

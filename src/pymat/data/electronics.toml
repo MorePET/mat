@@ -361,3 +361,108 @@ weldability = "good"
 
 [alumina_pcb.compliance]
 rohs_compliant = true
+
+# ============================================================================
+# Provenance (#175 audit)
+# ----------------------------------------------------------------------------
+# Default _sources entries attached during the one-time #175 audit. These
+# placeholder citations point at py-mat's aggregate curation history; future
+# per-source PRs (#158-#173) overwrite individual entries with proper
+# citations (Wikidata QIDs, NIST datasets, vendor URLs, etc.).
+# ============================================================================
+
+[fr4._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[rogers._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[rogers.r4350b._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[kapton._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[copper_pcb._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[copper_pcb.oz1._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[copper_pcb.oz2._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[copper_pcb.gold_plated._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[solder._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[solder.Sn63Pb37._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[solder.SAC305._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[epoxy_potting._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[silicone_potting._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[ferrite._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[ceramic_capacitor._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[alumina_pcb._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"

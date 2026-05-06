@@ -289,3 +289,126 @@ vendor = "eljen"
 [plastic_scint.EJ200.optical]
 light_yield = 12000
 decay_time = 2.1
+
+# ============================================================================
+# Provenance (#175 audit)
+# ----------------------------------------------------------------------------
+# Default _sources entries attached during the one-time #175 audit. These
+# placeholder citations point at py-mat's aggregate curation history; future
+# per-source PRs (#158-#173) overwrite individual entries with proper
+# citations (Wikidata QIDs, NIST datasets, vendor URLs, etc.).
+# ============================================================================
+
+[lyso._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[lyso.Ce._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[lyso.Ce.saint_gobain._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[lyso.Ce.saint_gobain.prelude420._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[lyso.Ce.epic._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[lyso.Ce.siccas._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[bgo._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[nai._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[nai.Tl._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[nai.Tl.saint_gobain._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[nai.Tl.hamamatsu._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[csi._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[csi.Tl._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[csi.Na._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[labr3._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[pwo._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[plastic_scint._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[plastic_scint.BC400._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[plastic_scint.EJ200._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
