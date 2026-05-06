@@ -15,7 +15,7 @@ Organized by physical/engineering domain:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from pint import Quantity
@@ -66,6 +66,22 @@ class MechanicalProperties:
     hardness_rockwell: Optional[float] = None  # HR (Rockwell hardness)
     fracture_toughness: Optional[float] = None  # MPa·m^0.5
     fracture_toughness_unit: str = "MPa*m^0.5"
+
+    # Plastics & ceramics flexural performance (#151)
+    flexural_modulus: Optional[float] = None  # MPa
+    flexural_modulus_unit: str = "MPa"
+    flexural_strength: Optional[float] = None  # MPa
+    flexural_strength_unit: str = "MPa"
+    # Cyclic-load endurance (#151)
+    fatigue_limit: Optional[float] = None  # MPa
+    fatigue_limit_unit: str = "MPa"
+    # Comparative tracking index for PCB substrates (#151)
+    cti: Optional[float] = None  # V
+    cti_unit: str = "V"
+    # Anisotropic CTE for non-cubic crystals like sapphire/quartz (#151)
+    cte_anisotropic: Optional[List[float]] = None  # [a, b, c] in ppm/K
+    # Sparse creep-rate measurements: list of {temp_K, stress_MPa, strain_per_hr} (#151)
+    creep_rate: Optional[List[Dict[str, float]]] = None
 
     # T-dependent curves (#148). Sibling fields parallel to scalars.
     youngs_modulus_curve: Optional[TempCurve] = None
@@ -132,6 +148,30 @@ class MechanicalProperties:
         if self.fracture_toughness is None:
             return None
         return self.fracture_toughness * ureg(self.fracture_toughness_unit)
+
+    @property
+    def flexural_modulus_qty(self) -> Optional[Quantity]:
+        if self.flexural_modulus is None:
+            return None
+        return self.flexural_modulus * ureg(self.flexural_modulus_unit)
+
+    @property
+    def flexural_strength_qty(self) -> Optional[Quantity]:
+        if self.flexural_strength is None:
+            return None
+        return self.flexural_strength * ureg(self.flexural_strength_unit)
+
+    @property
+    def fatigue_limit_qty(self) -> Optional[Quantity]:
+        if self.fatigue_limit is None:
+            return None
+        return self.fatigue_limit * ureg(self.fatigue_limit_unit)
+
+    @property
+    def cti_qty(self) -> Optional[Quantity]:
+        if self.cti is None:
+            return None
+        return self.cti * ureg(self.cti_unit)
 
 
 @dataclass
