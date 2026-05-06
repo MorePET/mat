@@ -89,7 +89,19 @@ _LOADED_CATEGORIES: set[str] = set()
 # Category to base materials mapping
 _CATEGORY_BASES: Dict[str, list[str]] = {
     "metals": ["stainless", "aluminum", "copper", "tungsten", "lead", "titanium", "brass"],
-    "scintillators": ["lyso", "bgo", "nai", "csi", "labr3", "pwo", "plastic_scint"],
+    "scintillators": [
+        "lyso",
+        "bgo",
+        "nai",
+        "csi",
+        "labr3",
+        "pwo",
+        "plastic_scint",
+        "gagg",
+        "lso",
+        "cebr3",
+        "sri2",
+    ],
     "plastics": [
         "peek",
         "delrin",
