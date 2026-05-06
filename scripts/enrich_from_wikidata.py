@@ -7,11 +7,12 @@ single SPARQL query, and prints a side-by-side report so a human can
 decide whether to update the TOMLs.
 
 This is NOT a runtime dependency of mat — it lives in scripts/ for
-data curation. Requires only `requests`.
+data curation. Shared helpers live in `scripts/_curation.py`.
 
 Usage:
     python scripts/enrich_from_wikidata.py              # full report
     python scripts/enrich_from_wikidata.py --key copper # one material
+    python scripts/enrich_from_wikidata.py --dry-run    # use fixture, no network
 
 Source: https://query.wikidata.org/sparql
 Property IDs used:
@@ -23,17 +24,22 @@ Property IDs used:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
-import requests
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from pymat import load_all
+import requests  # noqa: E402
+from _curation import USER_AGENT, fmt_delta  # noqa: E402
 
-USER_AGENT = "pymat-curation/0.1 (https://github.com/MorePet/py-mat)"
+from pymat import load_all  # noqa: E402
+
 SPARQL_URL = "https://query.wikidata.org/sparql"
+FIXTURE_PATH = (
+    Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "wikidata_sample.json"
+)
 
 # Curator-maintained mapping. Start with entries that have a clear
 # Wikidata identity; specific grades (s304, a6061, hdpe) don't belong
@@ -58,6 +64,11 @@ WIKIDATA_QIDS: dict[str, str] = {
 }
 
 # Wikidata unit Q-IDs we understand. Anything else → mark as "unknown unit".
+# Kept inline (not yet via UnitNormalizer) because density and melting
+# point both have a special case (Kelvin offset, kg/m³ scale) that the
+# generic registry can't express in a single multiplicative scale; the
+# QID set itself is the only piece worth lifting and it stays here as a
+# curated whitelist for clarity.
 _UNIT_G_CM3 = "Q13147228"
 _UNIT_KG_M3 = "Q844211"
 _UNIT_KELVIN = "Q11579"
@@ -82,10 +93,9 @@ def _normalize_melting_point(amount: float, unit_qid: str) -> float | None:
     return None
 
 
-def _sparql_query(qids: list[str]) -> dict[str, dict]:
-    """Run a single SPARQL query for the given Q-IDs; return {qid: props}."""
+def _build_sparql(qids: list[str]) -> str:
     values_clause = " ".join(f"wd:{q}" for q in qids)
-    query = f"""
+    return f"""
     SELECT ?item ?itemLabel ?density ?densityUnit ?melt ?meltUnit ?formula WHERE {{
       VALUES ?item {{ {values_clause} }}
       OPTIONAL {{
@@ -102,16 +112,34 @@ def _sparql_query(qids: list[str]) -> dict[str, dict]:
       SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en" . }}
     }}
     """
+
+
+def _sparql_query(qids: list[str]) -> dict[str, dict]:
+    """Run a single SPARQL query for the given Q-IDs; return {qid: props}."""
+    query = _build_sparql(qids)
     r = requests.post(
         SPARQL_URL,
         data={"query": query, "format": "json"},
-        headers={"User-Agent": USER_AGENT, "Accept": "application/sparql-results+json"},
+        headers={
+            "User-Agent": f"{USER_AGENT} (https://github.com/MorePet/py-mat)",
+            "Accept": "application/sparql-results+json",
+        },
         timeout=20,
     )
     r.raise_for_status()
+    return _parse_sparql_bindings(r.json())
 
+
+def _load_fixture() -> dict:
+    if not FIXTURE_PATH.exists():
+        raise FileNotFoundError(f"--dry-run requires fixture at {FIXTURE_PATH}; not found")
+    return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+
+
+def _parse_sparql_bindings(payload: dict) -> dict[str, dict]:
+    """Parse a SPARQL JSON payload into our `{qid: {...}}` shape."""
     out: dict[str, dict] = {}
-    for b in r.json()["results"]["bindings"]:
+    for b in payload["results"]["bindings"]:
         qid = b["item"]["value"].rsplit("/", 1)[-1]
         entry = out.setdefault(qid, {"label": b.get("itemLabel", {}).get("value", "")})
         if "density" in b and "densityUnit" in b:
@@ -127,28 +155,17 @@ def _sparql_query(qids: list[str]) -> dict[str, dict]:
     return out
 
 
-def _fmt_delta(ours: float | None, theirs: float | None, tol: float) -> str:
-    """Format a comparison cell: ✓ within tolerance, Δ above, — missing."""
-    if ours is None and theirs is None:
-        return "—"
-    if ours is None:
-        return f"(ours missing; wd={theirs:.4g})"
-    if theirs is None:
-        return f"(wd missing; ours={ours:.4g})"
-    diff = abs(ours - theirs)
-    rel = diff / max(abs(ours), abs(theirs), 1e-9)
-    marker = "OK" if rel <= tol else "DIFF"
-    return f"{marker}  ours={ours:.4g} wd={theirs:.4g} Δ={diff:.4g} ({rel * 100:.1f}%)"
-
-
-def compare(key_filter: str | None = None) -> int:
+def compare(key_filter: str | None = None, dry_run: bool = False) -> int:
     mats = load_all()
     targets = {k: q for k, q in WIKIDATA_QIDS.items() if (key_filter is None or k == key_filter)}
     if not targets:
         print(f"No material '{key_filter}' in WIKIDATA_QIDS mapping", file=sys.stderr)
         return 1
 
-    wd = _sparql_query(list(targets.values()))
+    if dry_run:
+        wd = _parse_sparql_bindings(_load_fixture())
+    else:
+        wd = _sparql_query(list(targets.values()))
 
     print(f"{'material':<14} {'density (g/cm³)':<52} {'melt (°C)':<52}")
     print("-" * 120)
@@ -162,8 +179,8 @@ def compare(key_filter: str | None = None) -> int:
         entry = wd.get(qid, {})
         wd_d = entry.get("density_g_cm3")
         wd_m = entry.get("melt_c")
-        d_cell = _fmt_delta(ours_d, wd_d, tol=0.05)
-        m_cell = _fmt_delta(ours_m, wd_m, tol=0.05)
+        d_cell = fmt_delta(ours_d, wd_d, tol=0.05)
+        m_cell = fmt_delta(ours_m, wd_m, tol=0.05)
         if "DIFF" in d_cell or "DIFF" in m_cell:
             diffs += 1
         print(f"{key:<14} {d_cell:<52} {m_cell:<52}")
@@ -177,8 +194,16 @@ def compare(key_filter: str | None = None) -> int:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--key", help="Only compare this material key")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Use the bundled SPARQL fixture instead of hitting the live "
+            "endpoint — for offline reproducibility."
+        ),
+    )
     args = parser.parse_args()
-    sys.exit(compare(args.key))
+    sys.exit(compare(args.key, dry_run=args.dry_run))
 
 
 if __name__ == "__main__":

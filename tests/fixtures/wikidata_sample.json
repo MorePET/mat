@@ -1,0 +1,54 @@
+{
+  "head": {
+    "vars": ["item", "itemLabel", "density", "densityUnit", "melt", "meltUnit", "formula"]
+  },
+  "results": {
+    "bindings": [
+      {
+        "item": { "type": "uri", "value": "http://www.wikidata.org/entity/Q663" },
+        "itemLabel": { "type": "literal", "value": "aluminium" },
+        "density": { "type": "literal", "value": "2.7" },
+        "densityUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q13147228" },
+        "melt": { "type": "literal", "value": "933.47" },
+        "meltUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q11579" },
+        "formula": { "type": "literal", "value": "Al" }
+      },
+      {
+        "item": { "type": "uri", "value": "http://www.wikidata.org/entity/Q753" },
+        "itemLabel": { "type": "literal", "value": "copper" },
+        "density": { "type": "literal", "value": "8.96" },
+        "densityUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q13147228" },
+        "melt": { "type": "literal", "value": "1357.77" },
+        "meltUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q11579" },
+        "formula": { "type": "literal", "value": "Cu" }
+      },
+      {
+        "item": { "type": "uri", "value": "http://www.wikidata.org/entity/Q669" },
+        "itemLabel": { "type": "literal", "value": "titanium" },
+        "density": { "type": "literal", "value": "4.506" },
+        "densityUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q13147228" },
+        "melt": { "type": "literal", "value": "1941" },
+        "meltUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q11579" },
+        "formula": { "type": "literal", "value": "Ti" }
+      },
+      {
+        "item": { "type": "uri", "value": "http://www.wikidata.org/entity/Q731" },
+        "itemLabel": { "type": "literal", "value": "tungsten" },
+        "density": { "type": "literal", "value": "19.25" },
+        "densityUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q13147228" },
+        "melt": { "type": "literal", "value": "3695" },
+        "meltUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q11579" },
+        "formula": { "type": "literal", "value": "W" }
+      },
+      {
+        "item": { "type": "uri", "value": "http://www.wikidata.org/entity/Q708" },
+        "itemLabel": { "type": "literal", "value": "lead" },
+        "density": { "type": "literal", "value": "11.34" },
+        "densityUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q13147228" },
+        "melt": { "type": "literal", "value": "600.61" },
+        "meltUnit": { "type": "uri", "value": "http://www.wikidata.org/entity/Q11579" },
+        "formula": { "type": "literal", "value": "Pb" }
+      }
+    ]
+  }
+}
