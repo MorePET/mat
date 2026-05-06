@@ -388,6 +388,12 @@ class ElectricalProperties:
     breakdown_voltage_unit: str = "kV/mm"
     volume_resistivity: Optional[float] = None  # Ω·cm
     volume_resistivity_unit: str = "ohm*cm"
+    # Surface resistivity, distinct from volume_resistivity (#154)
+    surface_resistivity: Optional[float] = None  # Ω/sq
+    surface_resistivity_unit: str = "ohm"
+    # Arc resistance for HV detector feedthroughs (#154)
+    arc_resistance: Optional[float] = None  # seconds
+    arc_resistance_unit: str = "s"
 
     # T-dependent curve (#148).
     resistivity_curve: Optional[TempCurve] = None
@@ -426,6 +432,18 @@ class ElectricalProperties:
         if self.volume_resistivity is None:
             return None
         return self.volume_resistivity * ureg(self.volume_resistivity_unit)
+
+    @property
+    def surface_resistivity_qty(self) -> Optional[Quantity]:
+        if self.surface_resistivity is None:
+            return None
+        return self.surface_resistivity * ureg(self.surface_resistivity_unit)
+
+    @property
+    def arc_resistance_qty(self) -> Optional[Quantity]:
+        if self.arc_resistance is None:
+            return None
+        return self.arc_resistance * ureg(self.arc_resistance_unit)
 
 
 @dataclass
