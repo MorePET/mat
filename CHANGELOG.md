@@ -5,16 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.9.1] - 2026-05-06
+## [3.10.0] - 2026-05-06
 
-Public-API contract clarification — no code change, just metadata +
-docs catching up to facts.
+Schema-foundation milestone rolls up four feature PRs (provenance,
+stddev sugar, licensing gate, T-dependent curves) plus a public-API
+clarification on `Vis`. Foundation for the broader schema-expansion
+work tracked in #151–#157.
+
+### Added
+
+* **`_sources` provenance table** ([#150](https://github.com/MorePET/mat/issues/150) / [#182](https://github.com/MorePET/mat/pull/182)).
+  TOML now supports `[<material>._sources]` with keyed-by-property-path
+  citations and a `_default` fallback. Parent-overlay inheritance works
+  the same way as other property tables. New `pymat.sources` module
+  exports a frozen `Source` dataclass (`citation`, `kind`, `ref`,
+  `license`, `note`), short-alias resolution (`density` →
+  `mechanical.density`), and `parse_sources_table` /
+  `merge_sources` helpers. This is the foundation for the licensing
+  gate (below) and the schema-expansion milestone.
+
+* **`_stddev` sibling sugar + ufloat boundary helper**
+  ([#149](https://github.com/MorePET/mat/issues/149) / [#183](https://github.com/MorePET/mat/pull/183)).
+  Per [ADR-0003](https://github.com/MorePET/mat/blob/main/docs/decisions/0003-schema-foundation.md),
+  `_stddev` lands as loader sugar, not as parallel dataclass fields.
+  The existing in-value `{nominal, stddev}` form is now routed
+  through `_parse_value` for property scalars (it already worked for
+  compositions). Both the canonical and sibling-sugar forms work;
+  specifying both for the same property is a hard error.
+
+* **Data-licensing policy + CI license gate**
+  ([#174](https://github.com/MorePET/mat/issues/174) / [#184](https://github.com/MorePET/mat/pull/184)).
+  Lands `docs/data-policy.md` (legal context, allowed licenses,
+  off-limits sources, attribution contract) plus
+  `scripts/check_licenses.py`, a stdlib-only CI gate that walks every
+  `_sources` entry and blocks on missing / `unknown` / invalid
+  license. Turns the `_sources.<key>.license` field added in #150
+  from "parsed" into "required for merge."
+
+* **T-dependent property curves**
+  ([#148](https://github.com/MorePET/mat/issues/148) / [#185](https://github.com/MorePET/mat/pull/185)).
+  TOML now supports `<prop>_curve = {temps_K = [...], values = [...]}`
+  with linear interpolation across nine properties:
+  `thermal_conductivity`, `specific_heat`, `thermal_expansion`,
+  `youngs_modulus`, `yield_strength`, `resistivity`,
+  `refractive_index`, `light_yield`, `decay_time`. Out-of-range
+  queries clamp to endpoints; mixed scalar + curve entries are
+  rejected at load time.
 
 ### Fixed
 
 * **`Vis` is officially a public class**
   ([#98](https://github.com/MorePET/mat/issues/98) /
-  [mat-vis #282](https://github.com/MorePET/mat-vis/issues/282)).
+  [mat-vis #282](https://github.com/MorePET/mat-vis/issues/282) /
+  [#186](https://github.com/MorePET/mat/pull/186)).
   `Vis`, `VisDeltas`, and `FinishEntry` have been re-exported from
   `pymat.vis` since 3.4 / 3.6 / 3.8 respectively, but their
   `__module__` attribute still pointed at the private `pymat.vis._model`
