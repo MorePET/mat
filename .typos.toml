@@ -42,6 +42,11 @@ stainles = "stainles"
 # every instance of "LSO" to "ALSO" (#170).
 LSO = "LSO"
 lso = "lso"
+# PubChem annotation-node identifier appearing in the PUG-View JSON
+# fixture (tests/fixtures/pubchem_water.json, #165). `typos` would
+# otherwise rewrite "ANID" to "AND" inside the captured response,
+# diverging the fixture from real PubChem output.
+ANID = "ANID"
 
 [files]
 extend-exclude = [
