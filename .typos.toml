@@ -47,9 +47,13 @@ lso = "lso"
 # otherwise rewrite "ANID" to "AND" inside the captured response,
 # diverging the fixture from real PubChem output.
 ANID = "ANID"
-# DuPont (E. I. du Pont de Nemours, now Heraeus for the LTCC 951
-# product line). `typos` otherwise rewrites "DuPont" → "DuPoint"
-# inside ceramics.toml citation notes (#135).
+# `typos` 1.46 matches the SUBSTRING "Pont" → "Point" inside any word,
+# which rewrites "DuPont" → "DuPoint" in ceramics.toml citation notes
+# (#135). The fix is to allowlist "Pont" itself; the full-word
+# allowlist below doesn't help because typos doesn't see "DuPont"
+# as a single token.
+Pont = "Pont"
+pont = "pont"
 DuPont = "DuPont"
 dupont = "dupont"
 
