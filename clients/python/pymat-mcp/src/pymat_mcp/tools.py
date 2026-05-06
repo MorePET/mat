@@ -39,6 +39,7 @@ _ALL_DOMAINS = (
     "thermal",
     "electrical",
     "optical",
+    "magnetic",
     "manufacturing",
     "compliance",
     "sourcing",

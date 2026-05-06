@@ -512,6 +512,27 @@ class OpticalProperties:
 
 
 @dataclass
+class MagneticProperties:
+    """Magnetic behavior for MR-PET hybrid systems and shielding (#155).
+
+    χ < ~10 ppm is the null-artifact threshold for MR-PET. Cu (-9.6e-6),
+    Ti (-1.8e-6) are MR-safe; mu-metal (μr ≈ 20000) is the high-permeability
+    soft-magnetic shield.
+    """
+
+    susceptibility_volumetric: Optional[float] = None  # χ_v, SI, dimensionless
+    permeability_relative: Optional[float] = None  # μr, dimensionless
+    saturation_field: Optional[float] = None  # T, ferromagnetics only
+    saturation_field_unit: str = "T"
+
+    @property
+    def saturation_field_qty(self) -> Optional["Quantity"]:
+        if self.saturation_field is None:
+            return None
+        return self.saturation_field * ureg(self.saturation_field_unit)
+
+
+@dataclass
 class ManufacturingProperties:
     """Machinability, weldability, printability."""
 
@@ -639,6 +660,7 @@ class AllProperties:
     thermal: ThermalProperties = field(default_factory=ThermalProperties)
     electrical: ElectricalProperties = field(default_factory=ElectricalProperties)
     optical: OpticalProperties = field(default_factory=OpticalProperties)
+    magnetic: MagneticProperties = field(default_factory=MagneticProperties)
     manufacturing: ManufacturingProperties = field(default_factory=ManufacturingProperties)
     compliance: ComplianceProperties = field(default_factory=ComplianceProperties)
     sourcing: SourcingProperties = field(default_factory=SourcingProperties)
