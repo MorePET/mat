@@ -474,11 +474,47 @@ class OpticalProperties:
     moliere_radius: Optional[float] = None  # cm
     energy_resolution: Optional[float] = None  # % at 1 MeV (for detectors)
 
+    # Geant4 photon transport — both currently missing in schema (#153)
+    scattering_length: Optional[float] = None  # cm
+    scattering_length_unit: str = "cm"
+    rayleigh_length: Optional[float] = None  # cm
+    rayleigh_length_unit: str = "cm"
+
+    # Multi-component decay — LYSO has fast (~36 ns) + slow (~600 ns) (#153)
+    # Each entry: {tau_ns, fraction}. Sum of fractions ≈ 1.
+    decay_components: Optional[List[Dict[str, float]]] = None
+    # Emission spectrum for SiPM PDE matching (#153)
+    # Shape: {wavelengths_nm: [...], intensities: [...]} (same length)
+    emission_spectrum: Optional[Dict[str, List[float]]] = None
+    # Sellmeier-style dispersion for Geant4 ray tracing (#153)
+    # Shape: {wavelengths_nm: [...], n: [...]}
+    refractive_index_dispersion: Optional[Dict[str, List[float]]] = None
+
+    # Detector-physics scalars (#153)
+    afterglow_pct_at_3ms: Optional[float] = None  # count-rate ceiling
+    afterglow_pct_at_100ms: Optional[float] = None
+    non_proportionality: Optional[float] = None  # % deviation 10 keV → 1 MeV
+    intrinsic_resolution_pct_at_662keV: Optional[float] = None  # 137Cs photopeak FWHM
+    temperature_coefficient_light_yield: Optional[float] = None  # %/K
+    hygroscopic: Optional[bool] = None  # NaI:Tl yes, BGO/LYSO no
+
     # T-dependent curves (#148). Refractive index, light yield, decay time
     # are the dimensionless / unit-implicit ones — no `_unit` field exists.
     refractive_index_curve: Optional[TempCurve] = None
     light_yield_curve: Optional[TempCurve] = None
     decay_time_curve: Optional[TempCurve] = None
+
+    @property
+    def scattering_length_qty(self) -> Optional["Quantity"]:
+        if self.scattering_length is None:
+            return None
+        return self.scattering_length * ureg(self.scattering_length_unit)
+
+    @property
+    def rayleigh_length_qty(self) -> Optional["Quantity"]:
+        if self.rayleigh_length is None:
+            return None
+        return self.rayleigh_length * ureg(self.rayleigh_length_unit)
 
     def refractive_index_at(self, temp: "Quantity") -> Optional[float]:
         """Refractive index at T. Curve > scalar fallback (#148)."""
