@@ -135,7 +135,16 @@ class TestValidate:
         assert "not in allow-list" in result.stderr
 
     @pytest.mark.parametrize(
-        "lic", ["CC0", "PD-USGov", "CC-BY-4.0", "CC-BY-SA-4.0", "proprietary-reference-only"]
+        "lic",
+        [
+            "CC0",
+            "PD-USGov",
+            "CC-BY-4.0",
+            "CC-BY-SA-4.0",
+            # Geant4-SL added in #167 for the G4NistMaterialBuilder mirror.
+            "Geant4-SL",
+            "proprietary-reference-only",
+        ],
     )
     def test_accepts_each_allowed_license(self, data_dir, lic):
         (data_dir / "metals.toml").write_text(

@@ -46,8 +46,26 @@ The `license` field on every `_sources` entry MUST be one of:
 | `PD-USGov` | US Government work — not copyrightable in US | NIST WebBook, NIST Cryogenic, NASA Outgassing, NIST PhysRefData |
 | `CC-BY-4.0` | Creative Commons Attribution 4.0 — attribution required | Materials Project, OQMD, NOMAD, SCOAP3 |
 | `CC-BY-SA-4.0` | CC-BY-SA — attribution + share-alike | Some Wikipedia-derived data (rare; prefer Wikidata) |
+| `Geant4-SL` | Geant4 Software License — BSD-like, attribution required | Geant4 `G4NistMaterialBuilder` constants |
 | `proprietary-reference-only` | Single value cited from a proprietary source for verification — used sparingly, never bulk | Vendor datasheets, ASM Handbook single-value citations |
 | `unknown` | **Transitional only.** Blocked by CI on merge. | Audit-window placeholder per #175 |
+
+### Note on `Geant4-SL`
+
+The [Geant4 Software License](https://geant4.web.cern.ch/download/license.html)
+is BSD-like: redistribution in source or binary form is permitted provided the
+upstream copyright notice and attribution travel with the values. It is
+strictly more permissive than `proprietary-reference-only` (which exists for
+single-value vendor citations under restrictive ToS) but stops short of CC-BY
+because of a few downstream-distribution clauses unique to the HEP
+collaboration. Added in #167 for the `G4NistMaterialBuilder` mirror — the
+Geant4 collaboration ships its NIST-derived constants under this license, and
+calling that out explicitly (rather than collapsing it into
+`proprietary-reference-only`) keeps the attribution requirement legible.
+
+The same license applies to future BSD-like sources we expect to hit
+(certain HEPData mirrors, third-party NIST compilations); reuse this value
+rather than introducing a new one for each.
 
 Any other value will fail the CI check and block merge.
 
