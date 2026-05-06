@@ -1311,7 +1311,7 @@ wheels = [
 
 [[package]]
 name = "py-materials"
-version = "3.9.0"
+version = "3.9.1"
 source = { editable = "." }
 dependencies = [
     { name = "mat-vis-client" },

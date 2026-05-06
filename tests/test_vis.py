@@ -747,6 +747,7 @@ class TestVisModuleApi:
         assert hasattr(vis, "rowmap_entry")
         assert hasattr(vis, "get_manifest")
 
+
     def test_get_manifest_returns_dict(self):
         from pymat import vis
 
@@ -891,3 +892,45 @@ class TestVisModuleApi:
         sentinel = object()
         monkeypatch.setattr(_client, "_client", sentinel)
         assert vis.client() is sentinel
+
+
+class TestPublicApiContract:
+    """``Vis`` / ``VisDeltas`` / ``FinishEntry`` are the public domain
+    types. Their canonical import path is ``pymat.vis``, not the
+    underscore-prefixed ``pymat.vis._model``. Closes #98 / mat-vis #282.
+
+    The ``__module__`` attribute is what ``type()``, ``repr``, IDE
+    auto-import suggestions, and Sphinx cross-references read — so
+    it has to agree with the public re-export, otherwise users get
+    pushed toward the private path even though we declared the type
+    public. A future refactor that moves the implementation must keep
+    these assertions green by re-pinning ``__module__`` at the public
+    re-export site.
+    """
+
+    def test_vis_module_path_is_public(self):
+        from pymat.vis import Vis
+
+        assert Vis.__module__ == "pymat.vis", (
+            f"Vis.__module__ leaks the private location {Vis.__module__!r}; "
+            "users get pushed toward 'from pymat.vis._model import Vis'."
+        )
+
+    def test_visdeltas_module_path_is_public(self):
+        from pymat.vis import VisDeltas
+
+        assert VisDeltas.__module__ == "pymat.vis"
+
+    def test_finishentry_module_path_is_public(self):
+        from pymat.vis import FinishEntry
+
+        assert FinishEntry.__module__ == "pymat.vis"
+
+    def test_repr_uses_public_path(self):
+        """``type(material.vis)`` is what users see in tracebacks and
+        REPLs — it must read as the public path."""
+        from pymat import stainless
+
+        # ``type(...).__module__`` flows from the class attribute we
+        # rewrote, so this is a behavioral pin on top of the metadata.
+        assert type(stainless.vis).__module__ == "pymat.vis"

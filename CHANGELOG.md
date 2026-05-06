@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.1] - 2026-05-06
+
+Public-API contract clarification — no code change, just metadata +
+docs catching up to facts.
+
+### Fixed
+
+* **`Vis` is officially a public class**
+  ([#98](https://github.com/MorePET/mat/issues/98) /
+  [mat-vis #282](https://github.com/MorePET/mat-vis/issues/282)).
+  `Vis`, `VisDeltas`, and `FinishEntry` have been re-exported from
+  `pymat.vis` since 3.4 / 3.6 / 3.8 respectively, but their
+  `__module__` attribute still pointed at the private `pymat.vis._model`
+  location — so `type(material.vis)`, `repr`, IDE auto-import
+  suggestions, and Sphinx cross-references all surfaced the
+  underscore-prefixed path, pushing downstream code (build123d,
+  ocp_vscode) toward `from pymat.vis._model import Vis`. The
+  re-export site now rewrites `__module__` to `"pymat.vis"`, and the
+  `pymat.vis` docstring documents the public-API contract explicitly:
+  field names and constructor signatures of `Vis` / `VisDeltas` /
+  `FinishEntry` follow semver. The `Vis` field set mirrors glTF 2.0 /
+  Three.js MeshPhysicalMaterial — a stable external spec, so the
+  freeze cost is intentionally low. Underscore-prefixed names
+  (`Vis._finish`, `Vis._textures`, `pymat.vis._model`,
+  `pymat.vis._client`) remain private and may change without notice.
+
+  Pinned by `tests/test_vis.py::TestPublicApiContract` so a future
+  refactor that moves the implementation can't silently regress the
+  public path.
+
 ## [3.9.0] - 2026-05-05
 
 Two UX fixes surfaced via live MCP testing of the new
