@@ -348,3 +348,90 @@ roughness = 0.4
 
 [yttria.vis.finishes]
 white = { source = "ambientcg", id = "Porcelain001" }
+
+# ============================================================================
+# Provenance (#175 audit)
+# ----------------------------------------------------------------------------
+# Default _sources entries attached during the one-time #175 audit. These
+# placeholder citations point at py-mat's aggregate curation history; future
+# per-source PRs (#158-#173) overwrite individual entries with proper
+# citations (Wikidata QIDs, NIST datasets, vendor URLs, etc.).
+# ============================================================================
+
+[alumina._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[alumina.al995._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[alumina.al999._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[zirconia._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[sic._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[macor._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[shapal._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[glass._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[glass.borosilicate._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[glass.fused_silica._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[glass.BK7._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[beryllia._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+[yttria._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
