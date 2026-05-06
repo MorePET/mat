@@ -47,6 +47,11 @@ lso = "lso"
 # otherwise rewrite "ANID" to "AND" inside the captured response,
 # diverging the fixture from real PubChem output.
 ANID = "ANID"
+# DuPont (E. I. du Pont de Nemours, now Heraeus for the LTCC 951
+# product line). `typos` otherwise rewrites "DuPont" → "DuPoint"
+# inside ceramics.toml citation notes (#135).
+DuPont = "DuPont"
+dupont = "dupont"
 
 [files]
 extend-exclude = [
