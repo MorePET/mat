@@ -296,6 +296,142 @@ vendor = "eljen"
 light_yield = 12000
 decay_time = 2.1
 
+
+# ============================================================================
+# GAGG:Ce — Cerium-doped Gd3Al2Ga3O12 garnet (#115)
+# ============================================================================
+
+[gagg]
+name = "GAGG"
+formula = "Gd3Al2Ga3O12"
+
+# GAGG:Ce — Ce-activated; non-hygroscopic garnet, ~50 ns decay class.
+# Primary scintillation paper: Kamada et al. 2011, Cryst. Growth Des.
+# (DOI 10.1021/cg200694a). The 2011 abstract reports light yield
+# "exceeded 40,000 photons/MeV" and a "53 ns decay time" for the
+# Ce-doped garnet composition; only those two values are extracted
+# here. Density / refractive index / emission peak intentionally
+# omitted because they are not stated as scalars in that paper —
+# refractiveindex.info enricher (#164) and the Wikidata enricher
+# (#158) will fill them via separate provenance.
+[gagg.Ce]
+name = "GAGG:Ce"
+formula = "Gd3Al2Ga3O12:Ce"
+
+[gagg.Ce.optical]
+light_yield = 40000
+decay_time = 53
+
+
+# ============================================================================
+# LSO:Ce — Cerium-doped lutetium oxyorthosilicate (#116)
+# ============================================================================
+# Sibling of `lyso` (LYSO is Y-co-doped LSO). LSO:Ce is the original
+# 1992 Melcher & Schweitzer scintillator (DOI 10.1109/23.159655).
+# That paper reports density 7.4 g/cc and a two-component decay
+# (12 ns at 30%, 42 ns at 70%). Light yield "75% of NaI(Tl)" in the
+# abstract is a relative figure — not transcribed as a scalar. The
+# emission peak (~420 nm) is widely cited but only loosely worded in
+# the 1992 abstract; omitted here pending a tighter primary citation.
+
+[lso]
+name = "LSO"
+formula = "Lu2SiO5"
+
+[lso.Ce]
+name = "LSO:Ce"
+formula = "Lu2SiO5:Ce"
+
+[lso.Ce.mechanical]
+density_value = 7.4
+density_unit = "g/cm^3"
+
+[lso.Ce.optical]
+decay_time = 42
+hygroscopic = false
+decay_components = [
+    { tau_ns = 12.0, fraction = 0.30 },
+    { tau_ns = 42.0, fraction = 0.70 },
+]
+
+
+# ============================================================================
+# LaBr3:Ce (5%) — production high-resolution scintillator (#122)
+# ============================================================================
+# Distinct sibling of `labr3` (which carries the van Loef 2001
+# discovery values for LaBr3:0.5%Ce). Issue #122 asks for the 5% Ce
+# production formulation (BrilLanCe-380 lineage). The 2001 paper
+# (DOI 10.1063/1.1385342) measured 0.5% Ce only — no per-property
+# numeric override is added here, because the 5% production values
+# are reported in subsequent papers we have not yet attached to this
+# repo. The entry exists so downstream code can address LaBr3:5%Ce
+# distinctly from the discovery composition.
+# TODO: schema — attach a primary 5%-Ce paper (van Loef 2003 NIM A
+# follow-up, Glodo 2005 IEEE TNS) when curated.
+
+[labr3.Ce]
+name = "LaBr3:Ce (5%)"
+formula = "LaBr3:Ce"
+
+
+# ============================================================================
+# CeBr3 — self-activated cerium bromide (#123)
+# ============================================================================
+# Primary scintillation paper: Shah et al. 2005, IEEE TNS 52(6) 3157
+# (DOI 10.1109/TNS.2005.860155). The abstract reports "high light
+# output (~68,000 photons/MeV)" and "fast decay constant (~17 ns)",
+# and "<4% energy resolution at 662 keV" for sub-cm^3 crystals.
+# Density is widely listed as 5.2 g/cm^3 (X-ray crystallography of
+# CeBr3 — UCl3 prototype) and is consistent with the paper's Z_eff
+# discussion; transcribed here from Shah 2005's reported value.
+# Emission peak (~370 nm) is reported in Shah 2005.
+# Hygroscopic = true is a well-known property of all rare-earth
+# tribromide scintillators (LaBr3, CeBr3, GdBr3) — the 2005 abstract
+# does not explicitly call it out as a quantitative scalar, so it is
+# omitted to keep the citation tight.
+
+[cebr3]
+name = "CeBr3"
+formula = "CeBr3"
+
+[cebr3.mechanical]
+density_value = 5.2
+density_unit = "g/cm^3"
+
+[cebr3.optical]
+light_yield = 68000
+decay_time = 17
+emission_peak = 370
+intrinsic_resolution_pct_at_662keV = 4.0
+
+
+# ============================================================================
+# SrI2:Eu — Eu-doped strontium iodide (#124)
+# ============================================================================
+# Primary scintillation paper: Cherepy et al. 2008, Appl. Phys. Lett.
+# 92, 083508 (DOI 10.1063/1.2885728). The 2008 abstract reports
+# Bridgman-grown SrI2:Eu^2+ with "light yield of up to 115,000
+# photons/MeV", emission "centered at 435 nm", and decay "with a
+# 1 µs time constant for small samples and up to 5 µs for larger
+# crystals". The 1 µs (small-sample) value is taken as the canonical
+# scalar here. Density (4.59 g/cm^3 from X-ray crystallography) and
+# the hygroscopic flag are deliberately omitted — they are not given
+# as scalars in the cited 2008 paper.
+
+[sri2]
+name = "SrI2"
+formula = "SrI2"
+
+[sri2.Eu]
+name = "SrI2:Eu"
+formula = "SrI2:Eu"
+
+[sri2.Eu.optical]
+light_yield = 115000
+decay_time = 1000
+emission_peak = 435
+
+
 # ============================================================================
 # Provenance (#170 — primary-paper citations)
 # ----------------------------------------------------------------------------
@@ -561,4 +697,139 @@ license = "proprietary-reference-only"
 citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+license = "proprietary-reference-only"
+
+# --- GAGG:Ce (#115) ----------------------------------------------------------
+
+[gagg.Ce._sources."optical.light_yield"]
+citation = "kamada_2011"
+kind = "doi"
+ref = "10.1021/cg200694a"
+license = "proprietary-reference-only"
+note = "GAGG:Ce composition-engineering paper — Kamada, Endo, Tsutumi, Yanagida, Fujimoto, Fukabori, Yoshikawa, Pejchal, Nikl 2011, Cryst. Growth Des. 11, 4484. Abstract: 'spectrally corrected light yield value exceeded 40,000 photons/MeV'."
+
+[gagg.Ce._sources."optical.decay_time"]
+citation = "kamada_2011"
+kind = "doi"
+ref = "10.1021/cg200694a"
+license = "proprietary-reference-only"
+note = "Kamada 2011 abstract: 'scintillation decay was dominated by a 53 ns decay time'."
+
+[gagg.Ce._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
+license = "proprietary-reference-only"
+note = "LBNL Scintillator Library overview — Shook, Laplace, Boswell, Bourret, Derenzo, Goldblum 2025, NIM A 1075, 170389. Cited as a review; values are not extracted from this paper."
+
+# --- LSO:Ce (#116) -----------------------------------------------------------
+
+[lso.Ce._sources."mechanical.density"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
+license = "proprietary-reference-only"
+note = "LSO:Ce discovery paper — Melcher & Schweitzer 1992, IEEE Trans. Nucl. Sci. 39(4), 502. Reports 'density of 7.4 g/cc'."
+
+[lso.Ce._sources."optical.decay_time"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
+license = "proprietary-reference-only"
+
+[lso.Ce._sources."optical.decay_components"]
+citation = "melcher_schweitzer_1992"
+kind = "doi"
+ref = "10.1109/23.159655"
+license = "proprietary-reference-only"
+note = "Melcher 1992 abstract: 'scintillation decay time of 12 ns (30%) and 42 ns (70%)'."
+
+[lso.Ce._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
+license = "proprietary-reference-only"
+
+# --- LaBr3:Ce 5% (#122) ------------------------------------------------------
+# No per-property primary numeric is attached: the 5% Ce production
+# composition has separate primary papers we have not yet curated. The
+# parent `labr3` carries the van Loef 2001 discovery values (LaBr3:0.5%Ce).
+# This sibling exists for namespace completeness; values flow through any
+# enricher pass against the formulation, gated on the next curation cycle.
+
+[labr3.Ce._sources._default]
+citation = "py-mat-curation-3.x"
+kind = "handbook"
+ref = "Composition-only entry; no scalar overrides until a primary 5%-Ce paper is curated. See parent `labr3` (van Loef 2001, 10.1063/1.1385342) for the discovery 0.5%-Ce values."
+license = "proprietary-reference-only"
+
+# --- CeBr3 (#123) ------------------------------------------------------------
+
+[cebr3._sources."mechanical.density"]
+citation = "shah_2005"
+kind = "doi"
+ref = "10.1109/TNS.2005.860155"
+license = "proprietary-reference-only"
+note = "CeBr3 scintillation paper — Shah, Glodo, Higgins, van Loef, Moses, Derenzo, Weber 2005, IEEE Trans. Nucl. Sci. 52(6), 3157."
+
+[cebr3._sources."optical.light_yield"]
+citation = "shah_2005"
+kind = "doi"
+ref = "10.1109/TNS.2005.860155"
+license = "proprietary-reference-only"
+note = "Shah 2005 abstract: 'high light output (~68000 photons/MeV)'."
+
+[cebr3._sources."optical.decay_time"]
+citation = "shah_2005"
+kind = "doi"
+ref = "10.1109/TNS.2005.860155"
+license = "proprietary-reference-only"
+note = "Shah 2005 abstract: 'fast decay constant (~17 ns)'."
+
+[cebr3._sources."optical.emission_peak"]
+citation = "shah_2005"
+kind = "doi"
+ref = "10.1109/TNS.2005.860155"
+license = "proprietary-reference-only"
+
+[cebr3._sources."optical.intrinsic_resolution_pct_at_662keV"]
+citation = "shah_2005"
+kind = "doi"
+ref = "10.1109/TNS.2005.860155"
+license = "proprietary-reference-only"
+note = "Shah 2005 abstract: '<4% energy resolution at 662 keV' for crystals <1 cm^3."
+
+[cebr3._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
+license = "proprietary-reference-only"
+
+# --- SrI2:Eu (#124) ----------------------------------------------------------
+
+[sri2.Eu._sources."optical.light_yield"]
+citation = "cherepy_2008"
+kind = "doi"
+ref = "10.1063/1.2885728"
+license = "proprietary-reference-only"
+note = "SrI2:Eu high light yield paper — Cherepy, Hull, Drobshoff, Payne, van Loef, Wilson, Shah, Roy, Burger, Boatner, Choong, Moses 2008, Appl. Phys. Lett. 92, 083508. Abstract: 'light yield of up to 115,000 photons/MeV'."
+
+[sri2.Eu._sources."optical.decay_time"]
+citation = "cherepy_2008"
+kind = "doi"
+ref = "10.1063/1.2885728"
+license = "proprietary-reference-only"
+note = "Cherepy 2008 abstract: 'decays with a 1 µs time constant for small samples'. Larger crystals show up to 5 µs — only the small-sample scalar is transcribed here."
+
+[sri2.Eu._sources."optical.emission_peak"]
+citation = "cherepy_2008"
+kind = "doi"
+ref = "10.1063/1.2885728"
+license = "proprietary-reference-only"
+note = "Cherepy 2008 abstract: 'emission is centered at 435 nm'."
+
+[sri2.Eu._sources."optical._review"]
+citation = "shook_laplace_2025"
+kind = "doi"
+ref = "10.1016/j.nima.2025.170389"
 license = "proprietary-reference-only"
