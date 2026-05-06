@@ -72,16 +72,43 @@ These sources are explicitly off-limits — do not extract any values from them
 into TOML files in this repo, even single values:
 
 - **MatWeb** — single-value citations behind login wall; ToS prohibits redistribution.
-- **CRC Handbook of Chemistry and Physics** — proprietary compilation; bulk-rejected
-  by EU sui generis law.
+- **CRC Handbook of Chemistry and Physics** (Taylor & Francis) — proprietary
+  compilation; bulk-rejected by EU sui generis law.
 - **ASM Handbook (full table extraction)** — single-value citations are OK
   with `license = "proprietary-reference-only"`; bulk-paste is not.
+- **MMPDS-02+** (Battelle, post-MIL-HDBK-5J) — commercial successor to
+  MIL-HDBK-5J. The original MIL-HDBK-5J (#166) is PD-USGov; later MMPDS
+  revisions are not. Cite MIL-HDBK-5J directly; do not extract from MMPDS.
 - **TopCAD / DanCAD vendor PDFs** — proprietary, ToS-restricted.
 - **Engineering ToolBox** — aggregator with no clear primary source; values
   are unverifiable. Always cite the primary source instead.
+- **Vendor scintillator/laminate datasheets** — Saint-Gobain/Luxium, Eljen,
+  Furukawa, C&A, Kuraray, Rogers, Isola, etc. All are
+  proprietary, all-rights-reserved. A single value typed from a datasheet
+  with full citation may qualify as fact extraction (acceptable under
+  `license = "proprietary-reference-only"`); copying datasheet tables,
+  figures, or scanned values is not.
+- **CIE booklets** — sold by the International Commission on Illumination;
+  no redistribution license. Use [colour-science](https://www.colour-science.org/)
+  (BSD-3) instead for re-licensed colorimetric data.
+- **Paywalled academic papers** — cite the DOI in `_sources.ref`; never
+  embed figures, tables, or scanned values from the PDF. Re-deriving a
+  single numerical value from a paper's prose is acceptable; lifting a
+  table is not.
 
 Always cite the **primary** source when possible. If the primary source is
 PD-USGov or CC-BY, use it directly.
+
+### Rule of thumb
+
+> **Fact extraction (one value, with attribution) ≈ acceptable.
+> Table copying ≈ infringement risk.**
+
+A single melting point typed from a vendor datasheet with the full citation
+recorded in `_sources` is fact extraction — uncopyrightable in the US, and
+unlikely to clear the *substantial-investment* threshold under EU sui
+generis. Reproducing the datasheet's full property table is the opposite,
+regardless of attribution.
 
 ## CI enforcement
 
