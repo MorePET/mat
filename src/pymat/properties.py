@@ -554,6 +554,9 @@ class VacuumProperties:
     permeation_he: Optional[float] = None
     # Operational class hint: "UHV" | "HV" | "rough"
     vacuum_class: Optional[str] = None
+
+
+@dataclass
 class NuclearProperties:
     """Nuclear / radiation-physics scalars (#157).
 
