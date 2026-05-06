@@ -197,6 +197,23 @@ class ThermalProperties:
     min_service_temp_unit: str = "degC"
     thermal_shock_resistance: Optional[str] = None  # "excellent", "good", "fair", "poor"
 
+    # Cryogenic radiation-shielding budgets (#152) — polished Al ≈ 0.04, anodized ≈ 0.8
+    emissivity: Optional[float] = None  # 0–1, dimensionless
+    # Heat-pulse propagation (#152)
+    thermal_diffusivity: Optional[float] = None  # mm²/s
+    thermal_diffusivity_unit: str = "mm^2/s"
+    # Cryogenic embrittlement boundary (#152) — Delrin/PEEK get brittle below ~-50 °C
+    min_use_temp_K: Optional[float] = None
+    cryogenic_compatible: Optional[bool] = None
+    # NIST-style ∫k dT for cryogenic heat-leak (#152)
+    integrated_thermal_conductivity: Optional[float] = None  # W/m
+    integrated_thermal_conductivity_unit: str = "W/m"
+    # Phase-change enthalpies for liquids/coolants (#152)
+    latent_heat_fusion: Optional[float] = None  # kJ/kg
+    latent_heat_fusion_unit: str = "kJ/kg"
+    latent_heat_vaporization: Optional[float] = None  # kJ/kg
+    latent_heat_vaporization_unit: str = "kJ/kg"
+
     # T-dependent curves (#148). Sibling fields parallel to scalars.
     thermal_conductivity_curve: Optional[TempCurve] = None
     specific_heat_curve: Optional[TempCurve] = None
@@ -262,6 +279,32 @@ class ThermalProperties:
         if self.min_service_temp_unit == "degC":
             return (self.min_service_temp + 273.15) * ureg.kelvin
         return self.min_service_temp * ureg(self.min_service_temp_unit)
+
+    @property
+    def thermal_diffusivity_qty(self) -> Optional[Quantity]:
+        if self.thermal_diffusivity is None:
+            return None
+        return self.thermal_diffusivity * ureg(self.thermal_diffusivity_unit)
+
+    @property
+    def integrated_thermal_conductivity_qty(self) -> Optional[Quantity]:
+        if self.integrated_thermal_conductivity is None:
+            return None
+        return self.integrated_thermal_conductivity * ureg(
+            self.integrated_thermal_conductivity_unit
+        )
+
+    @property
+    def latent_heat_fusion_qty(self) -> Optional[Quantity]:
+        if self.latent_heat_fusion is None:
+            return None
+        return self.latent_heat_fusion * ureg(self.latent_heat_fusion_unit)
+
+    @property
+    def latent_heat_vaporization_qty(self) -> Optional[Quantity]:
+        if self.latent_heat_vaporization is None:
+            return None
+        return self.latent_heat_vaporization * ureg(self.latent_heat_vaporization_unit)
 
     def thermal_conductivity_at(self, temp: Quantity) -> Optional[Quantity]:
         """
