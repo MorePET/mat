@@ -1,0 +1,63 @@
+# Release Please
+#
+# Drives the release pipeline from conventional commits.
+#
+# On every push to main, release-please scans commits since the last tag and
+# either:
+#   1. Updates / opens a per-package "Release PR" (chore(main): release X.Y.Z)
+#      that bumps versions + appends to CHANGELOG.md.
+#   2. If the just-merged commit IS a Release PR, pushes the tag — which fires
+#      release.yml (Python → PyPI) or release-rs-materials.yml (Rust →
+#      crates.io). Release-please also creates the GitHub Release with notes
+#      generated from the conventional-commit history.
+#
+# Tag formats (intentional, match existing history):
+#   - py-materials  → vX.Y.Z              → triggers release.yml
+#   - rs-materials  → rs-materials/vX.Y.Z → triggers release-rs-materials.yml
+#
+# Auth: uses the RELEASE_APP GitHub App so the tag push it performs triggers
+# downstream workflows. Tags pushed by GITHUB_TOKEN are intentionally inert
+# under GitHub's recursion protection — that would silently break PyPI/crates
+# publishing.
+#
+# Triggers: push to main · workflow_dispatch
+#
+# Docs: https://github.com/googleapis/release-please
+
+name: release-please
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate Release App Token
+        id: release-app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf  # v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Run release-please
+        uses: googleapis/release-please-action@8b8fd2cc23b2e18957157a9d923d75aa0c6f6ad5  # v4.4.1
+        with:
+          token: ${{ steps.release-app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

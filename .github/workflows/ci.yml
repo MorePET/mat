@@ -207,6 +207,29 @@ jobs:
         with:
           fail-on-severity: high
 
+  pr-hygiene:
+    # Enforces the PR template checklist. Any unchecked `- [ ]` left in the
+    # PR body fails the build. The template is designed for the user to
+    # DELETE sections that don't apply (see .github/pull_request_template.md);
+    # leaving them unchecked is treated as "you forgot", not "N/A".
+    #
+    # Skipped for release-please bot PRs because the bot owns the body and the
+    # release-reviewer checklist embedded there is for human reviewers, not for
+    # CI to gate (the gate is the human merging the PR).
+    name: PR Hygiene
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login != 'github-actions[bot]' &&
+      !startsWith(github.head_ref, 'release-please--')
+
+    steps:
+      - name: Require checklist items
+        uses: mheap/require-checklist-action@46d2ca1a0f90144bd081fd13a80b1dc581759365  # v2.5.0
+        with:
+          requireChecklist: true
+
   rust:
     name: Rust (mat-rs)
     runs-on: ubuntu-22.04
@@ -243,7 +266,7 @@ jobs:
     name: CI Summary
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [lint, test, security, dependency-review, rust]
+    needs: [lint, test, security, dependency-review, pr-hygiene, rust]
     if: always()
 
     steps:
@@ -256,6 +279,7 @@ jobs:
           echo "Test:              ${{ needs.test.result }}"
           echo "Security:          ${{ needs.security.result }}"
           echo "Dependency Review: ${{ needs.dependency-review.result }}"
+          echo "PR Hygiene:        ${{ needs.pr-hygiene.result }}"
           echo "Rust (mat-rs):     ${{ needs.rust.result }}"
           echo ""
 
@@ -278,6 +302,11 @@ jobs:
 
           if [ "${{ needs.dependency-review.result }}" = "failure" ]; then
             echo "ERROR: Dependency review failed"
+            FAILED=true
+          fi
+
+          if [ "${{ needs.pr-hygiene.result }}" = "failure" ]; then
+            echo "ERROR: PR Hygiene failed (unchecked checklist items in PR body)"
             FAILED=true
           fi
 
