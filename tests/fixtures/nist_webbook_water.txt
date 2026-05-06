@@ -1,0 +1,3 @@
+Temperature (K)	Pressure (bar)	Density (kg/m3)	Volume (m3/kg)	Internal Energy (kJ/kg)	Enthalpy (kJ/kg)	Entropy (J/g*K)	Cv (J/g*K)	Cp (J/g*K)	Sound Spd. (m/s)	Joule-Thomson (K/bar)	Viscosity (Pa*s)	Therm. Cond. (W/m*K)	Phase
+293.15	1.0132	998.21	0.0010018	83.906	84.007	0.29646	4.1567	4.1841	1482.3	-0.022492	0.0010016	0.59801	liquid
+298.15	1.0132	997.05	0.0010030	104.82	104.92	0.36720	4.1376	4.1813	1496.7	-0.022147	0.00089002	0.60652	liquid
