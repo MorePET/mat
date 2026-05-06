@@ -19,6 +19,14 @@ from textwrap import dedent
 
 import pytest
 
+# `_curation` lives in `scripts/` (curation-time only) and depends on
+# `requests` + `tomlkit`, which aren't part of the main dev/runtime
+# install. CI doesn't install `scripts/requirements-curation.txt`, so
+# skip the whole module if either is missing — these tests gate the
+# curation tooling, not the library itself.
+pytest.importorskip("requests")
+pytest.importorskip("tomlkit")
+
 # scripts/ isn't on sys.path by default (it's not a package); inject it.
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
