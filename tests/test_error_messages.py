@@ -527,6 +527,57 @@ class TestAdapterNoMapping:
 
 
 # ────────────────────────────────────────────────────────────────────
+# 13b. to_threejs color encoding (py-mat #99 / mat-vis #298)
+# ────────────────────────────────────────────────────────────────────
+
+
+class TestThreejsColorEncoding:
+    """``to_threejs(m)["color"]`` should be a Pythonic ``'#RRGGBB'``
+    hex string, not a hex int (which is what mat-vis-client 0.6.x
+    emits — ``12566468`` for ``#bfbfc4``).
+
+    Bernhard reported this in [py-mat #99](https://github.com/MorePET/mat/issues/99);
+    routed upstream as [mat-vis #298](https://github.com/MorePET/mat-vis/issues/298)
+    with a ``color_format=Literal["hex","int","tuple"]`` proposal,
+    default ``"hex"``. Three.js's ``MeshPhysicalMaterial`` constructor
+    accepts both forms — the string default is JS-side lossless, JSON-
+    round-trippable, and inspectable in REPLs.
+
+    Pinned as ``xfail`` here so:
+
+    - The contract is on record — when mat-vis-client 0.7.x ships #298
+      and py-materials picks up the new dep version, this test flips
+      to passing without anyone needing to remember to write it.
+    - We don't ship past a regression on the JS side (e.g. a future
+      version that returns int again).
+    """
+
+    @pytest.mark.xfail(
+        reason=(
+            "Pending mat-vis #298: color encoding is currently 'int' (the "
+            "Three.js wire format). Will flip to '#RRGGBB' string once "
+            "mat-vis-client 0.7.x ships color_format='hex' as the default. "
+            "py-materials consumes mat-vis-client>=0.6.3 so the dep bump is "
+            "additive."
+        ),
+        strict=True,
+    )
+    def test_color_is_hex_string(self):
+        import pymat
+        from pymat.vis import to_threejs
+
+        m = pymat["Stainless Steel 304"]
+        out = to_threejs(m)
+        color = out.get("color")
+        assert isinstance(color, str), (
+            f"color should be a hex string '#RRGGBB' for Pythonic ergonomics, "
+            f"got {type(color).__name__} ({color!r})"
+        )
+        assert color.startswith("#"), f"color should start with '#', got {color!r}"
+        assert len(color) == 7, f"color should be '#RRGGBB' (7 chars), got {color!r}"
+
+
+# ────────────────────────────────────────────────────────────────────
 # 14. Vis.fetch / textures error envelope (Bernhard's #280 case)
 # ────────────────────────────────────────────────────────────────────
 
