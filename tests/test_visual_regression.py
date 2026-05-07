@@ -449,23 +449,15 @@ class TestBernhardMatVis285_AdapterStructure_Textured:
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
 class TestBernhardMatVis285_AdapterStructure_Scalar:
     """The physicallybased.info path is scalar-only — no texture maps,
-    just authored PBR scalars. Closes the test-coverage gap from
-    [mat-vis #313](https://github.com/MorePET/mat-vis/issues/313):
-    ``Vis('physicallybased', 'X').to_threejs()`` previously raised
-    MaterialNotStagedError because the substrate path treated
-    physicallybased like a textured source.
+    just authored PBR scalars. Closed by py-mat #222 (PR #225) which
+    auto-resolves ``tier`` to ``"scalar"`` for sources whose manifest
+    only ships a scalar tier and short-circuits ``Vis._fetch`` to
+    skip texture fetching. Upstream mat-vis #313 stays open as the
+    substrate-path fix; py-mat consumers no longer hit the symptom.
     """
 
     @pytest.mark.parametrize("adapter", ["to_threejs", "to_gltf"])
     @pytest.mark.parametrize("label,material_id", BERNHARD_SCALAR_ONLY)
-    @pytest.mark.xfail(
-        reason=(
-            "mat-vis #313: scalar-only physicallybased path raises "
-            "MaterialNotStagedError instead of returning the scalars. "
-            "Strict-xfail until upstream wires the scalar path through."
-        ),
-        strict=True,
-    )
     def test_scalar_only_adapter(self, adapter: str, label: str, material_id: str) -> None:
         from pymat.vis import Vis, to_gltf, to_threejs
 
@@ -598,23 +590,27 @@ class TestBernhardMatVis285_Visual:
 
     GRID_COLS = 5
 
+    # Per-param xfail: textured tiers remain strict-xfail until the
+    # mat-vis #285 substrate re-bake ships; the scalar-only path was
+    # closed by py-mat #225 (#222 fix), so its param is just expected
+    # to pass.
+    _TEXTURED_XFAIL = pytest.mark.xfail(
+        reason=(
+            "mat-vis #285: textured-scene PNG renders default-grey because "
+            "the substrate emits default scalars. Strict-xfail until "
+            "upstream re-bakes the substrate with PR mat-vis#294's baker fix."
+        ),
+        strict=True,
+    )
+
     @pytest.mark.parametrize(
         "scene_kind,tier",
         [
-            ("textured", "1k"),
-            ("textured", "512"),
-            ("textured", "256"),
-            ("scalar", "scalar"),  # one PNG for the scalar-only path
+            pytest.param("textured", "1k", marks=_TEXTURED_XFAIL),
+            pytest.param("textured", "512", marks=_TEXTURED_XFAIL),
+            pytest.param("textured", "256", marks=_TEXTURED_XFAIL),
+            ("scalar", "scalar"),  # passes — closed by #225 (#222 fix)
         ],
-    )
-    @pytest.mark.xfail(
-        reason=(
-            "mat-vis #285: textured-scene PNG renders default-grey because "
-            "the substrate emits default scalars; mat-vis #313 / py-mat #222: "
-            "scalar-only PNG raises MaterialNotStagedError. Strict-xfail "
-            "until upstream re-bake + new client release."
-        ),
-        strict=True,
     )
     def test_grid_renders_at_tier(self, file_server, browser, scene_kind: str, tier: str) -> None:
         from pymat.vis import Vis, to_threejs
