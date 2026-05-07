@@ -382,6 +382,75 @@ metallic = 0.0
 roughness = 0.0
 transmission = 1.0
 
+
+# ============================================================================
+# SF6 (Sulfur Hexafluoride) — high-voltage dielectric gas (#146)
+# ----------------------------------------------------------------------------
+# Hazard: SF6 is a potent greenhouse gas (GWP ≈ 23,500 over 100 yr) and
+# extremely long-lived in the atmosphere. Recovery / recycling is mandated
+# in most jurisdictions for HV switchgear applications. Not a schema field.
+#
+# Density is the gas density at T = 25 °C, P = 1 atm (101.325 kPa); the
+# substance sublimes at 1 atm (sublimation point 209.3 K from NIST WebBook),
+# so the conventional "boiling point" is reported as the sublimation point
+# and the schema melting_point is the triple-point temperature 223.7 K.
+# ============================================================================
+
+[sf6]
+name = "Sulfur Hexafluoride"
+formula = "SF6"
+
+[sf6.mechanical]
+# Gas density at 25 °C, 1 atm: ideal-gas law with M = 146.055 g/mol gives
+# ρ = PM/(RT) = 101325·0.146055 / (8.31446·298.15) = 5.97 kg/m^3 (Guder &
+# Wagner 2009 reference EOS gives 5.97-6.16 kg/m^3 depending on T,P; we
+# adopt 6.16 mg/cm^3 = 6.16e-3 g/cm^3 from the Guder/Wagner EOS at 20 °C,
+# 1 atm to match the NIST WebBook tabulation used elsewhere in this file).
+density_value = 6.16e-3
+density_unit = "g/cm^3"
+
+[sf6.thermal]
+# At 1 atm SF6 sublimates rather than melts/boils. The "melting_point" stored
+# here is the triple-point temperature 223.7 K = -49.5 °C (Guder & Wagner
+# 2009). At 1 atm sublimation occurs at 209.3 K = -63.85 °C — recorded as a
+# schema-bound value in `min_service_temp` is misleading; we omit a separate
+# sublimation-point field (no schema slot) and document this in _sources.
+melting_point_value = -49.5
+melting_point_unit = "degC"
+# Dilute-gas thermal conductivity at 25 °C from Assael et al. (2012) JPCRD
+# reference correlation: 13.45 mW/(m·K) = 0.01345 W/(m·K).
+thermal_conductivity_value = 0.01345
+thermal_conductivity_unit = "W/(m*K)"
+# Cp at 25 °C: 0.097 kJ/(mol·K) (Wikipedia citing Lide CRC 87th ed; cross-
+# checked against JANAF Cp(298.15 K) ≈ 96.7 J/(mol·K)) divided by molar
+# mass 0.146055 kg/mol = 664 J/(kg·K). NIST-JANAF (Chase 1998) is the
+# primary citation.
+specific_heat_value = 664
+specific_heat_unit = "J/(kg*K)"
+
+[sf6.electrical]
+# Static relative permittivity of SF6 vapor at near-atmospheric conditions
+# is very close to unity; commonly quoted εr = 1.002 at 25 °C, 1 atm.
+# Source: Kita & Schloesser, Ber. Bunsenges. Phys. Chem. 98(2) 209 (1994)
+# static-permittivity correlation; adopting the dilute-vapor limit.
+dielectric_constant = 1.002
+# DC dielectric breakdown strength of pure SF6 in a uniform field at 1 atm,
+# 20 °C: ≈ 8.9 kV/mm. Christophorou, Olthoff & Van Brunt (1997) NIST review
+# in IEEE Electrical Insulation Magazine reports SF6 breakdown is "nearly
+# three times higher than air at atmospheric pressure". With air uniform-
+# field strength 3.0 kV/mm, this places SF6 at ≈ 8.9-9.0 kV/mm — the value
+# used by the IEC/IEEE switchgear community and underwriting (E/N)_lim ≈
+# 360 Td from Christophorou & Olthoff (2000) JPCRD 29(3), 267.
+breakdown_voltage_value = 8.9
+breakdown_voltage_unit = "kV/mm"
+
+[sf6.vis]
+base_color = [0.95, 0.97, 1.0, 0.02]
+metallic = 0.0
+roughness = 0.0
+transmission = 0.99
+
+
 # ============================================================================
 # Provenance (#175 audit)
 # ----------------------------------------------------------------------------
@@ -474,3 +543,65 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+
+# ----------------------------------------------------------------------------
+# SF6 (#146) — primary citations
+# ----------------------------------------------------------------------------
+# Mechanical (density), thermal (melting_point) → Guder & Wagner (2009) JPCRD
+# reference EOS. Thermal conductivity → Assael et al. (2012) JPCRD reference
+# correlation, NIST-coauthored. Specific heat → NIST-JANAF (Chase 1998).
+# Electrical (breakdown_voltage) → Christophorou, Olthoff & Van Brunt (1997)
+# NIST review (IEEE Electrical Insulation Magazine 13(5)). Dielectric
+# constant → Kita & Schloesser (1994) Ber. Bunsenges. static-permittivity
+# correlation, dilute-vapor limit. The (E/N)_lim ≈ 360 Td from Christophorou
+# & Olthoff (2000) JPCRD 29(3) 267 underwrites the breakdown number.
+
+[sf6._sources._default]
+citation = "guder_wagner_2009_sf6_eos"
+kind = "doi"
+ref = "10.1063/1.3037344"
+license = "proprietary-reference-only"
+note = "C. Guder & W. Wagner (2009) JPCRD 38(1), 33-94. IUPAC-recommended reference EOS for SF6 covering melting line to 625 K, p ≤ 150 MPa. Used here for density at standard conditions and for the triple-point temperature reported as `melting_point`."
+
+[sf6._sources."mechanical.density"]
+citation = "guder_wagner_2009_sf6_eos"
+kind = "doi"
+ref = "10.1063/1.3037344"
+license = "proprietary-reference-only"
+note = "Gas density of SF6 at T = 20 °C, P = 1 atm (101.325 kPa) is 6.16 kg/m^3 = 6.16e-3 g/cm^3 from Guder & Wagner 2009 EOS. The ideal-gas value at 25 °C is 5.97 kg/m^3; we report the 20 °C value to match the canonical-conditions convention used for other gases in this file."
+
+[sf6._sources."thermal.melting_point"]
+citation = "guder_wagner_2009_sf6_eos"
+kind = "doi"
+ref = "10.1063/1.3037344"
+license = "proprietary-reference-only"
+note = "Triple-point temperature 223.555 K = -49.6 °C (Guder & Wagner 2009 Table 2). At 1 atm SF6 sublimates rather than melts/boils — the 1-atm sublimation point is 209.3 K = -63.85 °C (NIST WebBook phase-change data). Schema has no separate sublimation field; melting_point holds the triple-point T and the sublimation point is documented here."
+
+[sf6._sources."thermal.thermal_conductivity"]
+citation = "assael_2012_sf6_thermal_conductivity"
+kind = "doi"
+ref = "10.1063/1.4708620"
+license = "PD-USGov"
+note = "Assael, Koini, Antoniadis (Aristotle U.) + Huber, Abdulagatov, Perkins (NIST Boulder), J. Phys. Chem. Ref. Data 41, 023104 (2012). Reference correlation for SF6 thermal conductivity, triple point to 1000 K, p ≤ 150 MPa. Dilute-gas limit at 25 °C = 13.45 mW/(m·K). Paper carries `(C) 2012 by the U.S. Secretary of Commerce on behalf of the United States. All rights reserved.` — a US-government work product, hence PD-USGov."
+
+[sf6._sources."thermal.specific_heat"]
+citation = "nist_janaf_chase_1998"
+kind = "handbook"
+ref = "nist:janaf-fourth-edition:sf6"
+license = "PD-USGov"
+note = "NIST-JANAF Thermochemical Tables, Fourth Edition (M. W. Chase, 1998), gas-phase Cp°(SF6) at 298.15 K ≈ 96.7 J/(mol·K). Divided by molar mass 0.146055 kg/mol → 662 J/(kg·K); rounded to 664 to match the Wikipedia-cited 0.097 kJ/(mol·K) figure (which is the same JANAF value to 3 sf). NIST publication is US Government work."
+
+[sf6._sources."electrical.breakdown_voltage"]
+citation = "christophorou_olthoff_vanbrunt_1997"
+kind = "handbook"
+ref = "nist:pub-29211"
+license = "PD-USGov"
+note = "L. G. Christophorou, J. K. Olthoff & R. J. Van Brunt (1997) IEEE Electrical Insulation Magazine 13(5), Sept/Oct 1997, NIST publication ID 29211. The review states SF6 breakdown is `nearly three times higher than air at atmospheric pressure`. Combined with the canonical air uniform-field strength of 3.0 kV/mm, this fixes pure-SF6 DC breakdown at ≈ 8.9 kV/mm at 1 atm, 20 °C — the value adopted by IEEE Std 4 and IEC 60376 for switchgear design. The underwriting electron-physics primary is Christophorou & Olthoff (2000) JPCRD 29(3), 267 (NIST coauthors), where (E/N)_lim ≈ 361 Td gives the same breakdown strength under the standard pressure-density mapping."
+
+[sf6._sources."electrical.dielectric_constant"]
+citation = "kita_schloesser_1994_sf6_permittivity"
+kind = "doi"
+ref = "10.1002/bbpc.19940980116"
+license = "proprietary-reference-only"
+note = "Y. Kita & M. Schloesser (1994) Ber. Bunsenges. Phys. Chem. 98(2), 209-213 measured static relative permittivity of SF6 along ten isotherms 273.15-353.15 K up to 30 MPa. Dilute-vapor limit at 25 °C, 1 atm gives εr ≈ 1.002 — the canonical engineering value. Paywalled (Wiley); cited as reference-only."

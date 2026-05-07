@@ -585,6 +585,56 @@ dark = { source = "ambientcg", id = "Porcelain003" }
 
 
 # ============================================================================
+# CONCRETE (ordinary) — NIST/PDG canonical Portland concrete (#145)
+# ----------------------------------------------------------------------------
+# The "ordinary concrete" entry here is the NIST PSTAR / PDG canonical
+# Portland-concrete composition that Geant4 ships as G4_CONCRETE: density
+# 2.300 g/cm^3, mean excitation energy I = 135.2 eV, ten-element mass
+# fractions (H 1.0, C 0.1, O 52.91, Na 1.6, Mg 0.2, Al 3.39, Si 33.70,
+# K 1.3, Ca 4.4, Fe 1.4 — wt %). H ≈ 1 wt% reflects bound + adsorbed water
+# in the cement paste; this is the primary moderator of fast neutrons in
+# shielding calculations.
+#
+# Use case: radiation-shielding simulation (NCRP-151 vault design, PET
+# cyclotron rooms), Geant4 phantom rooms. Mechanical and thermal scalars
+# vary enormously with mix design, age, and moisture content; only values
+# we can trace to a primary government source are included. ACI/handbook
+# values for E and f'c are not curated here — see ACI 318 or fib MC2010
+# downstream.
+# ============================================================================
+
+[concrete_ordinary]
+name = "Concrete (ordinary)"
+formula = "Portland-concrete-mixture"
+# Mass fractions, NIST-PML PSTAR matno=144 / Geant4 G4_CONCRETE.
+# Documented for reference; the schema represents only Z_eff and the radiation
+# lengths derived from this composition.
+composition = {H = 0.010, C = 0.001, O = 0.529107, Na = 0.016, Mg = 0.002, Al = 0.033872, Si = 0.337021, K = 0.013, Ca = 0.044, Fe = 0.014}
+
+[concrete_ordinary.mechanical]
+density_value = 2.30
+density_unit = "g/cm^3"
+
+[concrete_ordinary.nuclear]
+# PDG 2024 "Shielding concrete" atomic-nuclear-properties table.
+radiation_length_value = 11.55
+radiation_length_unit = "cm"
+interaction_length_value = 42.39
+interaction_length_unit = "cm"
+mean_excitation_energy_eV = 135.2
+# Effective Z (Mayneord weighted) for the ten-element composition above is
+# ~11; documented in PDG/Geant4 simulation literature. Used for stopping-
+# power approximations when full composition is unavailable.
+Z_eff = 11.0
+
+[concrete_ordinary.vis]
+base_color = [0.66, 0.65, 0.60, 1.0]
+metallic = 0.0
+roughness = 0.85
+transmission = 0.0
+
+
+# ============================================================================
 # Provenance (#175 audit)
 # ----------------------------------------------------------------------------
 # Default _sources entries attached during the one-time #175 audit. These
@@ -1128,3 +1178,64 @@ kind = "doi"
 ref = "10.1111/j.1151-2916.2000.tb01182.x"
 license = "proprietary-reference-only"
 note = "Si3N4 review reference — Riley 2000, J. Am. Ceram. Soc. 83(2), 245. Cited as the materials-class review; specific scalars come from STC 2021 datasheet."
+
+
+# ----------------------------------------------------------------------------
+# concrete_ordinary (#145) — primary citations
+# ----------------------------------------------------------------------------
+# Density, mean excitation energy, and elemental composition come from the
+# NIST PML PSTAR/ESTAR "Portland concrete" reference material (matno=144),
+# which is also the source for Geant4's G4_CONCRETE. Radiation length and
+# nuclear interaction length come from the PDG 2024 atomic & nuclear
+# properties table for "shielding concrete" — derived from the same NIST
+# composition by PDG using Tsai/Geant4 conventions. Both are US-government
+# work products (PD-USGov).
+#
+# Mechanical and thermal scalars (Young's modulus, compressive strength,
+# thermal conductivity, specific heat, CTE) are intentionally omitted —
+# they vary by ~3x with mix design, w/c ratio, age, and moisture content,
+# and we do not have a single primary government reference that pins them
+# to the Portland-concrete composition above. ACI 318 / fib MC2010 are the
+# downstream engineering references for those fields.
+
+[concrete_ordinary._sources._default]
+citation = "nist_pml_pstar_concrete_portland"
+kind = "handbook"
+ref = "physics.nist.gov:pstar/compos/144"
+license = "PD-USGov"
+note = "NIST Physical Measurement Laboratory PSTAR / ESTAR / ASTAR materials database, material number 144 = `CONCRETE, PORTLAND`. Density 2.300 g/cm^3, I = 135.2 eV, ten-element mass fractions H 1.0, C 0.1, O 52.91, Na 1.6, Mg 0.2, Al 3.39, Si 33.70, K 1.3, Ca 4.4, Fe 1.4 (wt%). NIST publication, US Government work."
+
+[concrete_ordinary._sources."mechanical.density"]
+citation = "nist_pml_pstar_concrete_portland"
+kind = "handbook"
+ref = "physics.nist.gov:pstar/compos/144"
+license = "PD-USGov"
+note = "Density 2.300 g/cm^3, NIST PSTAR Portland concrete reference. Same value adopted by PDG `shielding concrete` and Geant4 `G4_CONCRETE`. Approximately 10 wt% H is bound or adsorbed water in the cement paste — the primary fast-neutron moderator in shielding calculations."
+
+[concrete_ordinary._sources."nuclear.radiation_length"]
+citation = "pdg_2024_atomic_nuclear_properties"
+kind = "handbook"
+ref = "pdg.lbl.gov:atomic-nuclear/shielding-concrete"
+license = "CC-BY-4.0"
+note = "PDG 2024 Atomic & Nuclear Properties table for `shielding concrete`: X0 = 26.57 g/cm^2 = 11.55 cm. Derived from the NIST PSTAR composition via Tsai/Geant4 photon cross-sections. PDG Review of Particle Physics is published under CC-BY-4.0."
+
+[concrete_ordinary._sources."nuclear.interaction_length"]
+citation = "pdg_2024_atomic_nuclear_properties"
+kind = "handbook"
+ref = "pdg.lbl.gov:atomic-nuclear/shielding-concrete"
+license = "CC-BY-4.0"
+note = "PDG 2024 nuclear interaction length λ_int = 97.5 g/cm^2 = 42.39 cm. (The often-quoted 65 cm figure for `ordinary concrete` from older sources uses a different λ definition; we adopt the modern PDG value.)"
+
+[concrete_ordinary._sources."nuclear.mean_excitation_energy_eV"]
+citation = "nist_pml_pstar_concrete_portland"
+kind = "handbook"
+ref = "physics.nist.gov:pstar/compos/144"
+license = "PD-USGov"
+note = "Mean excitation energy I = 135.2 eV from NIST PML PSTAR Portland concrete. Same value reported by PDG and used by Geant4 G4_CONCRETE."
+
+[concrete_ordinary._sources."nuclear.Z_eff"]
+citation = "pdg_2024_atomic_nuclear_properties"
+kind = "handbook"
+ref = "pdg.lbl.gov:atomic-nuclear/shielding-concrete"
+license = "CC-BY-4.0"
+note = "Z_eff ≈ 11 reported as the working effective-Z value for ordinary/shielding concrete in the PDG-derived simulation community (Geant4, MCNP). Computed via Mayneord-style weighting of the NIST composition; documented but not directly tabulated by NIST/PDG, so cited as a PDG-community-derived scalar."
