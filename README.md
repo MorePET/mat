@@ -499,6 +499,166 @@ assert steel_part.color != al_part.color
 assert crystal.color != steel_part.color
 ```
 
+## Provenance — where every value comes from
+
+Every curated value carries a `_sources` entry pointing at a
+primary paper or handbook. `Material.source_of(path)` returns
+the `Source` for a property; short aliases (`"density"`) and
+fully-qualified paths (`"optical.light_yield"`) both resolve.
+
+```python
+from pymat import bgo, inconel625
+
+# BGO's light yield comes from Weber & Monchamp's 1973 discovery paper.
+src = bgo.source_of("optical.light_yield")
+assert src.kind == "doi"
+assert src.ref == "10.1063/1.1662183"
+assert src.license == "proprietary-reference-only"
+
+# Inconel 625's density traces to MIL-HDBK-5J Table 6.3.3.0(b).
+ms = inconel625.source_of("mechanical.density")
+assert ms.kind == "handbook"
+assert ms.ref == "mil-hdbk-5j:p6-35"
+assert ms.license == "PD-USGov"
+```
+
+## Citing values in publications
+
+`Material.cite(path)` returns a BibTeX entry for one property;
+`Material.cite()` (no arg) returns every source the material
+uses, deduplicated.
+
+```python
+from pymat import bgo
+
+bib = bgo.cite("optical.light_yield")
+assert "@" in bib  # BibTeX entry type marker
+assert "10.1063/1.1662183" in bib  # the DOI is embedded
+```
+
+## Property values with uncertainty
+
+Add a `<prop>_stddev` sibling key to a property and the loader
+folds it into a `ufloat` (from the `uncertainties` package) at
+load time. The build123d boundary still receives a plain float
+(the nominal value) — `Material.density_g_mm3` strips the
+uncertainty so CAD math doesn't surprise downstream consumers.
+
+```python
+from pymat import load_toml
+
+p = tmp_path / "steel.toml"
+p.write_text(
+    "[steel]\n"
+    'name = "Steel"\n'
+    "[steel.mechanical]\n"
+    "density_value = 7.85\n"
+    'density_unit = "g/cm^3"\n'
+    "density_stddev = 0.05\n"
+)
+steel = load_toml(p)["steel"]
+
+d = steel.properties.mechanical.density
+# `d` is a ufloat — arithmetic on it propagates uncertainty
+assert d.nominal_value == 7.85
+assert d.std_dev == 0.05
+
+# Plain-float view for build123d-style consumers
+assert steel.density_g_mm3 == 0.00785  # 7.85 g/cm³ → g/mm³
+```
+
+## Composition with grade-spec ranges
+
+Alloy specs (AMS, ASTM, EN AW) typically give a tolerance window
+per element. The loader accepts `{nominal, min, max}` per element
+and folds it into a `ufloat` whose ±σ spans the spec window.
+
+```python
+from pymat import aluminum
+
+# 6063 has min/max windows from the AZoM/ASM spec sheet
+a6063 = aluminum.a6063
+
+# Si is 0.2-0.6 wt% (nominal 0.4); the loader stores it as a ufloat
+si = a6063.composition["Si"]
+assert si.nominal_value == 0.004
+# ±σ is half the spec window
+assert si.std_dev == 0.002
+```
+
+## Temperature-dependent properties
+
+For values that vary with T, attach a `<prop>_curve` sibling
+with `temps_K` knots and `values`. Then call `<prop>_at(T)` on
+the property group with a Pint temperature `Quantity`. Linear
+interpolation between knots; values clamp at the boundaries.
+
+```python
+from pymat import load_toml
+from pymat.units import ureg
+
+p = tmp_path / "ofhc.toml"
+p.write_text(
+    "[copper]\n"
+    'name = "Copper"\n'
+    "[copper.thermal]\n"
+    "thermal_conductivity_value = 391\n"
+    'thermal_conductivity_unit = "W/(m*K)"\n'
+    "thermal_conductivity_curve = { "
+    "temps_K = [77, 295, 500], "
+    "values = [600, 391, 350] "
+    "}\n"
+)
+copper = load_toml(p)["copper"]
+
+# Scalar still reads as the RT value
+assert copper.properties.thermal.thermal_conductivity == 391
+
+# _at(T) follows the curve
+k77 = copper.properties.thermal.thermal_conductivity_at(77 * ureg.kelvin)
+assert k77.to("W/(m*K)").magnitude == 600
+
+# Linear interp between 77 K and 295 K
+k186 = copper.properties.thermal.thermal_conductivity_at(186 * ureg.kelvin)
+assert 495 < k186.to("W/(m*K)").magnitude < 496
+```
+
+## Modern scintillators
+
+The 3.11 release added GAGG:Ce, LSO:Ce, LaBr3:Ce, CeBr3, and
+SrI2:Eu, each cited to its primary measurement paper.
+
+```python
+from pymat import cebr3, gagg, sri2
+
+# GAGG:Ce — the dotted child carries the doped scalars
+assert gagg.Ce.properties.optical.light_yield == 40000
+assert gagg.Ce.properties.optical.decay_time == 53
+
+# CeBr3 — fast, bright, intrinsic 4% resolution at 662 keV
+assert cebr3.density == 5.2
+assert cebr3.properties.optical.light_yield == 68000
+
+# SrI2:Eu — highest light yield in the catalog
+assert sri2.Eu.properties.optical.light_yield == 115000
+```
+
+## Aerospace nickel-base superalloys
+
+Inconel 625 and 718 ship with MIL-HDBK-5J A-basis design
+allowables and Special Metals technical-bulletin thermal data.
+
+```python
+from pymat import inconel625, inconel718
+
+assert inconel625.density == 8.44
+assert inconel625.properties.mechanical.tensile_strength == 820  # MPa, A-basis
+
+assert inconel718.density == 8.22
+# Inconel 718 STA — much higher Ftu than 625 annealed
+assert inconel718.properties.mechanical.tensile_strength == 1241
+```
+
 ## Material Categories
 
 - **Metals**: Stainless steel, aluminum, copper, tungsten, lead, titanium, brass
