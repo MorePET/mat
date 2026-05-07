@@ -761,6 +761,114 @@ print_bed_temp_unit = "degC"
 food_safe = true
 recycling_symbol = 7
 
+
+# ============================================================================
+# Structural Composites
+# ----------------------------------------------------------------------------
+# Anisotropic glass-cloth/epoxy and carbon-fiber/epoxy laminates. Schema
+# stores scalar properties only — the canonical "warp" / "fiber-direction
+# (0deg)" value is reported, with the orientation, fiber volume fraction,
+# and resin matrix documented in each per-property `_sources.note`. See
+# the `_sources._default.note` for caveats and direction conventions.
+# ============================================================================
+
+# G-10 / G-10CR (NEMA glass-cloth epoxy laminate, IEC 60893 GEC1).
+# G-10CR is the cryogenic-grade variant (Boulder/NBS spec) — it meets the
+# G-10 NEMA spec and the values below are sourced from the NIST Cryogenic
+# Material Properties database (G-10CR) and Kasen et al. (1980), which is
+# the canonical NBS characterization at 295 K.
+[g10]
+name = "G-10 / G-10CR (Glass-Epoxy Laminate)"
+grade = "NEMA G-10 / G-10CR"
+
+[g10.mechanical]
+density_value = 1.904
+density_unit = "g/cm^3"
+youngs_modulus_value = 27.9
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.175
+tensile_strength_value = 429
+tensile_strength_unit = "MPa"
+compressive_strength_value = 374
+compressive_strength_unit = "MPa"
+
+[g10.thermal]
+thermal_conductivity_value = 0.85
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 977
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 1.18e-5
+thermal_expansion_unit = "1/K"
+cryogenic_compatible = true
+
+[g10.electrical]
+dielectric_constant = 4.9
+volume_resistivity_value = 9.0e14
+volume_resistivity_unit = "ohm*cm"
+breakdown_voltage_value = 47
+breakdown_voltage_unit = "kV/mm"
+
+[g10.vis]
+base_color = [0.78, 0.74, 0.4, 1.0]
+metallic = 0.0
+roughness = 0.55
+transmission = 0.0
+
+[g10.vis.finishes]
+natural = { source = "ambientcg", id = "Plastic004" }
+
+[g10.compliance]
+flame_retardant = true
+radiation_resistant = true
+
+
+# CFRP — Toray T700S unidirectional ply with epoxy resin (Toray 2500 / 120 degC
+# system). Properties are 0deg fiber-direction at 60% fiber volume fraction
+# and room temperature, taken directly from the Toray T700S commercial data
+# sheet (toray-cfe.com). 0deg vs quasi-isotropic differ by ~3x — these are
+# UD-ply values; do not use as quasi-iso laminate equivalents.
+[cfrp_t700]
+name = "CFRP T700S/Epoxy (UD, 60% Vf)"
+grade = "T700S unidirectional"
+vendor = "toray"
+
+[cfrp_t700.mechanical]
+density_value = 1.55
+density_unit = "g/cm^3"
+youngs_modulus_value = 135
+youngs_modulus_unit = "GPa"
+tensile_strength_value = 2550
+tensile_strength_unit = "MPa"
+compressive_strength_value = 1470
+compressive_strength_unit = "MPa"
+flexural_modulus_value = 120000
+flexural_modulus_unit = "MPa"
+
+[cfrp_t700.thermal]
+thermal_conductivity_value = 9.37
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 753
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = -0.38e-6
+thermal_expansion_unit = "1/K"
+
+[cfrp_t700.electrical]
+volume_resistivity_value = 1.6e-3
+volume_resistivity_unit = "ohm*cm"
+
+[cfrp_t700.vis]
+base_color = [0.08, 0.08, 0.08, 1.0]
+metallic = 0.0
+roughness = 0.35
+transmission = 0.0
+
+[cfrp_t700.vis.finishes]
+twill = { source = "ambientcg", id = "Plastic006" }
+
+[cfrp_t700.compliance]
+radiation_resistant = true
+
+
 # ============================================================================
 # Provenance (#175 audit)
 # ----------------------------------------------------------------------------
@@ -919,3 +1027,180 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+# ----------------------------------------------------------------------------
+# G-10 / G-10CR (#139) — primary citations
+# ----------------------------------------------------------------------------
+# Mechanical values (E_warp, tensile/compressive strength, Poisson's, density)
+# are from Kasen et al. (1980), NBS characterization, manufacturer A pilot
+# plant, 295 K, warp direction. Thermal values (k, Cp, alpha) are computed
+# from the NIST Cryogenic Material Properties G-10CR polynomial curve fits
+# evaluated at T = 293 K. G-10CR meets NEMA G-10 spec; warp direction is the
+# canonical scalar — the fill direction is ~65-80% of warp for fiber-dependent
+# parameters (modulus ratio ~0.80, strength ratio ~0.65) per Kasen Table I.
+
+[g10._sources._default]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "Kasen, MacDonald, Beekman, Schramm (1980) Adv. Cryogenic Eng. 26:235 — NBS characterization of G-10CR/G-11CR glass-cloth/epoxy at 295 K, 76 K, 4 K. Values quoted are 295 K, manufacturer A production-plant warp direction."
+
+[g10._sources."mechanical.density"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR thermal-conductivity specimen density, 1.904 g/cm^3 (Kasen 1980, Thermal Tests section). Verified from PPPL NCSX archived OCR 2026-05-07."
+
+[g10._sources."mechanical.youngs_modulus"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR Young's modulus E_warp = 27.9 GPa at 295 K, manufacturer A production plant (Kasen 1980 Table II). Fill-direction modulus is ~80% of warp; do not use as quasi-isotropic equivalent."
+
+[g10._sources."mechanical.tensile_strength"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR ultimate tensile strength sigma_t,warp = 429 MPa at 295 K, manufacturer A production plant (Kasen 1980 Table II). Fill-direction strength is ~65% of warp."
+
+[g10._sources."mechanical.compressive_strength"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR compressive strength sigma_c,warp = 374 MPa at 295 K, manufacturer A production plant (Kasen 1980 Table II)."
+
+[g10._sources."mechanical.poissons_ratio"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR Poisson's ratio nu_warp = 0.175 at 295 K, manufacturer A production plant (Kasen 1980 Table II)."
+
+[g10._sources."thermal.thermal_conductivity"]
+citation = "nist_cryo_g10cr"
+kind = "handbook"
+ref = "nist:cryogenics/g10cr"
+license = "PD-USGov"
+note = "NIST Cryogenic Material Properties G-10CR thermal conductivity, warp direction, evaluated from polynomial curve fit at T = 293 K (k_warp = 0.85 W/(m*K)). Equation range 12-300 K, 5% curve-fit error. Normal-direction value at 293 K is 0.60 W/(m*K). https://trc.nist.gov/cryogenics/materials/G-10%20CR%20Fiberglass%20Epoxy/G10CRFiberglassEpoxy_rev.htm"
+
+[g10._sources."thermal.specific_heat"]
+citation = "nist_cryo_g10cr"
+kind = "handbook"
+ref = "nist:cryogenics/g10cr"
+license = "PD-USGov"
+note = "NIST Cryogenic Material Properties G-10CR specific heat, evaluated from polynomial curve fit at T = 293 K (Cp = 977 J/(kg*K)). Equation range 4-300 K, 2% curve-fit error."
+
+[g10._sources."thermal.thermal_expansion"]
+citation = "nist_cryo_g10cr"
+kind = "handbook"
+ref = "nist:cryogenics/g10cr"
+license = "PD-USGov"
+note = "NIST Cryogenic Material Properties G-10CR linear expansion coefficient, warp direction, derived from polynomial fit (L-L293)/L293 differentiated at T = 293 K (alpha_warp = 1.18e-5 /K = 11.8 ppm/K). Normal-direction CTE at 293 K is 4.27e-5 /K (~3.6x warp). Equation range 10-300 K, 1.5-2% error."
+
+[g10._sources."electrical.volume_resistivity"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR volume resistivity ~9e14 ohm*cm at 295 K (Kasen 1980 Table III, manufacturer A pilot plant, ASTM D 257)."
+
+[g10._sources."electrical.breakdown_voltage"]
+citation = "kasen_1980_g10cr"
+kind = "doi"
+ref = "10.1007/978-1-4613-9859-2_24"
+license = "proprietary-reference-only"
+note = "G-10CR dielectric strength 45.7-48.4 kV/mm at 295 K (Kasen 1980 Table III, mfr A; 60 Hz, 0.5 kV/s rise). Reported value 47 kV/mm is the midpoint."
+
+[g10._sources."electrical.dielectric_constant"]
+citation = "iec_60893_gec1"
+kind = "handbook"
+ref = "IEC 60893-3-2 (GEC1) typical value"
+license = "proprietary-reference-only"
+note = "G-10/GEC1 dielectric constant ~4.9 at 1 MHz; standard industry-reported value for NEMA G-10/IEC 60893 GEC1. Not directly cited in Kasen 1980; rounded industry-handbook value."
+
+# ----------------------------------------------------------------------------
+# CFRP T700S/Epoxy (#138) — primary citations
+# ----------------------------------------------------------------------------
+# All composite values are from the Toray T700S commercial data sheet
+# (toray-cfe.com, July 2024 release): COMPOSITE PROPERTIES table, 60% Vf,
+# Toray 2500 / 120 degC epoxy resin, room temperature, 0deg fiber direction.
+# CTE, k, Cp are FIBER properties (FUNCTIONAL PROPERTIES table) — these are
+# stored as the fiber-direction value of the laminate, which is dominated by
+# the fiber for these properties at 60% Vf. Transverse / off-axis values are
+# NOT stored — see _default note. Resistivity (1.6e-3 ohm*cm = 1.6e-5 ohm*m)
+# is the fiber-axis electrical conductivity, characteristic of CFRP.
+
+[cfrp_t700._sources._default]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Toray T700S Carbon Fiber Data Sheet (Commercial Documentation AQ.866-6, July 2024, toray-cfe.com). Composite properties measured at RT, normalized to 60% fiber volume, Toray 2500/120 degC epoxy resin system. Values are 0deg (fiber-direction) UD-ply — quasi-isotropic laminate values would differ by ~3x for stiffness/strength. Off-axis (90deg) values intentionally not stored: schema is scalar, and a single number cannot capture the anisotropy."
+
+[cfrp_t700._sources."mechanical.density"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "T700S/epoxy laminate density 1.55 g/cm^3 — typical UD CFRP at 60% Vf (T700S fiber 1.80 g/cm^3 + epoxy ~1.20 g/cm^3, rule of mixtures). Toray data sheet quotes 1.80 g/cm^3 for the fiber alone."
+
+[cfrp_t700._sources."mechanical.youngs_modulus"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Tensile modulus 135 GPa (14.0e3 kgf/mm^2) at RT, 60% Vf, 0deg fiber direction (Toray T700S Composite Properties table). Transverse (90deg) modulus is ~8-10 GPa for typical UD CFRP — not stored."
+
+[cfrp_t700._sources."mechanical.tensile_strength"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Tensile strength 2550 MPa (260 kgf/mm^2) at RT, 60% Vf, 0deg fiber direction (Toray T700S Composite Properties). Transverse strength is ~50-80 MPa for UD CFRP — fiber-dominated 0deg value is the only canonical scalar."
+
+[cfrp_t700._sources."mechanical.compressive_strength"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Compressive strength 1470 MPa (150 kgf/mm^2) at RT, 60% Vf, 0deg (Toray T700S Composite Properties)."
+
+[cfrp_t700._sources."mechanical.flexural_modulus"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Flexural modulus 120 GPa (12.3e3 kgf/mm^2) at RT, 60% Vf, 0deg (Toray T700S Composite Properties). Stored in MPa to match schema unit (flexural_modulus_unit = 'MPa', so value = 120000)."
+
+[cfrp_t700._sources."thermal.thermal_conductivity"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Thermal conductivity 9.37 W/(m*K) — converted from Toray T700S Functional Properties (0.0224 cal/(cm*s*degC) * 4.184 J/cal * 100 cm/m). Fiber-axis (longitudinal) value; transverse k for UD CFRP is ~0.7-1.0 W/(m*K)."
+
+[cfrp_t700._sources."thermal.specific_heat"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Specific heat 753 J/(kg*K) — converted from 0.18 cal/(g*degC) * 4.184 J/cal * 1000 g/kg (Toray T700S Functional Properties)."
+
+[cfrp_t700._sources."thermal.thermal_expansion"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "CTE -0.38e-6 /degC at RT, fiber-axis direction (Toray T700S Functional Properties). NEGATIVE value is correct: aligned PAN carbon fibers contract on heating along the fiber axis. Transverse CTE for UD CFRP is ~+30e-6 /K — strongly anisotropic; fiber-axis value reported here."
+
+[cfrp_t700._sources."electrical.volume_resistivity"]
+citation = "toray_t700s_2024"
+kind = "vendor"
+ref = "toraycma.com:t700s"
+license = "proprietary-reference-only"
+note = "Electric resistivity 1.6e-3 ohm*cm fiber-axis (Toray T700S Functional Properties). CFRP is electrically conductive along fibers (~6.25e4 S/m); transverse resistivity is several orders of magnitude higher."

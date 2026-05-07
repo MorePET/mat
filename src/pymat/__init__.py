@@ -134,6 +134,8 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "pmma",
         "pe",
         "pc",
+        "g10",
+        "cfrp_t700",
     ],
     "ceramics": ["alumina", "zirconia", "sic", "macor", "shapal", "glass", "beryllia", "yttria"],
     "electronics": ["fr4", "rogers", "kapton", "copper_pcb", "solder"],
