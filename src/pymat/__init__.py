@@ -55,7 +55,9 @@ from .properties import (
     ThermalProperties,
 )
 from .search import search
+from .sources import Source
 from .units import ureg
+from .vis import FinishEntry, Vis, VisDeltas
 
 __version__ = "3.10.0"  # x-release-please-version
 __all__ = [
@@ -68,6 +70,7 @@ __all__ = [
     "ManufacturingProperties",
     "ComplianceProperties",
     "SourcingProperties",
+    "Source",
     "ureg",
     "load_toml",
     "load_category",
@@ -77,6 +80,13 @@ __all__ = [
     "enrich_all",
     "factories",
     "vis",
+    # Vis domain types — also re-exported on top-level pymat so consumers
+    # can `from pymat import Vis` without a second import line.
+    # The canonical home stays pymat.vis (per the public-API contract in
+    # pymat/vis/__init__.py); this is just a convenience alias.
+    "Vis",
+    "VisDeltas",
+    "FinishEntry",
 ]
 
 # ============================================================================
@@ -301,34 +311,17 @@ _sys.modules[__name__].__class__ = _PymatModule
 
 
 def __dir__() -> list[str]:
-    """
-    Help IDE discover available materials.
+    """Help IDE / REPL tab-completion discover available names.
 
-    Returns list of all registered materials plus standard exports.
+    Returns the public ``__all__`` plus every lazy-loadable base material.
+    Deriving from ``__all__`` (instead of a hardcoded subset) keeps tab
+    completion in sync with the public surface — adding a new public
+    name to ``__all__`` automatically surfaces it in ``dir(pymat)``.
     """
-    base_exports = [
-        "Material",
-        "AllProperties",
-        "MechanicalProperties",
-        "ThermalProperties",
-        "ElectricalProperties",
-        "OpticalProperties",
-        "ManufacturingProperties",
-        "ComplianceProperties",
-        "SourcingProperties",
-        "load_toml",
-        "load_category",
-        "enrich_from_periodictable",
-        "enrich_from_matproj",
-        "enrich_all",
-    ]
-
-    # Add all known base materials
-    known_materials = []
+    known_materials: list[str] = []
     for bases in _CATEGORY_BASES.values():
         known_materials.extend(bases)
-
-    return base_exports + known_materials
+    return list(__all__) + known_materials
 
 
 def load_all() -> Dict[str, Material]:
