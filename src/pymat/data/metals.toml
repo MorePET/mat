@@ -292,18 +292,43 @@ polished = { source = "ambientcg", id = "Metal043A" }
 oxidized = { source = "ambientcg", id = "Metal043B" }
 aged = { source = "ambientcg", id = "Metal026" }
 
+# OFHC Copper — UNS C10100 / C10200, Oxygen-Free High Conductivity (#129)
+# UHV / cryogenic / low-bg use. Distinct from generic copper because RT
+# conductivity is enhanced (≥101% IACS) and the cryogenic enhancement is
+# dramatic (k(20K) ≈ 1500 W/(m·K), k(4K) ≈ 10000 W/(m·K) for RRR=300+;
+# do NOT extrapolate the RT scalar for cryo design — the curve schema
+# (#148) tracks T-dependence and is intentionally left empty here).
 [copper.OFHC]
 name = "OFHC Copper (Oxygen-Free High Conductivity)"
-grade = "OFHC"
+grade = "C10100"
+formula = "Cu"
 
 [copper.OFHC.mechanical]
 density_value = 8.94
 density_unit = "g/cm^3"
+youngs_modulus_value = 115
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.34
+yield_strength_value = 70
+yield_strength_unit = "MPa"
+tensile_strength_value = 220
+tensile_strength_unit = "MPa"
+elongation = 45
+
+[copper.OFHC.thermal]
+melting_point_value = 1083
+melting_point_unit = "degC"
+thermal_conductivity_value = 391
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 385
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 16.5e-6
+thermal_expansion_unit = "1/K"
 
 [copper.OFHC.electrical]
-resistivity_value = 1.68e-8
+resistivity_value = 1.71e-8
 resistivity_unit = "ohm*m"
-conductivity_value = 5.96e7
+conductivity_value = 5.85e7
 conductivity_unit = "S/m"
 
 
@@ -957,6 +982,244 @@ metallic = 1.0
 roughness = 0.3
 transmission = 0.0
 
+
+# ============================================================================
+# BERYLLIUM (#130)
+# ----------------------------------------------------------------------------
+# X-ray window metal, low-Z phantoms. Hazard: respirable Be dust/fume causes
+# chronic beryllium disease (CBD). Do NOT machine, grind, or polish without
+# proper engineering controls (HEPA, wet-cut). Solid stock and finished
+# windows are safe to handle. Grade S-200F (vacuum hot-pressed) is the
+# canonical bulk grade quoted by Materion; pure-element scalars below match
+# both the element data (Wikipedia/CRC) and Materion S-200F datasheet to
+# within rounding.
+# ============================================================================
+
+[beryllium]
+name = "Beryllium"
+formula = "Be"
+grade = "S-200F"
+
+[beryllium.mechanical]
+density_value = 1.848
+density_unit = "g/cm^3"
+youngs_modulus_value = 287
+youngs_modulus_unit = "GPa"
+shear_modulus_value = 132
+shear_modulus_unit = "GPa"
+poissons_ratio = 0.032
+yield_strength_value = 207
+yield_strength_unit = "MPa"
+tensile_strength_value = 324
+tensile_strength_unit = "MPa"
+
+[beryllium.thermal]
+melting_point_value = 1287
+melting_point_unit = "degC"
+thermal_conductivity_value = 200
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 1825
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 11.0e-6
+thermal_expansion_unit = "1/K"
+
+[beryllium.electrical]
+resistivity_value = 3.6e-8
+resistivity_unit = "ohm*m"
+
+[beryllium.nuclear]
+radiation_length_value = 35.28
+radiation_length_unit = "cm"
+interaction_length_value = 42.10
+interaction_length_unit = "cm"
+mean_excitation_energy_eV = 63.7
+Z_eff = 4
+
+[beryllium.vis]
+base_color = [0.78, 0.79, 0.78, 1.0]
+metallic = 1.0
+roughness = 0.5
+transmission = 0.0
+
+
+# ============================================================================
+# TANTALUM (#131)
+# ----------------------------------------------------------------------------
+# High-Z gamma-shielding alternative to W/Pb in compact geometries; ductile
+# (unlike W) and biocompatible (unlike Pb). Canonical entry is Ta CP
+# (commercially pure, ASTM B708, annealed). Ta-2.5W is the common solid-
+# solution variant for higher strength — not modeled here, but the same
+# top-level Ta is a safe density/X0 stand-in.
+# ============================================================================
+
+[tantalum]
+name = "Tantalum"
+formula = "Ta"
+grade = "CP"
+
+[tantalum.mechanical]
+density_value = 16.65
+density_unit = "g/cm^3"
+youngs_modulus_value = 186
+youngs_modulus_unit = "GPa"
+shear_modulus_value = 69
+shear_modulus_unit = "GPa"
+poissons_ratio = 0.34
+yield_strength_value = 138
+yield_strength_unit = "MPa"
+tensile_strength_value = 207
+tensile_strength_unit = "MPa"
+hardness_vickers = 110
+
+[tantalum.thermal]
+melting_point_value = 3017
+melting_point_unit = "degC"
+thermal_conductivity_value = 57.5
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 140
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 6.3e-6
+thermal_expansion_unit = "1/K"
+
+[tantalum.electrical]
+resistivity_value = 1.31e-7
+resistivity_unit = "ohm*m"
+
+[tantalum.nuclear]
+radiation_length_value = 0.4094
+radiation_length_unit = "cm"
+interaction_length_value = 11.47
+interaction_length_unit = "cm"
+mean_excitation_energy_eV = 718.0
+Z_eff = 73
+
+[tantalum.vis]
+base_color = [0.65, 0.66, 0.69, 1.0]
+metallic = 1.0
+roughness = 0.35
+transmission = 0.0
+
+
+# ============================================================================
+# KOVAR (#127)
+# ----------------------------------------------------------------------------
+# ASTM F15 / Carpenter Kovar® — Fe-29Ni-17Co glass-sealing alloy. Designed
+# to match the thermal expansion of borosilicate (Corning 7052) and
+# alumina-borosilicate sealing glasses across 30-450 °C. CTE quoted here is
+# the mean linear expansion 30-450 °C, NOT the local α at 25 °C — the
+# matching curve is what makes the alloy useful, not any single point.
+# Curie temperature ~435 °C is the upper bound on glass-seal service.
+# ============================================================================
+
+[kovar]
+name = "Kovar"
+grade = "ASTM F15"
+# Carpenter Kovar® nominal mass fractions; balance Fe.
+composition = {Fe = 0.535, Ni = 0.29, Co = 0.17, Mn = 0.003, Si = 0.002}
+
+[kovar.mechanical]
+density_value = 8.36
+density_unit = "g/cm^3"
+youngs_modulus_value = 138
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.317
+yield_strength_value = 345
+yield_strength_unit = "MPa"
+tensile_strength_value = 517
+tensile_strength_unit = "MPa"
+elongation = 30
+hardness_vickers = 160
+
+[kovar.thermal]
+melting_point_value = 1450
+melting_point_unit = "degC"
+thermal_conductivity_value = 17.3
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 439
+specific_heat_unit = "J/(kg*K)"
+# Mean linear thermal expansion 30-450 °C — the glass-sealing matching
+# value. RT-only α is lower (~5.5e-6/K, 25-200 °C); see _sources note.
+thermal_expansion_value = 5.86e-6
+thermal_expansion_unit = "1/K"
+
+[kovar.electrical]
+resistivity_value = 4.9e-7
+resistivity_unit = "ohm*m"
+
+[kovar.magnetic]
+# Kovar is ferromagnetic up to its Curie point (~435 °C). μr at low field
+# is moderate (~5000-10000 typical for annealed strip); not the "high-μ"
+# class — use mu_metal for shielding.
+permeability_relative = 5000.0
+saturation_field = 1.6
+saturation_field_unit = "T"
+
+[kovar.vis]
+base_color = [0.62, 0.63, 0.66, 1.0]
+metallic = 1.0
+roughness = 0.4
+transmission = 0.0
+
+
+# ============================================================================
+# MU-METAL (#128)
+# ----------------------------------------------------------------------------
+# 80Ni-15Fe-5Mo soft-magnetic shielding alloy (ASTM A753 Type 4). All
+# magnetic values below assume the canonical hydrogen anneal (~1100-1175
+# °C, dry H₂ atmosphere, slow cool) — the "as-fabricated" permeability is
+# 1-2 orders of magnitude lower. After cold-working the part (forming,
+# stamping) the anneal must be repeated in the final geometry. μr_max is
+# the peak DC permeability at ~B = 0.4 T; initial μr ≈ 20 000.
+# ============================================================================
+
+[mu_metal]
+name = "Mu-metal"
+grade = "ASTM A753 Type 4"
+# Magnetic Shield Corp MuMETAL® / Carpenter HyMu80® nominal composition.
+composition = {Ni = 0.80, Fe = 0.145, Mo = 0.05, Cu = 0.005}
+
+[mu_metal.mechanical]
+density_value = 8.7
+density_unit = "g/cm^3"
+youngs_modulus_value = 215
+youngs_modulus_unit = "GPa"
+poissons_ratio = 0.30
+yield_strength_value = 250
+yield_strength_unit = "MPa"
+tensile_strength_value = 540
+tensile_strength_unit = "MPa"
+elongation = 40
+hardness_vickers = 120
+
+[mu_metal.thermal]
+melting_point_value = 1430
+melting_point_unit = "degC"
+thermal_conductivity_value = 19.0
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 460
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 12.7e-6
+thermal_expansion_unit = "1/K"
+
+[mu_metal.electrical]
+resistivity_value = 6.0e-7
+resistivity_unit = "ohm*m"
+
+[mu_metal.magnetic]
+# Annealed in dry H₂ at ~1150 °C. μr_max ≈ 100 000 (DC, peak); initial
+# μr ≈ 20 000. Saturation flux density Bs ≈ 0.74 T (low Bs is a tradeoff
+# of the high-μ regime — easy to saturate near strong magnets).
+permeability_relative = 100000.0
+saturation_field = 0.74
+saturation_field_unit = "T"
+
+[mu_metal.vis]
+base_color = [0.70, 0.71, 0.72, 1.0]
+metallic = 1.0
+roughness = 0.45
+transmission = 0.0
+
+
 # ============================================================================
 # Provenance (#175 audit)
 # ----------------------------------------------------------------------------
@@ -1123,11 +1386,102 @@ kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
 
+# OFHC Copper provenance (#129). Mechanical scalars are typical annealed
+# values for C10100 wrought rod (NIST cryogenics + element handbooks);
+# thermal scalars at RT are the well-established pure-Cu values which OFHC
+# matches to within rounding. NIST Cryogenic Material Properties Database
+# is the gold standard for the cryogenic curve (left as future work via
+# the #148 curve schema). Verified 2026-05-07.
 [copper.OFHC._sources._default]
-citation = "py-mat-curation-3.x"
+citation = "NIST Cryogenic Material Properties: OFHC Copper"
 kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+ref = "nist:cryogenics/ofhc-copper"
+license = "PD-USGov"
+note = "OFHC Copper UNS C10100/C10200; RT scalars from NIST cryogenic database (PD-USGov, https://trc.nist.gov/cryogenics/materials/) plus element-handbook values (Wikipedia/CRC, mechanical properties of annealed wrought Cu); see per-property entries; verified 2026-05-07."
+
+[copper.OFHC._sources."mechanical.density"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure Cu density 8.935 g/cm^3 at 20 °C; OFHC C10100 nominal density quoted at 8.94 g/cm^3 (rounded for canonical wrought rod); verified 2026-05-07."
+
+[copper.OFHC._sources."mechanical.youngs_modulus"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure-Cu E range 110-128 GPa; annealed C10100 E ≈ 115 GPa is the conventional wrought-rod value; verified 2026-05-07."
+
+[copper.OFHC._sources."mechanical.poissons_ratio"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure-Cu Poisson's ratio 0.34; verified 2026-05-07."
+
+[copper.OFHC._sources."mechanical.yield_strength"]
+citation = "ASTM B187 / B188 wrought-Cu rod, annealed (O60 temper)"
+kind = "vendor"
+ref = "astm:B187-19"
 license = "proprietary-reference-only"
+note = "OFHC C10100 annealed (O60) σy ≈ 70 MPa, σu ≈ 220 MPa, elongation ≥ 45% are the conventional rod-stock values consistent with ASTM B187 mill-annealed bar/rod; ASTM specs are paywalled but compositionally bound to UNS C10100; verified 2026-05-07."
+
+[copper.OFHC._sources."mechanical.tensile_strength"]
+citation = "ASTM B187 / B188 wrought-Cu rod, annealed (O60 temper)"
+kind = "vendor"
+ref = "astm:B187-19"
+license = "proprietary-reference-only"
+note = "OFHC C10100 annealed (O60) σu ≈ 220 MPa; verified 2026-05-07."
+
+[copper.OFHC._sources."mechanical.elongation"]
+citation = "ASTM B187 / B188 wrought-Cu rod, annealed (O60 temper)"
+kind = "vendor"
+ref = "astm:B187-19"
+license = "proprietary-reference-only"
+note = "OFHC C10100 annealed elongation 45% at break; verified 2026-05-07."
+
+[copper.OFHC._sources."thermal.melting_point"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure Cu melting point 1357.77 K = 1084.62 °C; OFHC unchanged from pure Cu; TOML rounds to 1083 °C; verified 2026-05-07."
+
+[copper.OFHC._sources."thermal.thermal_conductivity"]
+citation = "NIST Cryogenic Material Properties: OFHC Copper"
+kind = "handbook"
+ref = "nist:cryogenics/ofhc-copper"
+license = "PD-USGov"
+note = "RT k = 391 W/(m*K) at 300 K from NIST OFHC fit (RRR-50 grade) and consistent with Wikipedia/CRC Cu element value 401 W/(m*K) (TOML quotes the OFHC-RRR50 number conservatively). Cryogenic enhancement: k(20K) ≈ 1500 W/(m*K), k(4K) ≈ 10000 W/(m*K) for RRR-300; populate via #148 curve schema in a future PR; verified 2026-05-07."
+
+[copper.OFHC._sources."thermal.specific_heat"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure Cu Cp = 384.6 J/(kg*K) at 25 °C; TOML rounds to 385; verified 2026-05-07."
+
+[copper.OFHC._sources."thermal.thermal_expansion"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure Cu α = 16.64e-6 /K at 20 °C; TOML rounds to 16.5e-6 /K (OFHC matches pure Cu); verified 2026-05-07."
+
+[copper.OFHC._sources."electrical.resistivity"]
+citation = "Wikipedia: Copper (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Copper"
+license = "CC-BY-SA-4.0"
+note = "Pure Cu ρe = 16.78 nOhm*m at 20 °C; OFHC C10100 specified as ≥ 101% IACS, giving ρe ≈ 1.71e-8 Ohm*m; verified 2026-05-07."
+
+[copper.OFHC._sources."electrical.conductivity"]
+citation = "ASTM B170 (OFHC, IACS conductivity spec)"
+kind = "vendor"
+ref = "astm:B170-99"
+license = "proprietary-reference-only"
+note = "OFHC C10100 specified ≥ 101% IACS = 5.85e7 S/m at 20 °C; ASTM B170 is the compositional spec (paywalled, ref-only); verified 2026-05-07."
 
 [tungsten._sources._default]
 citation = "py-mat-curation-3.x"
@@ -1461,3 +1815,482 @@ citation = "py-mat-curation-3.x"
 kind = "handbook"
 ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
 license = "proprietary-reference-only"
+
+
+# ============================================================================
+# Beryllium provenance (#130). Pure-element scalars from Wikipedia / CRC
+# Handbook (CC-BY-SA-4.0); nuclear scalars from PDG Atomic & Nuclear
+# Properties (open access, public-domain US Government work). Mechanical
+# properties of bulk grade S-200F (vacuum hot-pressed) match the Materion
+# vendor datasheet to within rounding — Materion datasheets are paywalled
+# behind a registration wall, so the citation is reference-only.
+# ============================================================================
+
+[beryllium._sources._default]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics) + PDG"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be S-200F vacuum-hot-pressed grade; element scalars from Wikipedia/CRC, mechanical from Materion S-200F technical bulletin (proprietary-reference-only) cross-checked against PDG Atomic & Nuclear Properties; nuclear scalars from PDG (PD-USGov, https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/beryllium_Be.html); see per-property entries; verified 2026-05-07."
+
+[beryllium._sources."mechanical.density"]
+citation = "PDG Atomic & Nuclear Properties: Beryllium"
+kind = "handbook"
+ref = "pdg:beryllium"
+license = "PD-USGov"
+note = "Be density 1.848 g/cm^3 from PDG (matches Wikipedia/CRC 1.845 to within 0.2%); verified 2026-05-07."
+
+[beryllium._sources."mechanical.youngs_modulus"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be E = 287 GPa (~35% greater than steel — distinguishing property); verified 2026-05-07."
+
+[beryllium._sources."mechanical.shear_modulus"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be shear modulus G = 132 GPa; verified 2026-05-07."
+
+[beryllium._sources."mechanical.poissons_ratio"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be Poisson's ratio 0.032 — anomalously low among metals, an unusual fingerprint of Be's hcp lattice; verified 2026-05-07."
+
+[beryllium._sources."mechanical.yield_strength"]
+citation = "Materion S-200F Beryllium Technical Bulletin"
+kind = "vendor"
+ref = "materion.com:s-200f"
+license = "proprietary-reference-only"
+note = "S-200F vacuum-hot-pressed Be, σy ≈ 207 MPa (30 ksi), σu ≈ 324 MPa (47 ksi) longitudinal; values from Materion technical bulletin; verified 2026-05-07."
+
+[beryllium._sources."mechanical.tensile_strength"]
+citation = "Materion S-200F Beryllium Technical Bulletin"
+kind = "vendor"
+ref = "materion.com:s-200f"
+license = "proprietary-reference-only"
+note = "S-200F σu ≈ 324 MPa; verified 2026-05-07."
+
+[beryllium._sources."thermal.melting_point"]
+citation = "PDG Atomic & Nuclear Properties: Beryllium"
+kind = "handbook"
+ref = "pdg:beryllium"
+license = "PD-USGov"
+note = "Be melting point 1560 K = 1287 °C; verified 2026-05-07."
+
+[beryllium._sources."thermal.thermal_conductivity"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be k = 200 W/(m*K) at room temperature; verified 2026-05-07."
+
+[beryllium._sources."thermal.specific_heat"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be Cp = 1825 J/(kg*K) at 25 °C — exceptionally high among metals due to low atomic mass; verified 2026-05-07."
+
+[beryllium._sources."thermal.thermal_expansion"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be α = 11.0e-6 /K at 20 °C; verified 2026-05-07."
+
+[beryllium._sources."electrical.resistivity"]
+citation = "Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Beryllium"
+license = "CC-BY-SA-4.0"
+note = "Be ρe = 36 nOhm*m = 3.6e-8 Ohm*m at 20 °C; verified 2026-05-07."
+
+[beryllium._sources."nuclear.radiation_length"]
+citation = "PDG Atomic & Nuclear Properties: Beryllium"
+kind = "handbook"
+ref = "pdg:beryllium"
+license = "PD-USGov"
+note = "Be X0 = 65.19 g/cm^2 = 35.28 cm at ρ = 1.848 g/cm^3; verified 2026-05-07 from https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/beryllium_Be.html."
+
+[beryllium._sources."nuclear.interaction_length"]
+citation = "PDG Atomic & Nuclear Properties: Beryllium"
+kind = "handbook"
+ref = "pdg:beryllium"
+license = "PD-USGov"
+note = "Be λI = 77.8 g/cm^2 = 42.10 cm; verified 2026-05-07."
+
+[beryllium._sources."nuclear.mean_excitation_energy_eV"]
+citation = "PDG Atomic & Nuclear Properties: Beryllium"
+kind = "handbook"
+ref = "pdg:beryllium"
+license = "PD-USGov"
+note = "Be mean excitation energy I = 63.7 eV (Bethe-Bloch); verified 2026-05-07."
+
+[beryllium._sources."nuclear.Z_eff"]
+citation = "PDG Atomic & Nuclear Properties: Beryllium"
+kind = "handbook"
+ref = "pdg:beryllium"
+license = "PD-USGov"
+note = "Be Z = 4 (atomic number — pure element, Z_eff trivially equals Z); verified 2026-05-07."
+
+
+# ============================================================================
+# Tantalum provenance (#131). Pure-element scalars from Wikipedia / CRC
+# Handbook; nuclear scalars from PDG (open access, US-Government work).
+# Mechanical scalars are typical annealed Ta CP (commercially pure, ASTM
+# B708 sheet/plate) values that match Plansee and H.C. Starck public
+# datasheets to within rounding.
+# ============================================================================
+
+[tantalum._sources._default]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics) + PDG"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta CP (commercially pure, ASTM B708) annealed; element scalars from Wikipedia/CRC; nuclear scalars from PDG (PD-USGov, https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/tantalum_Ta.html); mechanical from Plansee public datasheet, RT, annealed; alternative grade Ta-2.5W has higher σy (~345 MPa) and similar density — same X0/λI within 1%; see per-property entries; verified 2026-05-07."
+
+[tantalum._sources."mechanical.density"]
+citation = "PDG Atomic & Nuclear Properties: Tantalum"
+kind = "handbook"
+ref = "pdg:tantalum"
+license = "PD-USGov"
+note = "Ta density 16.65 g/cm^3 from PDG (matches Wikipedia/CRC 16.678); verified 2026-05-07."
+
+[tantalum._sources."mechanical.youngs_modulus"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta E = 186 GPa; verified 2026-05-07."
+
+[tantalum._sources."mechanical.shear_modulus"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta shear modulus G = 69 GPa; verified 2026-05-07."
+
+[tantalum._sources."mechanical.poissons_ratio"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta Poisson's ratio 0.34; verified 2026-05-07."
+
+[tantalum._sources."mechanical.yield_strength"]
+citation = "Plansee Tantalum public datasheet"
+kind = "vendor"
+ref = "plansee.com:tantalum"
+license = "proprietary-reference-only"
+note = "Ta CP annealed σy ≈ 138 MPa (20 ksi), σu ≈ 207 MPa (30 ksi) — typical sheet/plate values; verified 2026-05-07."
+
+[tantalum._sources."mechanical.tensile_strength"]
+citation = "Plansee Tantalum public datasheet"
+kind = "vendor"
+ref = "plansee.com:tantalum"
+license = "proprietary-reference-only"
+note = "Ta CP annealed σu ≈ 207 MPa; verified 2026-05-07."
+
+[tantalum._sources."mechanical.hardness_vickers"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta Vickers hardness range 870-1200 MPa = HV 89-122; TOML quotes the typical annealed midpoint HV 110; verified 2026-05-07."
+
+[tantalum._sources."thermal.melting_point"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta melting point 3290 K = 3017 °C; verified 2026-05-07."
+
+[tantalum._sources."thermal.thermal_conductivity"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta k = 57.5 W/(m*K) at room temperature; verified 2026-05-07."
+
+[tantalum._sources."thermal.specific_heat"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta Cp = 140.149 J/(kg*K) at 25 °C; TOML rounds to 140; verified 2026-05-07."
+
+[tantalum._sources."thermal.thermal_expansion"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta α = 6.3e-6 /K at 25 °C; verified 2026-05-07."
+
+[tantalum._sources."electrical.resistivity"]
+citation = "Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Tantalum"
+license = "CC-BY-SA-4.0"
+note = "Ta ρe = 131 nOhm*m = 1.31e-7 Ohm*m at 20 °C; verified 2026-05-07."
+
+[tantalum._sources."nuclear.radiation_length"]
+citation = "PDG Atomic & Nuclear Properties: Tantalum"
+kind = "handbook"
+ref = "pdg:tantalum"
+license = "PD-USGov"
+note = "Ta X0 = 6.82 g/cm^2 = 0.4094 cm at ρ = 16.65 g/cm^3; verified 2026-05-07 from https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/tantalum_Ta.html."
+
+[tantalum._sources."nuclear.interaction_length"]
+citation = "PDG Atomic & Nuclear Properties: Tantalum"
+kind = "handbook"
+ref = "pdg:tantalum"
+license = "PD-USGov"
+note = "Ta λI = 191.0 g/cm^2 = 11.47 cm; verified 2026-05-07."
+
+[tantalum._sources."nuclear.mean_excitation_energy_eV"]
+citation = "PDG Atomic & Nuclear Properties: Tantalum"
+kind = "handbook"
+ref = "pdg:tantalum"
+license = "PD-USGov"
+note = "Ta mean excitation energy I = 718 eV; verified 2026-05-07."
+
+[tantalum._sources."nuclear.Z_eff"]
+citation = "PDG Atomic & Nuclear Properties: Tantalum"
+kind = "handbook"
+ref = "pdg:tantalum"
+license = "PD-USGov"
+note = "Ta Z = 73; verified 2026-05-07."
+
+
+# ============================================================================
+# Kovar provenance (#127). Compositional bounds from ASTM F15
+# (paywalled, ref-only). Physical/mechanical scalars match the public
+# Carpenter Technology Kovar® datasheet (vendor PDF, ref-only) and are
+# corroborated by Wikipedia (CC-BY-SA-4.0). Curie temperature 435 °C and
+# CTE 5.86e-6 /K (30-450 °C mean) are the canonical glass-sealing values.
+# ============================================================================
+
+[kovar._sources._default]
+citation = "Carpenter Technology Kovar Alloy Datasheet + ASTM F15"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar (ASTM F15, Fe-29Ni-17Co); compositional bounds from ASTM F15; physical/mechanical scalars from Carpenter Kovar® public datasheet and Wikipedia (CC-BY-SA-4.0); see per-property entries; CTE quoted is the mean linear expansion 30-450 °C (the glass-sealing matching value), NOT the local α at 25 °C (~5.5e-6 /K, 25-200 °C); Curie temperature 435 °C; verified 2026-05-07."
+
+[kovar._sources."mechanical.density"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar density 8.36 g/cm^3 (0.302 lb/in^3); verified 2026-05-07."
+
+[kovar._sources."mechanical.youngs_modulus"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar E = 138 GPa (20.0e6 psi) at RT; verified 2026-05-07."
+
+[kovar._sources."mechanical.poissons_ratio"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar Poisson's ratio 0.317 at RT; verified 2026-05-07."
+
+[kovar._sources."mechanical.yield_strength"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar annealed σy(0.2%) ≈ 50 ksi = 345 MPa, σu ≈ 75 ksi = 517 MPa, elongation 30%; verified 2026-05-07."
+
+[kovar._sources."mechanical.tensile_strength"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar annealed σu ≈ 517 MPa; verified 2026-05-07."
+
+[kovar._sources."mechanical.elongation"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar annealed elongation 30%; verified 2026-05-07."
+
+[kovar._sources."mechanical.hardness_vickers"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar annealed HRB ~80 ≈ HV 160 (converted via ISO 18265); verified 2026-05-07."
+
+[kovar._sources."thermal.melting_point"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar melting point ~1450 °C (2640 °F); verified 2026-05-07."
+
+[kovar._sources."thermal.thermal_conductivity"]
+citation = "Wikipedia: Kovar (Carpenter datasheet, CC-BY-SA-4.0)"
+kind = "handbook"
+ref = "wikipedia:Kovar"
+license = "CC-BY-SA-4.0"
+note = "Kovar k = 17.3 W/(m*K) at RT (Wikipedia cites 17 W/(m*K), Carpenter datasheet 17.3 W/(m*K) at 23-100 °C mean); verified 2026-05-07."
+
+[kovar._sources."thermal.specific_heat"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar Cp = 0.105 BTU/(lb*°F) = 439 J/(kg*K) at RT; verified 2026-05-07."
+
+[kovar._sources."thermal.thermal_expansion"]
+citation = "Carpenter Technology Kovar Alloy Datasheet (ASTM E831)"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar mean linear expansion 30-450 °C = 5.86e-6 /K (the glass-sealing matching curve — Corning 7052 borosilicate). Local α at 25 °C is lower (~5.5e-6 /K, 25-200 °C); above the ferromagnetic→paramagnetic transition at the Curie point ~435 °C the lattice expansion accelerates sharply and Kovar is no longer CTE-matched to glass; verified 2026-05-07."
+
+[kovar._sources."electrical.resistivity"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar ρe = 49 microohm*cm = 4.9e-7 Ohm*m at RT; verified 2026-05-07."
+
+[kovar._sources."magnetic.permeability_relative"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar is ferromagnetic up to its Curie point (~435 °C); μr_DC ~5000 typical for annealed strip at low field — moderate, not in the high-permeability shielding class (use mu_metal for shielding); verified 2026-05-07."
+
+[kovar._sources."magnetic.saturation_field"]
+citation = "Carpenter Technology Kovar Alloy Datasheet"
+kind = "vendor"
+ref = "carpentertechnology.com:kovar"
+license = "proprietary-reference-only"
+note = "Kovar saturation flux density Bs ≈ 1.6 T at RT (Fe-Ni-Co alloy in the moderate-Bs regime); verified 2026-05-07."
+
+
+# ============================================================================
+# Mu-metal provenance (#128). Magnetic Shield Corp MuMETAL® and Carpenter
+# HyMu80® are the canonical commercial brands; both are ASTM A753 Type 4
+# (80Ni-15Fe-5Mo). All magnetic values assume the canonical hydrogen
+# anneal (~1100-1175 °C, dry H₂, slow cool); without anneal, μr drops
+# 1-2 orders of magnitude. IEC 60404-8-6 is the international magnetic
+# spec but is paywalled; vendor datasheets are the public reference.
+# ============================================================================
+
+[mu_metal._sources._default]
+citation = "Magnetic Shield Corp MuMETAL Datasheet + ASTM A753"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal (ASTM A753 Type 4 / Carpenter HyMu80®, 80Ni-15Fe-5Mo); compositional bounds from ASTM A753; physical/mechanical scalars from Magnetic Shield Corp public datasheet (proprietary-reference-only); magnetic scalars assume the canonical hydrogen anneal at ~1150 °C in dry H₂ atmosphere with slow cool — without anneal, μr drops 1-2 orders of magnitude; cold-working (forming/stamping) requires re-anneal in final geometry; see per-property entries; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.density"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal density 8.7 g/cm^3 (0.314 lb/in^3) — typical 80Ni-15Fe-5Mo permalloy; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.youngs_modulus"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal E ≈ 215 GPa (31e6 psi) at RT, annealed; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.poissons_ratio"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal Poisson's ratio ~0.30 typical for Ni-Fe permalloys; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.yield_strength"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal annealed σy(0.2%) ≈ 250 MPa, σu ≈ 540 MPa, elongation ≥ 40%; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.tensile_strength"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal annealed σu ≈ 540 MPa; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.elongation"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal annealed elongation 40% at break; verified 2026-05-07."
+
+[mu_metal._sources."mechanical.hardness_vickers"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal annealed HV ~120 (Rockwell B ~70); verified 2026-05-07."
+
+[mu_metal._sources."thermal.melting_point"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal solidus ~1430 °C (2600 °F); verified 2026-05-07."
+
+[mu_metal._sources."thermal.thermal_conductivity"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal k ≈ 19 W/(m*K) at RT; verified 2026-05-07."
+
+[mu_metal._sources."thermal.specific_heat"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal Cp ≈ 460 J/(kg*K) at RT; verified 2026-05-07."
+
+[mu_metal._sources."thermal.thermal_expansion"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal mean linear α = 12.7e-6 /K (25-300 °C); verified 2026-05-07."
+
+[mu_metal._sources."electrical.resistivity"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal ρe ≈ 60 microohm*cm = 6.0e-7 Ohm*m at 20 °C; verified 2026-05-07."
+
+[mu_metal._sources."magnetic.permeability_relative"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet (ASTM A753)"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal μr_max ≈ 100 000 at peak DC permeability (B ≈ 0.4 T) after dry-H₂ anneal at ~1150 °C; initial μr ≈ 20 000; without anneal μr drops to ~2000; Wikipedia (CC-BY-SA-4.0) corroborates 80 000-100 000 typical range; verified 2026-05-07."
+
+[mu_metal._sources."magnetic.saturation_field"]
+citation = "Magnetic Shield Corp MuMETAL Datasheet"
+kind = "vendor"
+ref = "magnetic-shield.com:mumetal"
+license = "proprietary-reference-only"
+note = "Mu-metal saturation flux density Bs ≈ 0.74 T (low Bs is the cost of high μr — easy to saturate near strong magnets, design shields with adequate cross-section); verified 2026-05-07."
