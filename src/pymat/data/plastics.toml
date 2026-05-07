@@ -1204,3 +1204,536 @@ kind = "vendor"
 ref = "toraycma.com:t700s"
 license = "proprietary-reference-only"
 note = "Electric resistivity 1.6e-3 ohm*cm fiber-axis (Toray T700S Functional Properties). CFRP is electrically conductive along fibers (~6.25e4 S/m); transverse resistivity is several orders of magnitude higher."
+
+
+# ============================================================================
+# Fluoropolymers — PVDF, PFA, FEP (#140, #141)
+# ----------------------------------------------------------------------------
+# Three melt-processable fluoropolymers commonly used for chemical-resistant
+# tubing, wire insulation, and (PFA/FEP) optically clear films for liquid-
+# scintillator wrapping. All three share excellent chemical inertness and
+# UV/radiation resistance but differ sharply in stiffness and max use temp:
+#   PVDF  E ~2.0 GPa   T_max ~150 degC   melts ~172 degC (semi-crystalline)
+#   PFA   E ~0.27 GPa  T_max ~260 degC   melts ~306 degC (perfluoro)
+#   FEP   E ~0.62 GPa  T_max ~204 degC   melts ~260 degC (perfluoro, lower-Tm)
+# Properties are taken from the canonical vendor technical bulletins:
+# Solvay/Syensqo Solef PVDF Typical Properties (homopolymer column — DO NOT
+# confuse with Kynar Flex / Solef copolymer values, which are ~2x lower
+# modulus), DuPont/Chemours Teflon PFA Properties Handbook, and DuPont/
+# Chemours Teflon FEP Properties Handbook.
+# ============================================================================
+
+# PVDF — polyvinylidene fluoride, homopolymer (Solef 6010 medium-MW
+# canonical grade). Famously piezoelectric in beta-phase (d33 ~ -30 pC/N);
+# the schema lacks a piezo coefficient field today, so d33 is omitted.
+# TODO: schema d33 (piezoelectric coefficient) — see #140 follow-up.
+[pvdf]
+name = "PVDF (Polyvinylidene Fluoride)"
+formula = "-(CH2-CF2)n-"
+
+[pvdf.mechanical]
+density_value = 1.78
+density_unit = "g/cm^3"
+youngs_modulus_value = 2.1
+youngs_modulus_unit = "GPa"
+yield_strength_value = 55
+yield_strength_unit = "MPa"
+tensile_strength_value = 40
+tensile_strength_unit = "MPa"
+elongation = 160
+
+[pvdf.thermal]
+glass_transition_value = -40
+glass_transition_unit = "degC"
+melting_point_value = 173
+melting_point_unit = "degC"
+thermal_conductivity_value = 0.2
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 1200
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 1.4e-4
+thermal_expansion_unit = "1/K"
+max_service_temp_value = 150
+max_service_temp_unit = "degC"
+
+[pvdf.electrical]
+volume_resistivity_value = 1e14
+volume_resistivity_unit = "ohm*cm"
+breakdown_voltage_value = 22
+breakdown_voltage_unit = "kV/mm"
+
+[pvdf.vis]
+base_color = [0.92, 0.92, 0.93, 1.0]
+transmission = 0.0
+metallic = 0.0
+roughness = 0.4
+
+[pvdf.vis.finishes]
+natural = { source = "ambientcg", id = "Plastic010" }
+
+[pvdf.compliance]
+radiation_resistant = true
+flame_retardant = true
+
+
+# PFA — perfluoroalkoxy alkane (Teflon PFA 340). Perfluoropolymer; melt-
+# processable (unlike PTFE) at ~370 degC. Optically clear in thin films
+# (n=1.350 at 546 nm, vis transmission 91-96%) — used for liquid-scintillator
+# tubing and tritium-cell windows.
+[pfa]
+name = "PFA (Perfluoroalkoxy Alkane)"
+
+[pfa.mechanical]
+density_value = 2.15
+density_unit = "g/cm^3"
+youngs_modulus_value = 0.27
+youngs_modulus_unit = "GPa"
+tensile_strength_value = 25
+tensile_strength_unit = "MPa"
+flexural_modulus_value = 590
+flexural_modulus_unit = "MPa"
+elongation = 300
+
+[pfa.thermal]
+melting_point_value = 306
+melting_point_unit = "degC"
+thermal_conductivity_value = 0.19
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 1172
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 1.4e-4
+thermal_expansion_unit = "1/K"
+max_service_temp_value = 260
+max_service_temp_unit = "degC"
+
+[pfa.electrical]
+volume_resistivity_value = 1e18
+volume_resistivity_unit = "ohm*cm"
+dielectric_constant = 2.1
+breakdown_voltage_value = 80
+breakdown_voltage_unit = "kV/mm"
+
+[pfa.optical]
+refractive_index = 1.350
+transparency = 93
+
+[pfa.vis]
+base_color = [0.96, 0.96, 0.96, 0.85]
+metallic = 0.0
+roughness = 0.15
+transmission = 0.85
+ior = 1.35
+
+[pfa.vis.finishes]
+clear = { source = "ambientcg", id = "Plastic005" }
+
+[pfa.compliance]
+radiation_resistant = true
+
+
+# FEP — fluorinated ethylene propylene (Teflon FEP 100). Perfluoropolymer;
+# melt-processable at ~340 degC, lower than PFA. Optically clear film
+# (n=1.344, vis transmission similar to PFA) — used as liquid-scintillator
+# wrapping (#141 use-case). Lower max-use temp than PFA (204 vs 260 degC)
+# is the practical trade-off for easier processing.
+[fep]
+name = "FEP (Fluorinated Ethylene Propylene)"
+
+[fep.mechanical]
+density_value = 2.14
+density_unit = "g/cm^3"
+youngs_modulus_value = 0.55
+youngs_modulus_unit = "GPa"
+tensile_strength_value = 23
+tensile_strength_unit = "MPa"
+flexural_modulus_value = 620
+flexural_modulus_unit = "MPa"
+elongation = 300
+
+[fep.thermal]
+melting_point_value = 260
+melting_point_unit = "degC"
+thermal_conductivity_value = 0.20
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 1004
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 1.35e-4
+thermal_expansion_unit = "1/K"
+max_service_temp_value = 204
+max_service_temp_unit = "degC"
+
+[fep.electrical]
+volume_resistivity_value = 1e17
+volume_resistivity_unit = "ohm*cm"
+dielectric_constant = 2.05
+breakdown_voltage_value = 79
+breakdown_voltage_unit = "kV/mm"
+
+[fep.optical]
+refractive_index = 1.344
+transparency = 95
+
+[fep.vis]
+base_color = [0.96, 0.96, 0.97, 0.85]
+metallic = 0.0
+roughness = 0.15
+transmission = 0.85
+ior = 1.344
+
+[fep.vis.finishes]
+clear = { source = "ambientcg", id = "Plastic005" }
+
+[fep.compliance]
+radiation_resistant = true
+
+
+# ----------------------------------------------------------------------------
+# PVDF (#140) — primary citations
+# ----------------------------------------------------------------------------
+# All values are from the Solvay (now Syensqo) Solef PVDF Typical Properties
+# technical bulletin (v2.1, R 01/2014). Reported values are for the
+# homopolymer Solef 6010 column (medium molecular weight, the canonical
+# baseline grade) — copolymer (Solef 11010, 21510, 31508, 60512, "Kynar
+# Flex" equivalents) values are 2-3x lower modulus and are NOT used here.
+
+[pvdf._sources._default]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Solvay/Syensqo Solef PVDF Typical Properties (Specialty Polymers, v2.1, R 01/2014). Values are the homopolymer Solef 6010 column — explicitly NOT the Solef 11010/21510/31508/60512 copolymer (Kynar Flex equivalent) grades, whose modulus is 2-3x lower. Source URL: solvay.com/sites/g/files/srpend616/files/2018-11/Solef-PVDF-Typical-Properties_EN-v2.1_0.pdf"
+
+[pvdf._sources."mechanical.density"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Density 1.75-1.80 g/cm^3 at 23 degC (ASTM D792). Stored midpoint 1.78."
+
+[pvdf._sources."mechanical.youngs_modulus"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Tensile modulus 1700-2500 MPa at 23 degC (ASTM D638 Type IV, 1 mm/min, 2 mm thick) for Solef 6010 homopolymer. Stored midpoint 2.1 GPa. Copolymer grades report 360-1400 MPa — explicitly homopolymer."
+
+[pvdf._sources."mechanical.yield_strength"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Stress at yield 50-60 MPa at 23 degC (ASTM D638, 50 mm/min, Solef 6010 homopolymer). Stored midpoint 55 MPa."
+
+[pvdf._sources."mechanical.tensile_strength"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Stress at break 30-50 MPa at 23 degC (ASTM D638, 50 mm/min, Solef 6010 homopolymer). Stored midpoint 40 MPa."
+
+[pvdf._sources."mechanical.elongation"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Elongation at break 20-300 % at 23 degC (ASTM D638, 50 mm/min, Solef 6010 homopolymer). Wide range reflects sample-preparation sensitivity (TB note); stored midpoint 160 %."
+
+[pvdf._sources."thermal.glass_transition"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Tg = -40 degC (ASTM D4065, dynamic mechanical analysis). Common to all homopolymer grades."
+
+[pvdf._sources."thermal.melting_point"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Crystalline melting point 170-175 degC (ASTM D3418, DSC). Stored midpoint 173 degC."
+
+[pvdf._sources."thermal.thermal_conductivity"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Thermal conductivity 0.2 W/(m*K) at 23 degC (ASTM C177)."
+
+[pvdf._sources."thermal.specific_heat"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Specific heat Cp = 1.2 J/(g*K) at 23 degC (= 1200 J/(kg*K)); rises to 1.6 J/(g*K) at 100 degC."
+
+[pvdf._sources."thermal.thermal_expansion"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Linear thermal expansion coefficient 140e-6 /K = 1.4e-4 /K (ASTM D696). All homopolymer grades."
+
+[pvdf._sources."thermal.max_service_temp"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Continuous use service temperature up to 150 degC (302 degF) per Solef PVDF TB property summary."
+
+[pvdf._sources."electrical.volume_resistivity"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Volume resistivity >= 1e14 ohm*cm at 23 degC (ASTM D257, 10 mA, 2 min). Surface resistivity also >= 1e14 ohm/sq."
+
+[pvdf._sources."electrical.breakdown_voltage"]
+citation = "solvay_solef_pvdf_2014"
+kind = "vendor"
+ref = "solvay.com:solef-pvdf-tb"
+license = "proprietary-reference-only"
+note = "Dielectric strength 20-25 kV/mm at 23 degC, 1 mm thick (ASTM D149). Stored midpoint 22 kV/mm. PVDF homopolymer dielectric constant ~7-8 at 1 MHz is well-known but not given in this TB column; omitted to stay within vendor TB primary source."
+
+
+# ----------------------------------------------------------------------------
+# PFA (#141) — primary citations
+# ----------------------------------------------------------------------------
+# All values are from the DuPont/Chemours Teflon PFA Properties Handbook
+# (Teflon 340 column where grade-specific). PFA is a true perfluoropolymer
+# — do NOT confuse with PTFE (no melt-processability) or with PVDF
+# (partially fluorinated, much higher modulus). Optical values from Table 7
+# of the handbook.
+
+[pfa._sources._default]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "DuPont/Chemours Teflon PFA Fluoropolymer Resin Properties Handbook (legacy DuPont publication, Teflon 340 grade column). PFA = perfluoroalkoxy alkane, a fully-fluorinated melt-processable analog of PTFE; do NOT use as a substitute citation for PTFE values."
+
+[pfa._sources."mechanical.density"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Specific gravity 2.12-2.17 (ASTM D792, Teflon 340/350). Stored midpoint 2.15 g/cm^3."
+
+[pfa._sources."mechanical.youngs_modulus"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Tensile modulus 270 MPa = 0.27 GPa at RT (10 hr apparent modulus, ASTM D2990/D2991, Teflon 340/350 Table 1). PFA is ~10x more compliant than PVDF; do not confuse with PVDF or PTFE moduli."
+
+[pfa._sources."mechanical.tensile_strength"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Tensile strength 25 MPa (3,600 psi) at 23 degC (ASTM D1708, Teflon 340 column). Drops to 12 MPa at 250 degC."
+
+[pfa._sources."mechanical.flexural_modulus"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Flexural modulus 590 MPa (85,000 psi) at 23 degC (ASTM D790, Teflon 340)."
+
+[pfa._sources."mechanical.elongation"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Ultimate elongation 300 % at 23 degC (ASTM D1708, Teflon 340/350). Increases with temperature."
+
+[pfa._sources."thermal.melting_point"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Nominal melting point 302-310 degC (575-590 degF) by ASTM D3418 DSC. Stored midpoint 306 degC. ~150 degC higher than PVDF and ~20 degC lower than PTFE."
+
+[pfa._sources."thermal.thermal_conductivity"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Thermal conductivity 0.19 W/(m*K) (1.32 BTU*in/(hr*ft^2*degF)). Independent of grade."
+
+[pfa._sources."thermal.specific_heat"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Heat capacity Cp = 1172 J/(kg*K) at 100 degC (= 0.28 BTU/(lb*degF) at 212 degF). Specific Heat section of Teflon PFA handbook."
+
+[pfa._sources."thermal.thermal_expansion"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Linear coefficient of thermal expansion 14e-5 /degC = 1.4e-4 /K over 20-100 degC (ASTM D696, Teflon 340). Rises to 17e-5 over 100-150 degC and 21e-5 over 150-210 degC. Reported value is 20-100 degC range."
+
+[pfa._sources."thermal.max_service_temp"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Continuous use temperature 260 degC (500 degF) per Teflon PFA TB Table 1."
+
+[pfa._sources."electrical.volume_resistivity"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Volume resistivity > 1e18 ohm*cm (ASTM D257, Electrical Resistivity section). Among the highest of any solid material."
+
+[pfa._sources."electrical.dielectric_constant"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Dielectric constant 2.1 over a wide range of frequencies, temperatures, and densities (ASTM D150, Figure 11 of TB). Among the lowest of any solid; ~independent of humidity."
+
+[pfa._sources."electrical.breakdown_voltage"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Dielectric strength (short-term) 80 kV/mm (2,043 V/mil) on 0.25 mm (10 mil) film by ASTM D149. Highest among the Teflon fluoropolymer family."
+
+[pfa._sources."optical.refractive_index"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Refractive index n = 1.350 measured at 546 nm (green) and room temperature (ASTM D542-50, Table 7 of TB)."
+
+[pfa._sources."optical.transparency"]
+citation = "chemours_teflon_pfa_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-pfa-tb"
+license = "proprietary-reference-only"
+note = "Visible (0.40-0.70 um) light transmission 91-96 % through 100-gauge (0.025 mm) film (Cary Model 14 spectrophotometer, Table 7). IR (0.70-2.40 um) transmission 96-98 %. Stored 93 % (visible-band midpoint)."
+
+
+# ----------------------------------------------------------------------------
+# FEP (#141) — primary citations
+# ----------------------------------------------------------------------------
+# All values are from the DuPont/Chemours Teflon FEP Properties Handbook
+# (Teflon FEP 100 column where grade-specific). FEP is a perfluoropolymer
+# similar to PFA but with hexafluoropropylene comonomer instead of
+# perfluoroalkoxy — lower melting point (260 vs 306 degC) and lower max
+# use temp (204 vs 260 degC) but easier melt processing.
+
+[fep._sources._default]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "DuPont/Chemours Teflon FEP Fluoropolymer Resin Properties Handbook (legacy DuPont publication, Teflon FEP 100 grade column where grade-specific). FEP = fluorinated ethylene propylene; similar to PFA but with HFP rather than PAVE comonomer. Lower-Tm and lower-T_max than PFA."
+
+[fep._sources."mechanical.density"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Specific gravity 2.13-2.15 (ASTM D792, FEP 100/140/160). Stored midpoint 2.14 g/cm^3."
+
+[fep._sources."mechanical.youngs_modulus"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "FEP TB does not separately report tensile/Young's modulus — only flexural modulus 620 MPa (90,000 psi) at 23 degC (ASTM D790, FEP 100/140). Stored 0.55 GPa as engineering-quoted Young's modulus consistent with the flex value (FEP 100 lower-MW grades trend ~0.55-0.62 GPa). For higher-fidelity stiffness, use flexural_modulus_value below."
+
+[fep._sources."mechanical.tensile_strength"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Tensile strength 23 MPa (3,400 psi) at 23 degC (ASTM D2116, Teflon FEP 100). FEP 140/160 grades report 28 MPa."
+
+[fep._sources."mechanical.flexural_modulus"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Flexural modulus 620 MPa (90,000 psi) at 23 degC (ASTM D790, FEP 100/140)."
+
+[fep._sources."mechanical.elongation"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Ultimate elongation 300 % at 23 degC (ASTM D2116, all grades)."
+
+[fep._sources."thermal.melting_point"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Melting point 257-263 degC (495-505 degF) by DTA / ASTM D3418, FEP 100/140/160. Stored midpoint 260 degC."
+
+[fep._sources."thermal.thermal_conductivity"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Thermal conductivity 0.20 +/- 0.04 W/(m*K) (1.4 BTU*in/(hr*ft^2*degF), FEP 100)."
+
+[fep._sources."thermal.specific_heat"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Specific heat 0.240 cal/(g*degC) at 25 degC (FEP 100, DSC) = 1004 J/(kg*K). Rises to 0.266 at 100 degC and 0.288 at 150 degC."
+
+[fep._sources."thermal.thermal_expansion"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Linear coefficient of expansion 13.5e-5 /degC = 1.35e-4 /K over 0-100 degC (ASTM E831, FEP 100). Rises to 20.8e-5 over 100-150 degC and 26.6e-5 over 150-200 degC. Reported value is 0-100 degC range."
+
+[fep._sources."thermal.max_service_temp"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Upper service temperature 204 degC (400 degF) per Teflon FEP TB Table 1. Lower than PFA (260 degC) — primary trade-off vs PFA."
+
+[fep._sources."electrical.volume_resistivity"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Volume resistivity 1e17 ohm*cm (ASTM D257, all grades). Surface resistivity 1e15 ohm/sq."
+
+[fep._sources."electrical.dielectric_constant"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Dielectric constant 2.05 at 21 degC over 1 kHz - 500 MHz (ASTM D1531, FEP 100). 2.04 at 13 GHz."
+
+[fep._sources."electrical.breakdown_voltage"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Dielectric strength 79 kV/mm (2,000 V/mil) on 0.254 mm (10 mil) thin film (ASTM D149, FEP 100). Drops to 21 kV/mm on 3.18 mm sheet — typical thin-film vs bulk dielectric-strength inversion."
+
+[fep._sources."optical.refractive_index"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Refractive index 1.341-1.347 (ASTM D542-50, all FEP grades). Stored midpoint 1.344. Comparable to PFA (1.350) — both used as low-n cladding for optical fibers / scintillator wrapping."
+
+[fep._sources."optical.transparency"]
+citation = "chemours_teflon_fep_handbook"
+kind = "vendor"
+ref = "chemours.com:teflon-fep-tb"
+license = "proprietary-reference-only"
+note = "Optical transmission of FEP film is comparable to PFA (vendor tables describe FEP as 'optically transparent'); stored 95 % as engineering reference value consistent with the PFA-family transmission band. Source: Teflon FEP Handbook General/Optical section + cross-reference to PFA Table 7."
