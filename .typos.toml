@@ -56,6 +56,10 @@ Pont = "Pont"
 pont = "pont"
 DuPont = "DuPont"
 dupont = "dupont"
+# American Concrete Institute (ACI) — concrete-engineering standards body.
+# `typos` rewrites "ACI" → "ACPI" (Advanced Configuration and Power
+# Interface). Cited in ceramics.toml comments referencing ACI 318 (#145).
+ACI = "ACI"
 
 [files]
 extend-exclude = [
