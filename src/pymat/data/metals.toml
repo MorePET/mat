@@ -1221,6 +1221,151 @@ transmission = 0.0
 
 
 # ============================================================================
+# GADOLINIUM (#132)
+# ----------------------------------------------------------------------------
+# Pure rare-earth metal. Reference for highest natural-element thermal
+# neutron capture cross-section (~49 000 barns natural; isotope 157Gd ~
+# 254 000 barns). Used as MRI contrast precursor (chelated Gd³⁺), neutron
+# control rods, and magnetic refrigeration (Curie ~292 K — anomalously
+# close to room temperature). The α-Gd phase is hcp at RT, ferromagnetic
+# below the Curie point.
+#
+# Mechanical scalars are for nominal high-purity (99.9%) cast α-Gd; bulk
+# rare-earth mechanical data are sparse, all yield/tensile values are
+# typical and depend strongly on purity, oxygen content, and prior cold
+# work — do not use for safety-critical structural design without a
+# vendor-specific certificate of analysis.
+#
+# Note: the natural-Gd thermal-neutron capture cross-section is the
+# dominant nuclear feature; no schema field for σ_n,γ exists yet (see
+# `_sources._default.note` — TODO: schema neutron_capture).
+# ============================================================================
+
+[gadolinium]
+name = "Gadolinium"
+formula = "Gd"
+grade = "99.9% (3N)"
+
+[gadolinium.mechanical]
+density_value = 7.901
+density_unit = "g/cm^3"
+youngs_modulus_value = 54.8
+youngs_modulus_unit = "GPa"
+shear_modulus_value = 21.8
+shear_modulus_unit = "GPa"
+poissons_ratio = 0.259
+
+[gadolinium.thermal]
+melting_point_value = 1311.85
+melting_point_unit = "degC"
+# Boiling point 3546 K = 3273 °C (Wikipedia/CRC).
+thermal_conductivity_value = 10.6
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 235.485
+specific_heat_unit = "J/(kg*K)"
+# Lattice α at 100 °C (above Curie point, paramagnetic regime). Below the
+# Curie point (~293 K) the magnetostrictive anomaly drives an apparent
+# negative α near 20 °C (~ -21.4e-6 /K, Wikipedia/CRC) — that's a coupled
+# magnetic-elastic effect, not the lattice CTE; see _sources note.
+thermal_expansion_value = 11.1e-6
+thermal_expansion_unit = "1/K"
+
+[gadolinium.electrical]
+resistivity_value = 1.31e-6
+resistivity_unit = "ohm*m"
+
+[gadolinium.magnetic]
+# Gd is ferromagnetic below the Curie temperature ~293 K (close to RT).
+# At "room temperature" (20 °C = 293.15 K) Gd sits *just* above its
+# Curie point — paramagnetic in a typical lab and human-body environment,
+# but ferromagnetic in a cold room (≤19 °C). The permeability_relative
+# field below is the low-field paramagnetic value at 295 K; the
+# ferromagnetic μr in a cold room is much higher and field-dependent.
+# Saturation flux density Bs ≈ 2.6 T below the Curie point. See
+# _sources note for Curie-point context (magnetic refrigeration).
+permeability_relative = 1.48e5
+saturation_field = 2.6
+saturation_field_unit = "T"
+
+[gadolinium.nuclear]
+radiation_length_value = 0.9471
+radiation_length_unit = "cm"
+interaction_length_value = 23.09
+interaction_length_unit = "cm"
+mean_excitation_energy_eV = 591.0
+Z_eff = 64
+
+[gadolinium.vis]
+base_color = [0.78, 0.79, 0.80, 1.0]
+metallic = 1.0
+roughness = 0.45
+transmission = 0.0
+
+
+# ============================================================================
+# LUTETIUM (#133)
+# ----------------------------------------------------------------------------
+# Densest and one of the most expensive rare-earth metals. Reference
+# entry for parent material of LYSO/LSO scintillators (Lu₂SiO₅:Ce) and
+# for natural-Lu intrinsic-background calculations (¹⁷⁶Lu has a 2.6 % iso-
+# topic abundance and 3.78 × 10¹⁰ y half-life, β⁻ decay → ¹⁷⁶Hf with
+# γ cascade — the dominant intrinsic background in LYSO PET detectors,
+# ~39 Bq/g activity in pure natural Lu²O₃). Lu is hcp at all T below
+# melting.
+#
+# Bulk-purity Lu is hard to obtain — chemically inseparable from Hf in
+# small amounts; commercial 99.9% Lu typically has <500 ppm Hf residual
+# (Hf and Lu are adjacent in the periodic table after the lanthanide
+# contraction, so ionic-radius separation is poor). Bulk mechanical data
+# are sparse for the same price-driven reason.
+# ============================================================================
+
+[lutetium]
+name = "Lutetium"
+formula = "Lu"
+# Commercial 99.9% Lu metal; residual Hf typically <500 ppm.
+grade = "99.9% (3N), residual Hf <500 ppm"
+
+[lutetium.mechanical]
+density_value = 9.841
+density_unit = "g/cm^3"
+youngs_modulus_value = 68.6
+youngs_modulus_unit = "GPa"
+shear_modulus_value = 27.2
+shear_modulus_unit = "GPa"
+poissons_ratio = 0.261
+
+[lutetium.thermal]
+melting_point_value = 1651.85
+melting_point_unit = "degC"
+# Boiling point 3675 K = 3402 °C (Wikipedia/CRC).
+thermal_conductivity_value = 16.4
+thermal_conductivity_unit = "W/(m*K)"
+specific_heat_value = 153.512
+specific_heat_unit = "J/(kg*K)"
+thermal_expansion_value = 9.9e-6
+thermal_expansion_unit = "1/K"
+
+[lutetium.electrical]
+resistivity_value = 5.82e-7
+resistivity_unit = "ohm*m"
+
+[lutetium.nuclear]
+radiation_length_value = 0.7036
+radiation_length_unit = "cm"
+interaction_length_value = 19.19
+interaction_length_unit = "cm"
+mean_excitation_energy_eV = 694.0
+Z_eff = 71
+
+[lutetium.vis]
+base_color = [0.78, 0.79, 0.79, 1.0]
+metallic = 1.0
+roughness = 0.45
+transmission = 0.0
+
+
+# ============================================================================
 # Provenance (#175 audit)
 # ----------------------------------------------------------------------------
 # Default _sources entries attached during the one-time #175 audit. These
@@ -2294,3 +2439,247 @@ kind = "vendor"
 ref = "magnetic-shield.com:mumetal"
 license = "proprietary-reference-only"
 note = "Mu-metal saturation flux density Bs ≈ 0.74 T (low Bs is the cost of high μr — easy to saturate near strong magnets, design shields with adequate cross-section); verified 2026-05-07."
+
+
+# ============================================================================
+# Gadolinium provenance (#132). Pure-element scalars from Wikipedia / CRC
+# Handbook (CC-BY-SA-4.0); nuclear scalars from PDG Atomic & Nuclear
+# Properties (open access, public-domain US Government work). Bulk-metal
+# mechanical values are typical for high-purity (99.9%) cast α-Gd and
+# match American Elements / Stanford Advanced Materials public catalog
+# entries (proprietary-reference-only). Vickers hardness omitted — the
+# published range (510-950 MPa, Wikipedia/CRC) is too wide to express
+# as a single curated scalar; consult the certificate of analysis for
+# the specific cast.
+#
+# Note: Gd has the highest thermal-neutron capture cross-section of any
+# natural element (~49 000 barns natural; ~254 000 barns for ¹⁵⁷Gd).
+# The `nuclear` sub-table has no neutron_capture field today —
+# # TODO: schema neutron_capture (tracked separately).
+# ============================================================================
+
+[gadolinium._sources._default]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics) + PDG"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd α-phase 99.9%-pure cast metal; element scalars from Wikipedia/CRC (CC-BY-SA-4.0), nuclear scalars from PDG Atomic & Nuclear Properties (PD-USGov, https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/gadolinium_Gd.html); see per-property entries; Vickers hardness omitted (published range 510-950 MPa is too wide for a single scalar); thermal-neutron capture σ_n,γ ≈ 49 000 barns natural / ≈ 254 000 barns for ¹⁵⁷Gd is the dominant nuclear feature but no schema field exists yet (TODO: schema neutron_capture); verified 2026-05-07."
+
+[gadolinium._sources."mechanical.density"]
+citation = "PDG Atomic & Nuclear Properties: Gadolinium"
+kind = "handbook"
+ref = "pdg:gadolinium"
+license = "PD-USGov"
+note = "Gd density 7.901 g/cm^3 from PDG (Wikipedia/CRC quote 7.899 g/cm^3 at 20 °C — agreement to 0.03%); verified 2026-05-07."
+
+[gadolinium._sources."mechanical.youngs_modulus"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd α-form Young's modulus E = 54.8 GPa; verified 2026-05-07."
+
+[gadolinium._sources."mechanical.shear_modulus"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd α-form shear modulus G = 21.8 GPa; verified 2026-05-07."
+
+[gadolinium._sources."mechanical.poissons_ratio"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd α-form Poisson's ratio 0.259; verified 2026-05-07."
+
+[gadolinium._sources."thermal.melting_point"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd melting point 1585 K = 1311.85 °C (1312 °C in CRC); verified 2026-05-07."
+
+[gadolinium._sources."thermal.thermal_conductivity"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd k = 10.6 W/(m*K) at RT — low for a metal, characteristic of rare earths with strong magnon-phonon coupling; verified 2026-05-07."
+
+[gadolinium._sources."thermal.specific_heat"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd Cp = 235.485 J/(kg*K) at 25 °C; specific heat shows a sharp λ-anomaly at the Curie point (~293 K) — the basis for room-temperature magnetic refrigeration cycles using pure Gd; verified 2026-05-07."
+
+[gadolinium._sources."thermal.thermal_expansion"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd α = 11.1e-6 /K at 100 °C (lattice CTE in the paramagnetic regime above the Curie point); below the Curie point (~293 K) the apparent CTE near 20 °C is anomalously negative (~ -21.4e-6 /K, Wikipedia/CRC) due to magnetostriction — that's a coupled magnetic-elastic effect, NOT the lattice expansion. Use 11.1e-6 /K above ~293 K; for cryogenic / cold-room work the magnetostrictive value matters; verified 2026-05-07."
+
+[gadolinium._sources."electrical.resistivity"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd α-form polycrystalline ρe = 1.310 µΩ*m = 1.31e-6 Ohm*m at RT — high for a metal, again characteristic of magnetic rare earths; verified 2026-05-07."
+
+[gadolinium._sources."magnetic.permeability_relative"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd is ferromagnetic below the Curie temperature TC ≈ 293.4 K (~20.3 °C) — anomalously close to room temperature, the basis for room-temperature magnetic refrigeration. At RT (20 °C) Gd is *just* paramagnetic; in a cold room (≤19 °C) it is ferromagnetic. Listed μr ≈ 1.48e5 is the low-field DC paramagnetic susceptibility at 295 K (χ_v ≈ 1.5e5, exceptionally large for a paramagnet — this is the 'Curie-Weiss enhanced' regime just above TC); the ferromagnetic μr in a cold room is much higher and strongly field-dependent. Saturation flux density Bs ≈ 2.6 T below TC; verified 2026-05-07."
+
+[gadolinium._sources."magnetic.saturation_field"]
+citation = "Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Gadolinium"
+license = "CC-BY-SA-4.0"
+note = "Gd saturation flux density Bs ≈ 2.6 T at 0 K extrapolated; relevant only below the Curie point (~293 K); above TC, Gd is paramagnetic and saturation_field is not strictly defined; verified 2026-05-07."
+
+[gadolinium._sources."nuclear.radiation_length"]
+citation = "PDG Atomic & Nuclear Properties: Gadolinium"
+kind = "handbook"
+ref = "pdg:gadolinium"
+license = "PD-USGov"
+note = "Gd X0 = 7.48 g/cm^2 = 0.9471 cm at ρ = 7.901 g/cm^3; verified 2026-05-07 from https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/gadolinium_Gd.html."
+
+[gadolinium._sources."nuclear.interaction_length"]
+citation = "PDG Atomic & Nuclear Properties: Gadolinium"
+kind = "handbook"
+ref = "pdg:gadolinium"
+license = "PD-USGov"
+note = "Gd λI = 182.4 g/cm^2 = 23.09 cm; verified 2026-05-07."
+
+[gadolinium._sources."nuclear.mean_excitation_energy_eV"]
+citation = "PDG Atomic & Nuclear Properties: Gadolinium"
+kind = "handbook"
+ref = "pdg:gadolinium"
+license = "PD-USGov"
+note = "Gd mean excitation energy I = 591.0 eV (Bethe-Bloch); verified 2026-05-07."
+
+[gadolinium._sources."nuclear.Z_eff"]
+citation = "PDG Atomic & Nuclear Properties: Gadolinium"
+kind = "handbook"
+ref = "pdg:gadolinium"
+license = "PD-USGov"
+note = "Gd Z = 64 (atomic number — pure element, Z_eff trivially equals Z); verified 2026-05-07."
+
+
+# ============================================================================
+# Lutetium provenance (#133). Pure-element scalars from Wikipedia / CRC
+# Handbook (CC-BY-SA-4.0); nuclear scalars from PDG Atomic & Nuclear
+# Properties (open access, public-domain US Government work). Bulk-metal
+# mechanical values are typical for high-purity (99.9%) hcp Lu and match
+# American Elements / Stanford Advanced Materials public catalog entries
+# (proprietary-reference-only). Bulk-Lu mechanical data are sparse — Lu
+# is the most expensive rare-earth metal and bulk samples are difficult
+# to obtain pure (Hf is chemically near-inseparable from Lu after the
+# lanthanide contraction; commercial 99.9% typically has <500 ppm Hf).
+# Vickers hardness omitted — the published range (755-1160 MPa,
+# Wikipedia/CRC) is too wide for a single curated scalar; consult the
+# certificate of analysis for the specific cast.
+# ============================================================================
+
+[lutetium._sources._default]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics) + PDG"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu 99.9%-pure hcp metal (residual Hf typically <500 ppm — Lu/Hf separation is chemically difficult after the lanthanide contraction); element scalars from Wikipedia/CRC (CC-BY-SA-4.0), nuclear scalars from PDG Atomic & Nuclear Properties (PD-USGov, https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/lutetium_Lu.html); see per-property entries; Vickers hardness omitted (published range 755-1160 MPa is too wide for a single scalar); bulk mechanical data sparse owing to Lu's price (most expensive rare-earth metal); ¹⁷⁶Lu intrinsic activity (~39 Bq/g in natural Lu, β⁻ → ¹⁷⁶Hf with γ cascade) is the dominant LYSO/LSO scintillator background — see scintillators.toml for the LYSO entry; verified 2026-05-07."
+
+[lutetium._sources."mechanical.density"]
+citation = "PDG Atomic & Nuclear Properties: Lutetium"
+kind = "handbook"
+ref = "pdg:lutetium"
+license = "PD-USGov"
+note = "Lu density 9.841 g/cm^3 from PDG (Wikipedia/CRC quote 9.840 g/cm^3 at 20 °C — agreement to 0.01%); densest of the lanthanides; verified 2026-05-07."
+
+[lutetium._sources."mechanical.youngs_modulus"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu Young's modulus E = 68.6 GPa; verified 2026-05-07."
+
+[lutetium._sources."mechanical.shear_modulus"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu shear modulus G = 27.2 GPa; verified 2026-05-07."
+
+[lutetium._sources."mechanical.poissons_ratio"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu Poisson's ratio 0.261; verified 2026-05-07."
+
+[lutetium._sources."thermal.melting_point"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu melting point 1925 K = 1651.85 °C (1652 °C in CRC); highest of the lanthanides; verified 2026-05-07."
+
+[lutetium._sources."thermal.thermal_conductivity"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu k = 16.4 W/(m*K) at RT; verified 2026-05-07."
+
+[lutetium._sources."thermal.specific_heat"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu Cp = 153.512 J/(kg*K) at 25 °C (26.86 J/(mol*K) molar); verified 2026-05-07."
+
+[lutetium._sources."thermal.thermal_expansion"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu α = 9.9e-6 /K at RT (polycrystalline average; hcp Lu is anisotropic — α_a ≈ 6.6e-6 /K, α_c ≈ 14.6e-6 /K — a single isotropic scalar is the standard handbook value); verified 2026-05-07."
+
+[lutetium._sources."electrical.resistivity"]
+citation = "Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)"
+kind = "handbook"
+ref = "wikipedia:Lutetium"
+license = "CC-BY-SA-4.0"
+note = "Lu ρe = 582 nOhm*m = 5.82e-7 Ohm*m at RT; verified 2026-05-07."
+
+[lutetium._sources."nuclear.radiation_length"]
+citation = "PDG Atomic & Nuclear Properties: Lutetium"
+kind = "handbook"
+ref = "pdg:lutetium"
+license = "PD-USGov"
+note = "Lu X0 = 6.92 g/cm^2 = 0.7036 cm at ρ = 9.841 g/cm^3; verified 2026-05-07 from https://pdg.lbl.gov/2024/AtomicNuclearProperties/HTML/lutetium_Lu.html."
+
+[lutetium._sources."nuclear.interaction_length"]
+citation = "PDG Atomic & Nuclear Properties: Lutetium"
+kind = "handbook"
+ref = "pdg:lutetium"
+license = "PD-USGov"
+note = "Lu λI = 188.9 g/cm^2 = 19.19 cm; verified 2026-05-07."
+
+[lutetium._sources."nuclear.mean_excitation_energy_eV"]
+citation = "PDG Atomic & Nuclear Properties: Lutetium"
+kind = "handbook"
+ref = "pdg:lutetium"
+license = "PD-USGov"
+note = "Lu mean excitation energy I = 694.0 eV (Bethe-Bloch); verified 2026-05-07."
+
+[lutetium._sources."nuclear.Z_eff"]
+citation = "PDG Atomic & Nuclear Properties: Lutetium"
+kind = "handbook"
+ref = "pdg:lutetium"
+license = "PD-USGov"
+note = "Lu Z = 71 (atomic number — pure element, Z_eff trivially equals Z); verified 2026-05-07."
