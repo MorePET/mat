@@ -115,6 +115,49 @@ _IDENTITY_FIELDS = frozenset({"source", "material_id", "tier"})
 _SENTINEL: Any = object()
 
 
+def _validate_tier(value: str | None) -> None:
+    """Reject an obviously-bogus ``tier`` assignment with a clear message.
+
+    Mirrors the ``Vis.finish=`` setter (which raises ``ValueError`` with
+    the available finish list). Without this, ``vis.tier = "99k"``
+    silently succeeds and the failure surfaces deep inside
+    mat-vis-client on first ``.textures`` access — the consumer never
+    sees the offending input echoed back. Closes the gap pinned by
+    ``tests/test_error_messages.py::TestVisTierUnknown`` and
+    ``tests/test_consumer_journey.py::TestErrorJourney::
+    test_unknown_tier_raises_at_assignment`` (both consumer-flagged
+    via [mat-vis #280](https://github.com/MorePET/mat-vis/issues/280)
+    territory — error messages that fire in the wrong layer / without
+    user-given input echoed).
+
+    Validation policy:
+
+    - ``None`` is allowed — un-mapping a Vis is a documented operation.
+    - The set of valid tiers comes from ``client.tiers()`` (reads the
+      cached mat-vis manifest; no network call after the first fetch).
+    - If the client / manifest is unreachable (offline, corrupted
+      cache, future-version migration), validation is skipped silently
+      rather than blocking the assignment. Worse to break offline
+      workflows than to leave a typo unflagged — the lazy-fetch path
+      will still raise on the eventual ``.textures`` access, just
+      without the at-assignment-site echo this helper provides.
+    """
+    if value is None:
+        return
+    try:
+        from mat_vis_client import get_client
+
+        valid = get_client().tiers()
+    except Exception:
+        # Permissive fallback — see policy in docstring above.
+        return
+    if value not in valid:
+        raise ValueError(
+            f"Unknown tier {value!r}. Available: {sorted(valid)}. "
+            "Set vis.tier = None to un-map, or pick one of the listed tiers."
+        )
+
+
 @dataclass
 class ResolvedChannel:
     """Result of resolving a channel across texture + scalar sources.
@@ -251,6 +294,16 @@ class Vis:
             # Compare before the write so we can detect a no-op.
             if getattr(self, name, _SENTINEL) == value:
                 return
+            # Validate user-supplied tier values at the assignment site so
+            # the offending input is echoed back to the caller (rather than
+            # surfacing deep inside mat-vis-client on the next fetch).
+            # Source / material_id stay free-form — the universe of valid
+            # values there is open-ended (gpuopen names, ambientcg ids,
+            # future sources) and any check here would lag the upstream
+            # catalog. Tier is a closed set per the mat-vis manifest, so
+            # validation pays its way.
+            if name == "tier":
+                _validate_tier(value)
             super().__setattr__(name, value)
             # Invalidate via super() to avoid infinite recursion into
             # this same __setattr__ handler.
@@ -362,6 +415,9 @@ class Vis:
         """
         # Write directly via super() to avoid the per-field invalidation.
         # We'll clear the cache at the end, once, if anything changed.
+        # Tier is validated up-front (parallel to __setattr__) so callers
+        # going through ``set_identity`` get the same at-assignment-site
+        # echo on a bogus tier as direct ``vis.tier = ...`` assignment.
         changed = False
         if source is not None and source != self.source:
             super().__setattr__("source", source)
@@ -370,6 +426,7 @@ class Vis:
             super().__setattr__("material_id", material_id)
             changed = True
         if tier is not None and tier != self.tier:
+            _validate_tier(tier)
             super().__setattr__("tier", tier)
             changed = True
         if changed:

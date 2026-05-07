@@ -144,7 +144,7 @@ class TestIdentityInvalidation:
 
     def test_tier_change_clears_cache(self):
         v = self._prefetched()
-        v.tier = "2k"
+        v.tier = "512"  # was "2k" — now validated against client.tiers()
         assert v._textures == {}
         assert v._fetched is False
 
@@ -216,7 +216,7 @@ class TestIdentityInvalidation:
         assert v._fetched is True
 
         # Real change still invalidates
-        v.tier = "2k"
+        v.tier = "512"  # was "2k" — now validated against client.tiers()
         assert v._textures == {}
         assert v._fetched is False
 
