@@ -3,6 +3,28 @@
 #
 # Each line defines a file pattern and the GitHub users/teams required to review
 # changes to matching files. Later rules take precedence over earlier ones.
+#
+# Pair with branch-protection rule "Require review from Code Owners" on `main`
+# for this to actually block merge — CODEOWNERS alone only auto-assigns the
+# review request.
 
-# Default: all files require review from the maintainer
-#*                               @username
+# Release-time touchpoints: every release-please PR edits these, so requesting
+# @gerchowl as reviewer puts a human-in-the-loop signoff on every release.
+# The release-reviewer checklist (release-please-config.json pull-request-header)
+# includes a visual-inspection item that requires opening the latest catalog-
+# previews / visual-regression run artifacts before approving.
+CHANGELOG.md                          @gerchowl
+.release-please-manifest.json         @gerchowl
+release-please-config.json            @gerchowl
+
+# Visual catalog: every change to TOMLs or vis adapters can shift the rendered
+# look. CODEOWNERS here ties review to the human who can eyeball the artifact
+# uploaded by catalog-previews / visual-regression workflows.
+src/pymat/data/**                     @gerchowl
+src/pymat/vis/**                      @gerchowl
+tests/test_visual_regression.py       @gerchowl
+tests/test_substrate_repros.py        @gerchowl
+tests/visual_render.html              @gerchowl
+scripts/generate_previews.py          @gerchowl
+.github/workflows/catalog-previews.yml @gerchowl
+.github/workflows/visual-regression.yml @gerchowl

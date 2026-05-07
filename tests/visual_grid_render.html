@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>body{margin:0;overflow:hidden;background:#1a1a2e}canvas{display:block}</style>
+</head>
+<body>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+
+// Renders a programmatic grid of spheres, each with a material assembled
+// from to_threejs() output. Bypasses glTF entirely — the input is a
+// JSON file with a list of {label, threejs_dict, row, col} entries.
+//
+// Used by tests/test_visual_regression.py::TestBernhardMatVis285_Visual.
+
+const params = new URLSearchParams(window.location.search);
+const specUrl = params.get('spec') || 'grid_spec.json';
+const radius = parseFloat(params.get('radius') || '7');
+const spacing = parseFloat(params.get('spacing') || '20');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+
+const W = window.innerWidth, H = window.innerHeight;
+const camera = new THREE.PerspectiveCamera(45, W/H, 0.01, 100000);
+const renderer = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true});
+renderer.setSize(W, H);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+dir.position.set(20, 30, 20);
+scene.add(dir);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+
+const TEXTURE_KEYS = [
+  'map', 'normalMap', 'roughnessMap', 'metalnessMap',
+  'aoMap', 'emissiveMap', 'displacementMap', 'alphaMap',
+];
+
+function _loadTextureFromDataURI(dataUri) {
+  if (!dataUri || typeof dataUri !== 'string' || !dataUri.startsWith('data:')) return null;
+  const tex = new THREE.TextureLoader().load(dataUri);
+  tex.colorSpace = THREE.SRGBColorSpace;  // for color textures; non-color use NoColorSpace
+  return tex;
+}
+
+function _buildMaterial(spec) {
+  // Convert color hex string to THREE.Color (Three.js accepts the string
+  // directly in MeshPhysicalMaterial({color: '#bfbfc4'}); kept explicit
+  // here so we know what we're constructing.)
+  const params = {};
+  if ('color' in spec && spec.color != null) params.color = spec.color;
+  if ('metalness' in spec && spec.metalness != null) params.metalness = spec.metalness;
+  if ('roughness' in spec && spec.roughness != null) params.roughness = spec.roughness;
+  if ('ior' in spec && spec.ior != null) params.ior = spec.ior;
+  if ('transmission' in spec && spec.transmission != null) params.transmission = spec.transmission;
+  if ('clearcoat' in spec && spec.clearcoat != null) params.clearcoat = spec.clearcoat;
+  if ('emissive' in spec && spec.emissive != null) params.emissive = new THREE.Color(spec.emissive[0] ?? 0, spec.emissive[1] ?? 0, spec.emissive[2] ?? 0);
+  for (const k of TEXTURE_KEYS) {
+    if (k in spec && spec[k]) {
+      const tex = _loadTextureFromDataURI(spec[k]);
+      if (tex) {
+        // Non-color textures must use NoColorSpace per Three.js r152+
+        if (k !== 'map' && k !== 'emissiveMap') tex.colorSpace = THREE.NoColorSpace;
+        params[k] = tex;
+      }
+    }
+  }
+  return new THREE.MeshPhysicalMaterial(params);
+}
+
+async function main() {
+  const resp = await fetch(specUrl);
+  const spec = await resp.json();
+  const items = spec.items || [];
+
+  let maxRow = 0, maxCol = 0;
+  for (const it of items) {
+    if (it.row > maxRow) maxRow = it.row;
+    if (it.col > maxCol) maxCol = it.col;
+  }
+  const sphereGeo = new THREE.SphereGeometry(radius, 48, 48);
+
+  for (const it of items) {
+    const mat = _buildMaterial(it.threejs);
+    const mesh = new THREE.Mesh(sphereGeo, mat);
+    mesh.position.set(it.col * spacing, -it.row * spacing, 0);
+    mesh.name = it.label;
+    scene.add(mesh);
+  }
+
+  const cx = (maxCol * spacing) / 2;
+  const cy = -(maxRow * spacing) / 2;
+  const sceneSize = Math.max(maxCol, maxRow) * spacing + 4 * radius;
+  const fovRad = camera.fov * Math.PI / 180;
+  const dist = (sceneSize / (2 * Math.tan(fovRad / 2))) * 1.4;
+  camera.position.set(cx, cy + dist * 0.2, dist);
+  camera.lookAt(cx, cy, 0);
+  controls.target.set(cx, cy, 0);
+  controls.update();
+
+  document.title = `${specUrl} — ${items.length} spheres`;
+  console.log(`Rendered ${items.length} materials`);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+  // Mark ready so headless screenshot pipeline knows to capture
+  setTimeout(() => { window.__renderComplete = true; }, 1500);
+}
+
+main().catch((err) => {
+  console.error('grid render failed:', err);
+  window.__renderComplete = true;
+  window.__renderError = String(err);
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
