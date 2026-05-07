@@ -125,8 +125,8 @@ class TestIdentityOverride:
 
     def test_full_identity_swap(self):
         v = _base()
-        v2 = v.override(source="polyhaven", material_id="metal_01", tier="2k")
-        assert (v2.source, v2.material_id, v2.tier) == ("polyhaven", "metal_01", "2k")
+        v2 = v.override(source="polyhaven", material_id="metal_01", tier="512")
+        assert (v2.source, v2.material_id, v2.tier) == ("polyhaven", "metal_01", "512")
 
     def test_identity_change_clears_stale_finish(self):
         """If user moves identity without specifying a finish, the
@@ -274,14 +274,14 @@ class TestTierOnlyChangePreservesFinish:
     def test_tier_change_keeps_finish_label(self):
         v = _base()
         v.finish = "polished"
-        v2 = v.override(tier="2k")
+        v2 = v.override(tier="512")
         assert v2._finish == "polished", (
             "tier change must not clear _finish — finishes pin (source, material_id), not tier"
         )
         # Same (source, material_id) as the polished entry → finish remains valid
         assert v2.source == "ambientcg"
         assert v2.material_id == "Metal049A"
-        assert v2.tier == "2k"
+        assert v2.tier == "512"
 
     def test_tier_change_still_invalidates_cache(self):
         """Tier change must clear the texture cache (different bytes
@@ -290,7 +290,7 @@ class TestTierOnlyChangePreservesFinish:
         v.finish = "polished"
         v._textures = {"color": b"\x89PNG_1k_bytes"}
         v._fetched = True
-        v2 = v.override(tier="2k")
+        v2 = v.override(tier="512")
         assert v2._textures == {}
         assert v2._fetched is False
         assert v2._finish == "polished"
