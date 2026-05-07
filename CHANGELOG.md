@@ -8,44 +8,132 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.11.0](https://github.com/MorePET/mat/compare/v3.10.0...v3.11.0) (2026-05-07)
 
 
-### Added
+Schema-expansion milestone — completes the seven sub-tables (#151–#157)
+plus ~30 new materials, six external-source enrichers, full
+`_sources` provenance attached to every TOML, and the trailing
+public-API follow-ups (top-level `Source`/`Vis` re-exports + tier
+validation) from the 3.10.0 iteration.
 
-* **audit:** attach _sources to every TOML; delete license ratchet ([#175](https://github.com/MorePET/mat/issues/175)) ([#196](https://github.com/MorePET/mat/issues/196)) ([7ef7c73](https://github.com/MorePET/mat/commit/7ef7c7322f889c2c9dd9e5a8273f4c51c2f66cfa))
-* **data:** add 4 technical ceramics (AlN, LTCC 951, sapphire, Si3N4) ([#134](https://github.com/MorePET/mat/issues/134), [#135](https://github.com/MorePET/mat/issues/135), [#136](https://github.com/MorePET/mat/issues/136), [#137](https://github.com/MorePET/mat/issues/137)) ([#208](https://github.com/MorePET/mat/issues/208)) ([133a020](https://github.com/MorePET/mat/commit/133a0208ff9d40df693c9bc3b3dfabf1bf7dc693))
-* **data:** add 4 vendor optical materials (EJ-200/BC-408, PU foam, EPO-TEK 301, BC-630) ([#118](https://github.com/MorePET/mat/issues/118), [#142](https://github.com/MorePET/mat/issues/142), [#143](https://github.com/MorePET/mat/issues/143), [#147](https://github.com/MorePET/mat/issues/147)) ([#213](https://github.com/MorePET/mat/issues/213)) ([61162fd](https://github.com/MorePET/mat/commit/61162fd77cc4f7de2aeba57549ff26139ecf2eb9))
-* **data:** add 5 modern scintillators (GAGG, LSO:Ce, LaBr3:Ce, CeBr3, SrI2:Eu) ([#206](https://github.com/MorePET/mat/issues/206)) ([4d92f49](https://github.com/MorePET/mat/commit/4d92f499413beed758c3f5852d9104bc7ef9ca3b)), closes [#115](https://github.com/MorePET/mat/issues/115) [#116](https://github.com/MorePET/mat/issues/116) [#122](https://github.com/MorePET/mat/issues/122) [#123](https://github.com/MorePET/mat/issues/123) [#124](https://github.com/MorePET/mat/issues/124)
-* **data:** add 5 specialty metals — Kovar, Mu-metal, OFHC Cu, Be, Ta ([#209](https://github.com/MorePET/mat/issues/209)) ([9334775](https://github.com/MorePET/mat/commit/9334775a451b96b035f89bcf9532fdfd4b9e643a))
-* **data:** add borated PE, ordinary concrete, SF6 ([#144](https://github.com/MorePET/mat/issues/144), [#145](https://github.com/MorePET/mat/issues/145), [#146](https://github.com/MorePET/mat/issues/146)) ([#214](https://github.com/MorePET/mat/issues/214)) ([9cd5032](https://github.com/MorePET/mat/commit/9cd5032d948e102b030979ba66c1d83a06e7a943))
-* **data:** add CFRP T700/epoxy and G10 composite laminates ([#210](https://github.com/MorePET/mat/issues/210)) ([8aa2a4a](https://github.com/MorePET/mat/commit/8aa2a4ac98fc816436377f1864b76ce2bd9427d2))
-* **data:** add Gd and Lu rare-earth metals ([#132](https://github.com/MorePET/mat/issues/132), [#133](https://github.com/MorePET/mat/issues/133)) ([#211](https://github.com/MorePET/mat/issues/211)) ([1e9a0d3](https://github.com/MorePET/mat/commit/1e9a0d33db34965b6ed71de44bba793c3d31ba9f))
-* **data:** add Inconel 625 and 718 nickel-base superalloys ([#207](https://github.com/MorePET/mat/issues/207)) ([8b8c226](https://github.com/MorePET/mat/commit/8b8c226cba476b6b928c35b1e5d9a1aa4cb9abb3))
-* **data:** add PVDF, PFA, FEP fluoropolymers ([#140](https://github.com/MorePET/mat/issues/140), [#141](https://github.com/MorePET/mat/issues/141)) ([#212](https://github.com/MorePET/mat/issues/212)) ([1a6faad](https://github.com/MorePET/mat/commit/1a6faade292f06da539be13db12c8edc511d89b5))
-* **schema:** electrical sub-table additions ([#154](https://github.com/MorePET/mat/issues/154)) ([#191](https://github.com/MorePET/mat/issues/191)) ([4e7935f](https://github.com/MorePET/mat/commit/4e7935f68ff4b7e5623007a63e45b5cfafeb450d))
-* **schema:** mechanical sub-table additions ([#151](https://github.com/MorePET/mat/issues/151)) ([#189](https://github.com/MorePET/mat/issues/189)) ([fd21d46](https://github.com/MorePET/mat/commit/fd21d46987e395c819d7288bf6c6d9da69450881))
-* **schema:** new [magnetic] sub-table ([#155](https://github.com/MorePET/mat/issues/155)) ([#192](https://github.com/MorePET/mat/issues/192)) ([14fa448](https://github.com/MorePET/mat/commit/14fa4488a0cec5ab10fa782fdf6082379ac4c7ed))
-* **schema:** new [nuclear] sub-table + py-mat[nuclear] extra ([#157](https://github.com/MorePET/mat/issues/157)) ([#195](https://github.com/MorePET/mat/issues/195)) ([e37d404](https://github.com/MorePET/mat/commit/e37d4048f1b606dfe4c174587834e20641b96a25))
-* **schema:** new [vacuum] sub-table ([#156](https://github.com/MorePET/mat/issues/156)) ([#193](https://github.com/MorePET/mat/issues/193)) ([6b63c99](https://github.com/MorePET/mat/commit/6b63c998a37168a6ec309e485b1d75d1e1399ccb))
-* **schema:** optical sub-table additions — scintillator/Geant4 ([#153](https://github.com/MorePET/mat/issues/153)) ([#194](https://github.com/MorePET/mat/issues/194)) ([113da96](https://github.com/MorePET/mat/commit/113da968a390583ea00ab55c946afa9195949639))
-* **schema:** thermal sub-table additions ([#152](https://github.com/MorePET/mat/issues/152)) ([#190](https://github.com/MorePET/mat/issues/190)) ([0738dd2](https://github.com/MorePET/mat/commit/0738dd29e26fe4cf05b3d630362442fdff175ee0))
-* **scripts:** extend Wikidata enricher to compounds + new properties ([#158](https://github.com/MorePET/mat/issues/158)) ([#198](https://github.com/MorePET/mat/issues/198)) ([e5692e3](https://github.com/MorePET/mat/commit/e5692e348928bb28384805e467f0fbcedbacb00a))
-* **scripts:** mirror Geant4 G4NistManager constants for scintillators ([#167](https://github.com/MorePET/mat/issues/167)) ([#200](https://github.com/MorePET/mat/issues/200)) ([4895376](https://github.com/MorePET/mat/commit/48953765861bc9661f45ae3052db862328bc9f13))
-* **scripts:** NIST WebBook (SRD 69) enricher for gases & liquids ([#159](https://github.com/MorePET/mat/issues/159)) ([#203](https://github.com/MorePET/mat/issues/203)) ([2386ab2](https://github.com/MorePET/mat/commit/2386ab22708bb729796bfea7c8dc34839045e609))
-* **scripts:** PubChem enricher for small-molecule scalars ([#165](https://github.com/MorePET/mat/issues/165)) ([#204](https://github.com/MorePET/mat/issues/204)) ([c964f9a](https://github.com/MorePET/mat/commit/c964f9a4255b70cfcff9bbe5ea7e711133140503))
-* **scripts:** refractiveindex.info enricher for n,k dispersion ([#164](https://github.com/MorePET/mat/issues/164)) ([#201](https://github.com/MorePET/mat/issues/201)) ([ee97441](https://github.com/MorePET/mat/commit/ee974410c21cd3b7d92e97a74b26a210945d5308))
-* **scripts:** shared curation helpers (Phase 4 prep) ([#197](https://github.com/MorePET/mat/issues/197)) ([e4e507b](https://github.com/MorePET/mat/commit/e4e507b8b48d6ff93833529665d0e1e07b2e495e))
+### Added — schema (sub-tables)
 
+* **`mechanical` sub-table additions**
+  ([#151](https://github.com/MorePET/mat/issues/151) / [#189](https://github.com/MorePET/mat/pull/189)).
+* **`thermal` sub-table additions**
+  ([#152](https://github.com/MorePET/mat/issues/152) / [#190](https://github.com/MorePET/mat/pull/190)).
+* **`electrical` sub-table additions**
+  ([#154](https://github.com/MorePET/mat/issues/154) / [#191](https://github.com/MorePET/mat/pull/191)).
+* **New `magnetic` sub-table**
+  ([#155](https://github.com/MorePET/mat/issues/155) / [#192](https://github.com/MorePET/mat/pull/192)).
+* **`optical` sub-table additions** — scintillator / Geant4
+  ([#153](https://github.com/MorePET/mat/issues/153) / [#194](https://github.com/MorePET/mat/pull/194)).
+* **New `vacuum` sub-table**
+  ([#156](https://github.com/MorePET/mat/issues/156) / [#193](https://github.com/MorePET/mat/pull/193)).
+* **New `nuclear` sub-table** with `py-mat[nuclear]` extra
+  ([#157](https://github.com/MorePET/mat/issues/157) / [#195](https://github.com/MorePET/mat/pull/195)).
+
+### Added — materials (~30 new entries)
+
+* **Modern scintillators**: GAGG, LSO:Ce, LaBr3:Ce, CeBr3, SrI2:Eu
+  ([#206](https://github.com/MorePET/mat/pull/206)).
+* **Specialty metals**: Kovar, Mu-metal, OFHC Cu, Be, Ta
+  ([#209](https://github.com/MorePET/mat/pull/209)).
+* **Nickel-base superalloys**: Inconel 625, 718
+  ([#207](https://github.com/MorePET/mat/pull/207)).
+* **Technical ceramics**: AlN, LTCC 951, sapphire, Si3N4
+  ([#208](https://github.com/MorePET/mat/pull/208)).
+* **Composite laminates**: CFRP T700/epoxy, G10
+  ([#210](https://github.com/MorePET/mat/pull/210)).
+* **Rare-earth metals**: Gd, Lu
+  ([#211](https://github.com/MorePET/mat/pull/211)).
+* **Fluoropolymers**: PVDF, PFA, FEP
+  ([#212](https://github.com/MorePET/mat/pull/212)).
+* **Vendor optical materials**: EJ-200/BC-408, PU foam, EPO-TEK 301,
+  BC-630 ([#213](https://github.com/MorePET/mat/pull/213)).
+* **Shielding & gases**: borated PE, ordinary concrete, SF6
+  ([#214](https://github.com/MorePET/mat/pull/214)).
+
+### Added — enrichers & curation
+
+* **Wikidata enricher** extended to compounds + new properties
+  ([#158](https://github.com/MorePET/mat/issues/158) / [#198](https://github.com/MorePET/mat/pull/198)).
+* **Geant4 G4NistManager mirror** for scintillator constants
+  ([#167](https://github.com/MorePET/mat/issues/167) / [#200](https://github.com/MorePET/mat/pull/200)).
+* **refractiveindex.info enricher** for n,k dispersion
+  ([#164](https://github.com/MorePET/mat/issues/164) / [#201](https://github.com/MorePET/mat/pull/201)).
+* **NIST WebBook (SRD 69) enricher** for gases & liquids
+  ([#159](https://github.com/MorePET/mat/issues/159) / [#203](https://github.com/MorePET/mat/pull/203)).
+* **PubChem enricher** for small-molecule scalars
+  ([#165](https://github.com/MorePET/mat/issues/165) / [#204](https://github.com/MorePET/mat/pull/204)).
+* **Shared curation helpers** (Phase 4 prep)
+  ([#197](https://github.com/MorePET/mat/pull/197)).
+* **`_sources` attached to every shipped TOML**; license-ratchet file
+  retired in favour of the policy-driven validator from 3.10.0
+  ([#175](https://github.com/MorePET/mat/issues/175) / [#196](https://github.com/MorePET/mat/pull/196)).
+
+### Added — public API (trailing follow-ups to #98 / mat-vis #282)
+
+* **`Source` / `Vis` / `VisDeltas` / `FinishEntry` re-exported on
+  top-level `pymat`** — `from pymat import Source, Vis` works without
+  reaching into a submodule. Classes bound at the top level are the
+  same objects as their canonical-module counterparts (alias, not
+  shim) so type annotations on either path interoperate.
+* **`pymat.__dir__` derives from `__all__`** — IDE tab-completion now
+  surfaces every name in `__all__` (`search`, `ureg`, `factories`,
+  `vis` were silently dropped before).
 
 ### Fixed
 
-* **api:** close trailing public-surface gaps + add 3 contract test suites ([#215](https://github.com/MorePET/mat/issues/215)) ([9feb14f](https://github.com/MorePET/mat/commit/9feb14f689ef44c8d03820a41f101129e0c0afb5))
-
+* **`Vis.tier=` validates at the assignment site.** Mirrors the
+  long-shipped `Vis.finish=` setter pattern. Bad tier
+  (`vis.tier = "99k"`) now raises `ValueError` with the offending
+  input echoed and the available tiers listed — instead of surfacing
+  deep inside mat-vis-client on the next `.textures` access. Closes
+  the asymmetry between the two identity setters; same shape of bug
+  as Bernhard's [mat-vis #280](https://github.com/MorePET/mat-vis/issues/280)
+  inside py-mat's surface. Validates against `client.tiers()` with
+  permissive fallback — offline / corrupted-cache callers fall
+  through silently rather than block workflows.
 
 ### Documentation
 
-* **data:** MIL-HDBK-5J citations for aerospace alloys ([#166](https://github.com/MorePET/mat/issues/166)) ([#205](https://github.com/MorePET/mat/issues/205)) ([58719de](https://github.com/MorePET/mat/commit/58719de1dbb13d1b7d9044fd20a0229bd82de339))
-* **data:** primary-paper citations for scintillator entries ([#170](https://github.com/MorePET/mat/issues/170)) ([#202](https://github.com/MorePET/mat/issues/202)) ([7f6e8c4](https://github.com/MorePET/mat/commit/7f6e8c4c7e7ad41f9488dc2e7e237f8409bfd891))
-* **policy:** expand off-limits sources list ([#173](https://github.com/MorePET/mat/issues/173)) ([#199](https://github.com/MorePET/mat/issues/199)) ([7fb9cd9](https://github.com/MorePET/mat/commit/7fb9cd954b26f1898792f8b044ec839f45603afc))
-* **readme:** add 3.11 feature examples to compiled README ([#216](https://github.com/MorePET/mat/issues/216)) ([82e141c](https://github.com/MorePET/mat/commit/82e141c8fcdcd02c94e6b3d52c301da1ebf56344))
+* **MIL-HDBK-5J citations** for aerospace alloys
+  ([#166](https://github.com/MorePET/mat/issues/166) / [#205](https://github.com/MorePET/mat/pull/205)).
+* **Primary-paper citations** for scintillator entries
+  ([#170](https://github.com/MorePET/mat/issues/170) / [#202](https://github.com/MorePET/mat/pull/202)).
+* **Off-limits sources list** expanded
+  ([#173](https://github.com/MorePET/mat/issues/173) / [#199](https://github.com/MorePET/mat/pull/199)).
+* **README compiled examples** for 3.11 features
+  ([#216](https://github.com/MorePET/mat/pull/216)).
+
+### Tests
+
+* **~170 new contract tests** across three suites: consumer journey,
+  public-API surface, error-message UX. Pins what every prior
+  iteration of the public surface implicitly required and what
+  Bernhard's mat-vis #280–#288 / build123d#1270 made explicit.
+* **`to_threejs` color-encoding xfail pin**
+  ([#99](https://github.com/MorePET/mat/issues/99) / [#217](https://github.com/MorePET/mat/pull/217)) — strict `xfail` asserting
+  `to_threejs(m)["color"]` is a `'#RRGGBB'` hex string. Today fails
+  (mat-vis-client emits the Three.js wire-format int); flips green
+  when [mat-vis #298](https://github.com/MorePET/mat-vis/issues/298)
+  ships in a future `mat-vis-client` release.
+
+### Known Gaps (xfails, candidate follow-up issues)
+
+* `Vis._fetch` doesn't annotate mat-vis-client errors with the
+  owning `Material.name` — direct in-py-mat manifestation of mat-vis
+  #280.
+* `pymat.<typo>` / `Material.<typo>` (attribute access) lack
+  fuzzy-suggest UX that `pymat["..."]` provides.
+* `load_category("metls")` echoes a filesystem path with no
+  available-categories list and no fuzzy hint.
+* Adapters silently return default-grey for materials with no vis
+  mapping.
+* `pymat.search(...)` rapidfuzz threshold misfires on long random
+  underscored tokens.
+
+Each xfail has a clear `reason=` string in `tests/test_error_messages.py`
+or `tests/test_consumer_journey.py`.
 
 ## [3.10.0] - 2026-05-06
 
