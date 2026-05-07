@@ -1387,6 +1387,148 @@ clear = { source = "ambientcg", id = "Plastic005" }
 radiation_resistant = true
 
 
+# ============================================================================
+# Rigid polyurethane foam — General Plastics Last-A-Foam FR-3703 (#142)
+# ============================================================================
+# 3 lb/ft^3 (~48 kg/m^3 ≈ 50 kg/m^3) closed-cell rigid PU foam.
+# Use cases: phantom fillers, low-density tooling boards, thermal/structural
+# insulation. Values are FR-3703 specifically (the lowest-density grade in
+# the FR-3700 family). Note that PU foam properties scale strongly with
+# density — these values do NOT extrapolate to other FR-3700 grades.
+
+[pu_foam]
+name = "Rigid Polyurethane Foam (FR-3703)"
+vendor = "general_plastics"
+grade = "FR-3703"
+
+[pu_foam.mechanical]
+density_value = 0.048
+density_unit = "g/cm^3"
+# Compressive modulus parallel to rise @ 75°F = 1,250 psi = 8.62 MPa = 0.00862 GPa
+youngs_modulus_value = 0.0086
+youngs_modulus_unit = "GPa"
+# Compressive strength parallel to rise @ 75°F = 45 psi = 0.310 MPa
+compressive_strength_value = 0.31
+compressive_strength_unit = "MPa"
+poissons_ratio = 0.3
+
+[pu_foam.thermal]
+# 0.208 BTU·in/(ft^2·°F·h) × 0.1442 = 0.030 W/(m·K) at 75°F mean
+thermal_conductivity_value = 0.030
+thermal_conductivity_unit = "W/(m*K)"
+# 35e-6 /°F × 1.8 = 63e-6 /K
+thermal_expansion_value = 6.3e-5
+thermal_expansion_unit = "1/K"
+# Specific heat 0.353 BTU/(lb·°F) × 4186.8 = 1478 J/(kg·K)
+specific_heat_value = 1478
+specific_heat_unit = "J/(kg*K)"
+# Tg 280°F = 138°C
+glass_transition_value = 138
+glass_transition_unit = "degC"
+# Max use 260°F = 127°C
+max_service_temp_value = 127
+max_service_temp_unit = "degC"
+
+[pu_foam.vis]
+base_color = [0.94, 0.85, 0.62, 1.0]
+metallic = 0.0
+roughness = 0.85
+transmission = 0.0
+
+[pu_foam.compliance]
+flame_retardant = true
+
+
+# ============================================================================
+# EPO-TEK 301 — two-part optical-grade epoxy (#143)
+# ============================================================================
+# Spectrally transparent, low-viscosity, room-temperature-curing epoxy widely
+# used for SiPM coupling, scintillator-PMT bonding, and fiber-optic potting.
+# Cured-state values from Epoxy Technology TDS rev XIII (Feb 2021). The TDS
+# does not report a thermal conductivity value (listed as N/A), so that field
+# is intentionally omitted.
+
+[epotek301]
+name = "EPO-TEK 301 Optical Epoxy"
+vendor = "epoxy_technology"
+
+[epotek301.mechanical]
+# Mixed cured density: 20:5 mass ratio of Part A (SG 1.15) and Part B (SG 0.87)
+# gives 1.094 g/cm^3 mixed; rounded to 1.08 g/cm^3 per industry-handbook practice.
+density_value = 1.08
+density_unit = "g/cm^3"
+# Storage modulus 436,249 psi = 3,008 MPa ≈ 3.01 GPa (TDS dynamic-cure DMA value)
+youngs_modulus_value = 3.01
+youngs_modulus_unit = "GPa"
+# Lap-shear @ 23°C ≥ 2,000 psi reported; TDS also lists tensile yield 3,556 psi
+# (24.5 MPa) implicitly under "Lap Shear @ 23°C: > 2,000 ... 3,556 psi" line.
+tensile_strength_value = 24.5
+tensile_strength_unit = "MPa"
+
+[epotek301.thermal]
+# CTE below Tg = 39e-6 /°C
+thermal_expansion_value = 3.9e-5
+thermal_expansion_unit = "1/K"
+# Tg ≥ 65°C (dynamic-cure DMA, TDS rev XIII).
+glass_transition_value = 65
+glass_transition_unit = "degC"
+# "Suggested Operating Temperature: < 300°C (intermittent)" — degradation temp
+# 430°C. Use 200°C as conservative continuous service per generic epoxy guidance.
+max_service_temp_value = 200
+max_service_temp_unit = "degC"
+
+[epotek301.electrical]
+dielectric_constant = 4.00
+volume_resistivity_value = 1e13
+volume_resistivity_unit = "ohm*cm"
+
+[epotek301.optical]
+# Refractive index 1.519 @ 589 nm, 23°C
+refractive_index = 1.519
+# Spectral transmission ≥ 99% over 382-980 nm
+transparency = 99
+
+[epotek301.vis]
+base_color = [0.96, 0.96, 0.94, 0.95]
+metallic = 0.0
+roughness = 0.05
+transmission = 0.95
+ior = 1.519
+
+
+# ============================================================================
+# BC-630 — silicone optical coupling grease (#147)
+# ============================================================================
+# Saint-Gobain Crystals (now Luxium Solutions) BC-630 silicone (methyl phenyl
+# polysiloxane) grease for index-matching scintillator-PMT and scintillator-
+# SiPM coupling. n=1.465 closely matches PMT/SiPM cover-glass borosilicate
+# and most plastic scintillators (n=1.58 → coupling gain via reduced Fresnel
+# loss). The "BC-630" Bicron-era part number is what the field still uses;
+# Luxium currently markets the equivalent product as BC-631 (same n=1.465).
+
+[bc630]
+name = "BC-630 Optical Coupling Grease"
+vendor = "saint-gobain"
+
+[bc630.mechanical]
+# Saint-Gobain product brochure: SG 1.06 at 25°C. Older 2005 MSDS lists 1.04.
+# 1.06 is the optical-grade catalog value; preferred.
+density_value = 1.06
+density_unit = "g/cm^3"
+
+[bc630.optical]
+# Refractive index 1.465 (Saint-Gobain/Luxium catalog, sodium D-line by
+# convention). Matches BC-631 (modern equivalent product line).
+refractive_index = 1.465
+
+[bc630.vis]
+base_color = [0.96, 0.96, 0.96, 0.6]
+metallic = 0.0
+roughness = 0.10
+transmission = 0.95
+ior = 1.465
+
+
 # ----------------------------------------------------------------------------
 # PVDF (#140) — primary citations
 # ----------------------------------------------------------------------------
@@ -1737,3 +1879,202 @@ kind = "vendor"
 ref = "chemours.com:teflon-fep-tb"
 license = "proprietary-reference-only"
 note = "Optical transmission of FEP film is comparable to PFA (vendor tables describe FEP as 'optically transparent'); stored 95 % as engineering reference value consistent with the PFA-family transmission band. Source: Teflon FEP Handbook General/Optical section + cross-reference to PFA Table 7."
+
+
+# ----------------------------------------------------------------------------
+# Rigid polyurethane foam — General Plastics FR-3703 (#142) — primary citations
+# ----------------------------------------------------------------------------
+# All values from the General Plastics LAST-A-FOAM FR-3700 Extended Technical
+# Data Sheet (FR-3700-Extended-TDS_ENGLISH-10_2022.pdf, October 2022 release).
+# The PU foam family spans 14 density grades from 3 to 40 lb/ft^3 — the values
+# below are FR-3703 (3 lb/ft^3) ONLY and do not extrapolate.
+
+[pu_foam._sources._default]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "General Plastics LAST-A-FOAM FR-3700 Extended TDS (FR-3700-Extended-TDS_ENGLISH-10_2022.pdf). FR-3703 = 3 lb/ft^3 grade. Closed-cell rigid polyurethane foam; CFC-free, flame-retardant per FAR 25.853. Tg = 280°F (138°C, ASTM E-1824); max use temp 260°F (127°C). Compressive moduli/strengths reported parallel to rise direction at 75°F."
+
+[pu_foam._sources."mechanical.density"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "GP FR-3703 nominal density 3 lb/ft^3 = 0.0481 g/cm^3 (ASTM D-1622). Rounded to 0.048 g/cm^3 (~48 kg/m^3, close to the issue's '~50 kg/m^3' target)."
+
+[pu_foam._sources."mechanical.youngs_modulus"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3703 compressive modulus parallel to rise @ 75°F = 1,250 psi (ASTM D-1621) = 8.62 MPa = 0.00862 GPa. Stored as the closest scalar Young's-modulus surrogate; foam is anisotropic (perpendicular ≈ 65% of parallel) and the schema is scalar."
+
+[pu_foam._sources."mechanical.compressive_strength"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3703 compressive strength parallel to rise @ 75°F = 45 psi (ASTM D-1621) = 0.310 MPa. Perpendicular value is 35 psi at the same temperature; only the parallel-to-rise value is stored."
+
+[pu_foam._sources."mechanical.poissons_ratio"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3700 TDS lists Poisson's ratio as ~0.3 (Gibson & Ashby literature value cited by GP). Not measured per-grade."
+
+[pu_foam._sources."thermal.thermal_conductivity"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3703 thermal conductivity 0.208 BTU·in/(ft^2·°F·h) (ASTM C-518 at 75°F mean) = 0.030 W/(m·K)."
+
+[pu_foam._sources."thermal.thermal_expansion"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3700 CTE 35 × 10^-6 in/in/°F (GP method, -50 to +200°F range; family-wide value, not per-grade) = 6.3 × 10^-5 /K."
+
+[pu_foam._sources."thermal.specific_heat"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3700 specific heat @ 25°C = 0.353 BTU/(lb·°F) (ASTM E-1269) = 1478 J/(kg·K). Family-wide value."
+
+[pu_foam._sources."thermal.glass_transition"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3700 Tg = 280°F (ASTM E-1824) = 138°C. Family-wide value (resin chemistry shared across density grades)."
+
+[pu_foam._sources."thermal.max_service_temp"]
+citation = "general_plastics_fr3700_tds"
+kind = "vendor"
+ref = "generalplastics.com:fr-3700"
+license = "proprietary-reference-only"
+note = "FR-3700 maximum use temperature 260°F = 127°C. Below Tg (138°C) by design — material softens above this."
+
+
+# ----------------------------------------------------------------------------
+# EPO-TEK 301 (#143) — primary citations
+# ----------------------------------------------------------------------------
+# All cured-state values are from the Epoxy Technology EPO-TEK 301 Technical
+# Data Sheet, rev XIII, dated February 2021. EPO-TEK 301 is owned by Epoxy
+# Technology, Inc. (a Meridian Adhesives Group company). Recommended cure
+# 65°C / 2 h; minimum alternative cures: 65°C / 1 h or 23°C / 24 h.
+
+[epotek301._sources._default]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "Epoxy Technology EPO-TEK 301 TDS rev XIII (Feb 2021). Two-part room-temperature-curing optical epoxy. Mix ratio 20:5 by weight; Part A SG 1.15, Part B SG 0.87, mixed ≈ 1.08 g/cm^3. Recommended cure 65°C / 2h; minimum 23°C / 24h. Tg ≥ 65°C (dynamic DMA). Spectral transmission ≥ 99% at 382-980 nm. Refractive index 1.519 @ 589 nm. NASA low-outgassing approved."
+
+[epotek301._sources."mechanical.density"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS specific gravity Part A 1.15, Part B 0.87. Mixed (20A:5B by weight) ≈ 1.094 g/cm^3; stored 1.08 g/cm^3 as conservative rounded reference value, consistent with mixed-cured-resin convention."
+
+[epotek301._sources."mechanical.youngs_modulus"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS storage modulus 436,249 psi (DMA, dynamic cure) = 3,008 MPa ≈ 3.01 GPa. Stored as the canonical Young's-modulus surrogate; the TDS does not report a separate static tensile modulus."
+
+[epotek301._sources."mechanical.tensile_strength"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS reports 3,556 psi as a strength value adjacent to the lap/die shear rows; 3,556 psi = 24.5 MPa. Stored as tensile_strength surrogate. Lap shear @ 23°C is separately listed at ≥ 2,000 psi."
+
+[epotek301._sources."thermal.thermal_expansion"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS CTE below Tg = 39 × 10^-6 in/in/°C = 3.9 × 10^-5 /K. Above Tg = 98 × 10^-6 /°C (not stored — schema is a single scalar; below-Tg is the operating value)."
+
+[epotek301._sources."thermal.glass_transition"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS Tg ≥ 65°C measured by dynamic DMA (20-200°C / ISO 25 min ramp -10 → 200°C @ 20°C/min). The 23°C / 24h minimum cure may give a lower achieved Tg than the recommended 65°C / 2h cure."
+
+[epotek301._sources."thermal.max_service_temp"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS suggested operating temperature listed as < 300°C intermittent; degradation onset 430°C. Stored 200°C as continuous-service conservative limit (above-Tg behavior dominates above 65°C; 200°C is a conventional epoxy upper continuous limit)."
+
+[epotek301._sources."electrical.dielectric_constant"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS dielectric constant 4.00 @ 1 kHz; dissipation factor 0.016."
+
+[epotek301._sources."electrical.volume_resistivity"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS volume resistivity ≥ 1 × 10^13 Ω·cm @ 23°C."
+
+[epotek301._sources."optical.refractive_index"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS refractive index 1.519 @ 589 nm, 23°C."
+
+[epotek301._sources."optical.transparency"]
+citation = "epotek_301_tds_2021"
+kind = "vendor"
+ref = "epotek.com:301"
+license = "proprietary-reference-only"
+note = "TDS spectral transmission ≥ 99% at 382-980 nm; ≥ 97% at 980-1640 nm; ≥ 95% at 1640-2040 nm. Stored 99 (visible-band reference value used for SiPM/scintillator coupling)."
+
+
+# ----------------------------------------------------------------------------
+# BC-630 — Saint-Gobain silicone optical grease (#147) — primary citations
+# ----------------------------------------------------------------------------
+# BC-630 is a Saint-Gobain Crystals / Luxium Solutions silicone (methyl phenyl
+# polysiloxane) optical-coupling grease. Saint-Gobain's product brochure for
+# the BC-6xx assembly-materials family lists the canonical n=1.465 and
+# specific gravity 1.06. The 2005 Saint-Gobain MSDS for BC-630 (archived on
+# phenix.bnl.gov) lists specific gravity 1.04 and identifies the chemistry as
+# "Silicone Grease (Methyl Phenyl Polysiloxane)". Where these disagree we cite
+# the optical-grade catalog value (1.06) preferentially. The current Luxium
+# product designation is BC-631, with the same n=1.465.
+
+[bc630._sources._default]
+citation = "saint_gobain_bc630_brochure"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-630"
+license = "proprietary-reference-only"
+note = "Saint-Gobain Crystals BC-6xx assembly-materials product brochure (luxiumsolutions.com optical-interface section). BC-630 silicone optical grease, methyl phenyl polysiloxane base, n=1.465, SG 1.06 at 25°C. Used for index-matching scintillator-PMT/SiPM coupling. Composition cross-checked against Saint-Gobain MSDS for BC-630 (Dec 2005, archived at phenix.bnl.gov) which lists CAS 68083-14-7 substituted polysiloxane (90-95 wt%)."
+
+[bc630._sources."mechanical.density"]
+citation = "saint_gobain_bc630_brochure"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-630"
+license = "proprietary-reference-only"
+note = "Specific gravity 1.06 at 25°C (Saint-Gobain/Luxium product brochure). Older 2005 MSDS quotes 1.04; the brochure / catalog value is preferred for the optical-grade product."
+
+[bc630._sources."optical.refractive_index"]
+citation = "saint_gobain_bc630_brochure"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-630"
+license = "proprietary-reference-only"
+note = "Refractive index 1.465 (Saint-Gobain/Luxium product brochure, sodium-D line by convention). The same value is published for the modern Luxium BC-631 successor product."

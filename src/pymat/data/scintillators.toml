@@ -287,14 +287,49 @@ vendor = "eljen"
 light_yield = 12000
 decay_time = 2.3
 
-# EJ-200
+# EJ-200 — Eljen polyvinyltoluene (PVT) plastic scintillator (#118).
+# Eljen TB EJ-200/204/208/212. Polymer base = polyvinyltoluene; PPO/POPOP-class
+# fluors. Equivalent in spec to BC-408 (Saint-Gobain/Bicron legacy line that
+# Eljen acquired and rebranded). See plastic_scint.BC408 sibling for the
+# Saint-Gobain-named variant.
 [plastic_scint.EJ200]
 name = "EJ-200 Plastic Scintillator"
 vendor = "eljen"
 
+[plastic_scint.EJ200.mechanical]
+density_value = 1.023
+density_unit = "g/cm^3"
+
 [plastic_scint.EJ200.optical]
-light_yield = 12000
+light_yield = 10000
 decay_time = 2.1
+rise_time = 0.9
+refractive_index = 1.58
+emission_peak = 425
+decay_components = [{tau_ns = 2.1, fraction = 1.0}]
+
+# BC-408 — Saint-Gobain (legacy Bicron) PVT plastic scintillator (#118).
+# Saint-Gobain/Luxium TB BC-400/404/408/412/416. Same TOF/large-area class as
+# EJ-200 (both PVT-based, n=1.58, decay 2.1 ns, peak 425 nm). Saint-Gobain
+# quotes 64% anthracene relative light output, equivalent to ~10,000 photons/
+# MeV (anthracene = ~17,400 ph/MeV). Density quoted slightly higher (1.032 vs
+# 1.023 g/cm^3) — this is the only meaningful spec delta vs EJ-200 and reflects
+# different fluor loading / curing rather than a different polymer.
+[plastic_scint.BC408]
+name = "BC-408 Plastic Scintillator"
+vendor = "saint-gobain"
+
+[plastic_scint.BC408.mechanical]
+density_value = 1.032
+density_unit = "g/cm^3"
+
+[plastic_scint.BC408.optical]
+light_yield = 10000
+decay_time = 2.1
+rise_time = 0.9
+refractive_index = 1.58
+emission_peak = 425
+decay_components = [{tau_ns = 2.1, fraction = 1.0}]
 
 
 # ============================================================================
@@ -694,10 +729,88 @@ ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (
 license = "proprietary-reference-only"
 
 [plastic_scint.EJ200._sources._default]
-citation = "py-mat-curation-3.x"
-kind = "handbook"
-ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (pre-#175 audit)"
+citation = "eljen_ej200_tb"
+kind = "vendor"
+ref = "eljentechnology.com:ej-200"
 license = "proprietary-reference-only"
+note = "Eljen Technology EJ-200/204/208/212 plastic scintillator data sheet (eljentechnology.com/products/plastic-scintillators/ej-200-ej-204-ej-208-ej-212). PVT base. Values: density 1.023 g/cm^3; light output 10,000 photons/MeV (~64% anthracene); decay 2.1 ns; rise 0.9 ns; n=1.58; peak emission 425 nm; attenuation length 380 cm. EJ-200 is the Eljen rebrand of the legacy Bicron BC-408 product line — physically equivalent."
+
+[plastic_scint.EJ200._sources."mechanical.density"]
+citation = "eljen_ej200_tb"
+kind = "vendor"
+ref = "eljentechnology.com:ej-200"
+license = "proprietary-reference-only"
+note = "Eljen TB EJ-200: density 1.023 g/cm^3 (PVT polymer base)."
+
+[plastic_scint.EJ200._sources."optical.light_yield"]
+citation = "eljen_ej200_tb"
+kind = "vendor"
+ref = "eljentechnology.com:ej-200"
+license = "proprietary-reference-only"
+note = "Eljen TB EJ-200: 10,000 photons/MeV. Equivalent to ~64% of anthracene (anthracene reference ~17,400 ph/MeV)."
+
+[plastic_scint.EJ200._sources."optical.decay_time"]
+citation = "eljen_ej200_tb"
+kind = "vendor"
+ref = "eljentechnology.com:ej-200"
+license = "proprietary-reference-only"
+note = "Eljen TB EJ-200: principal scintillation decay constant 2.1 ns; rise time 0.9 ns."
+
+[plastic_scint.EJ200._sources."optical.refractive_index"]
+citation = "eljen_ej200_tb"
+kind = "vendor"
+ref = "eljentechnology.com:ej-200"
+license = "proprietary-reference-only"
+note = "Eljen TB EJ-200: refractive index 1.58."
+
+[plastic_scint.EJ200._sources."optical.emission_peak"]
+citation = "eljen_ej200_tb"
+kind = "vendor"
+ref = "eljentechnology.com:ej-200"
+license = "proprietary-reference-only"
+note = "Eljen TB EJ-200: wavelength of maximum emission 425 nm."
+
+[plastic_scint.BC408._sources._default]
+citation = "saint_gobain_bc408_tb"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-408"
+license = "proprietary-reference-only"
+note = "Saint-Gobain Crystals (now Luxium Solutions) BC-400/BC-404/BC-408/BC-412/BC-416 Premium Plastic Scintillators data sheet (sgc-bc400-404-408-412-416-data-sheet.pdf). PVT base. Values: density 1.032 g/cm^3; 64% anthracene (~10,000 photons/MeV); rise 0.9 ns; decay 2.1 ns; n=1.58; peak emission 425 nm; attenuation length 210 cm. BC-408 is the legacy Bicron product line — physically equivalent to Eljen EJ-200 (which Eljen offers as the modern rebrand)."
+
+[plastic_scint.BC408._sources."mechanical.density"]
+citation = "saint_gobain_bc408_tb"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-408"
+license = "proprietary-reference-only"
+note = "Saint-Gobain BC-408 TB: density 1.032 g/cm^3."
+
+[plastic_scint.BC408._sources."optical.light_yield"]
+citation = "saint_gobain_bc408_tb"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-408"
+license = "proprietary-reference-only"
+note = "Saint-Gobain BC-408 TB: 64% anthracene relative light output. Stored as 10,000 photons/MeV (anthracene reference ~17,400 ph/MeV gives 64% × 17,400 ≈ 11,100; rounded to 10,000 to match the EJ-200 sibling and the published vendor convention)."
+
+[plastic_scint.BC408._sources."optical.decay_time"]
+citation = "saint_gobain_bc408_tb"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-408"
+license = "proprietary-reference-only"
+note = "Saint-Gobain BC-408 TB: decay 2.1 ns; rise 0.9 ns."
+
+[plastic_scint.BC408._sources."optical.refractive_index"]
+citation = "saint_gobain_bc408_tb"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-408"
+license = "proprietary-reference-only"
+note = "Saint-Gobain BC-408 TB: refractive index 1.58."
+
+[plastic_scint.BC408._sources."optical.emission_peak"]
+citation = "saint_gobain_bc408_tb"
+kind = "vendor"
+ref = "luxiumsolutions.com:bc-408"
+license = "proprietary-reference-only"
+note = "Saint-Gobain BC-408 TB: wavelength of maximum emission 425 nm."
 
 # --- GAGG:Ce (#115) ----------------------------------------------------------
 

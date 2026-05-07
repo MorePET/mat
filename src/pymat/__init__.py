@@ -141,6 +141,9 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "pvdf",
         "pfa",
         "fep",
+        "pu_foam",
+        "epotek301",
+        "bc630",
     ],
     "ceramics": [
         "alumina",
