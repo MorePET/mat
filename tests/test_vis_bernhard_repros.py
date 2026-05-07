@@ -21,7 +21,6 @@ import pytest
 
 from pymat.vis._model import Vis
 
-
 # ── #220: Vis.scalars accessor ────────────────────────────────
 
 
@@ -178,8 +177,7 @@ def _install_scalar_only_fake_client(monkeypatch):
             available = list(src_entry.get("tiers", {}))
             if tier not in available:
                 raise _NotStaged(
-                    f"material {material_id!r} not staged at tier {tier!r}. "
-                    f"Available: {available}"
+                    f"material {material_id!r} not staged at tier {tier!r}. Available: {available}"
                 )
             if source == "physicallybased":
                 return {}
