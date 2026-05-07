@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-22T09:22:37Z
-updated: 2026-04-22T09:22:37Z
+updated: 2026-05-06T18:54:45Z
 author: bernhard-42
 author_url: https://github.com/bernhard-42
 url: https://github.com/MorePET/mat/issues/98
-comments: 0
+comments: 1
 labels: bug
 assignees: none
 milestone: none
 projects: none
 parent: none
 children: none
-synced: 2026-04-23T04:44:01.258Z
+synced: 2026-05-07T05:24:05.514Z
 ---
 
 # [Issue 98]: [[BUG] material.vis returns object of a class in a private model](https://github.com/MorePET/mat/issues/98)
@@ -66,3 +66,22 @@ _No response_
 ### Changelog Category
 
 Fixed
+---
+
+# [Comment #1]() by [gerchowl]()
+
+_Posted on May 6, 2026 at 06:54 PM_
+
+Shipped in [py-materials 3.10.0](https://pypi.org/project/py-materials/3.10.0/).
+
+`Vis` / `VisDeltas` / `FinishEntry` are now formally public:
+- `__module__` rewritten to `pymat.vis` so `type()`, `repr`, IDE auto-import, and Sphinx all surface the public path.
+- `pymat.vis` module docstring documents the stability contract: field set follows semver; additive changes minor; renames need major.
+- Pinned by `tests/test_vis.py::TestPublicApiContract`.
+
+```python
+from pymat.vis import Vis, VisDeltas, FinishEntry  # public
+```
+
+Underscore-prefixed paths (`pymat.vis._model`, `Vis._finish`, `Vis._textures`, `pymat.vis._client`) remain private.
+
