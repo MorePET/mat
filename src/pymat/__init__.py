@@ -144,6 +144,7 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "pu_foam",
         "epotek301",
         "bc630",
+        "borated_pe",
     ],
     "ceramics": [
         "alumina",
@@ -158,6 +159,7 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "ltcc951",
         "sapphire",
         "si3n4",
+        "concrete_ordinary",
     ],
     "electronics": ["fr4", "rogers", "kapton", "copper_pcb", "solder"],
     "liquids": ["water", "heavy_water", "mineral_oil", "glycerol", "silicone_oil"],
@@ -173,6 +175,7 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "xenon",
         "methane",
         "vacuum",
+        "sf6",
     ],
 }
 

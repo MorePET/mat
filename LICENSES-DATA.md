@@ -11,6 +11,12 @@ py-materials data corpus. Per the licenses, attribution is required.
 | `Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Beryllium |
 | `Wikipedia: Beryllium (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Beryllium |
 | `Wikipedia: Copper (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Copper |
+| `Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Gadolinium |
+| `Wikipedia: Gadolinium (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Gadolinium |
 | `Wikipedia: Kovar (Carpenter datasheet, CC-BY-SA-4.0)` | CC-BY-SA-4.0 | wikipedia:Kovar |
+| `Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Lutetium |
+| `Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Lutetium |
 | `Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Tantalum |
 | `Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Tantalum |
+| `pdg_2024_atomic_nuclear_properties` | CC-BY-4.0 | pdg.lbl.gov:atomic-nuclear/shielding-concrete |
+| `wikipedia_aln` | CC-BY-SA-4.0 | https://en.wikipedia.org/wiki/Aluminium_nitride |

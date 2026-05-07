@@ -1529,6 +1529,77 @@ transmission = 0.95
 ior = 1.465
 
 
+# ============================================================================
+# BORATED POLYETHYLENE (5 wt% B) — neutron-shielding HDPE composite (#144)
+# ----------------------------------------------------------------------------
+# Canonical formulation: high-density polyethylene loaded with 5 wt% natural
+# boron (typically as B4C or boron oxide compounded into the polymer melt).
+# Used for thermal-neutron shielding around accelerators, PET cyclotrons,
+# and reactor beam-lines. The 10B(n,α)7Li capture reaction (3837 b thermal
+# cross-section, 19.9 % natural-B abundance) provides the shielding action;
+# the H content of the host PE moderates fast neutrons to thermal energies
+# first.
+#
+# 10B-enriched 5 wt% variants exist for compact applications (cyclotron
+# face shielding, criticality control) — properties are identical except
+# for the (n,α) macroscopic cross-section. The natural-boron 5 wt% grade is
+# the canonical, cheaper option and is what is curated here.
+#
+# Schema does NOT have a neutron-capture cross-section field; the (n,α)
+# rate must be derived downstream from composition + ENDF/B data. Nuclear
+# table omitted entirely — PDG does not list borated PE separately, and
+# adopting unborated-PE values without the boron contribution would be
+# misleading for neutron physics. # TODO: schema neutron_capture_xs
+# ============================================================================
+
+[borated_pe]
+name = "Borated Polyethylene (5 wt% B, natural)"
+formula = "(C2H4)n + 5 wt% B"
+grade = "5 wt% natural-B HDPE"
+
+[borated_pe.mechanical]
+# Density 59.6 lb/ft^3 = 0.955 g/cm^3 from Emco Plastics borated-HDPE
+# datasheet (5 wt% B). The pure HDPE host is 0.95; the small B fraction
+# raises bulk density slightly. SWX-201 grade quotes the same range.
+density_value = 0.955
+density_unit = "g/cm^3"
+# Tensile strength at yield 4000 psi = 27.6 MPa (Emco datasheet).
+tensile_strength_value = 27.6
+tensile_strength_unit = "MPa"
+# Flexural modulus 200,000 psi = 1.379 GPa (Emco datasheet). Stored in
+# the youngs_modulus slot as the closest scalar surrogate; the schema
+# also supports flexural_modulus directly so we record both.
+youngs_modulus_value = 1.38
+youngs_modulus_unit = "GPa"
+flexural_modulus_value = 1379
+flexural_modulus_unit = "MPa"
+# Ultimate elongation > 600 % per the datasheet — record the floor.
+elongation = 600
+
+[borated_pe.thermal]
+# Heat-deflection temperature at 66 psi = 171 °F = 77 °C (Emco datasheet).
+# Used as the conservative continuous max-service temperature; the matrix
+# softens (and B4C distribution may drift) above this point.
+max_service_temp_value = 77
+max_service_temp_unit = "degC"
+# Thermal conductivity of the unfilled HDPE host is ~0.45 W/(m·K) (Solvay
+# polymer handbook). The Emco datasheet does NOT report a thermal
+# conductivity for borated HDPE; the value is intentionally omitted to
+# avoid an unsupported scalar. Use the parent `pe.hdpe` k as a fallback.
+
+[borated_pe.compliance]
+radiation_resistant = true  # Neutron shielding — primary application
+recyclable = false  # Borated PE is not part of the consumer #2 HDPE stream
+
+[borated_pe.vis]
+# Borated PE is typically dyed light grey or natural-translucent. Darker
+# than pure HDPE due to B4C particulate (~5 wt% black/dark-grey loading).
+base_color = [0.78, 0.78, 0.76, 1.0]
+metallic = 0.0
+roughness = 0.55
+transmission = 0.0
+
+
 # ----------------------------------------------------------------------------
 # PVDF (#140) — primary citations
 # ----------------------------------------------------------------------------
@@ -2078,3 +2149,67 @@ kind = "vendor"
 ref = "luxiumsolutions.com:bc-630"
 license = "proprietary-reference-only"
 note = "Refractive index 1.465 (Saint-Gobain/Luxium product brochure, sodium-D line by convention). The same value is published for the modern Luxium BC-631 successor product."
+
+
+# ----------------------------------------------------------------------------
+# borated_pe (#144) — primary citations
+# ----------------------------------------------------------------------------
+# Mechanical and thermal scalars come from the Emco Plastics published
+# borated HDPE datasheet (5 wt% boron), cross-checked against the
+# Shieldwerx SWX-201 product family overview which describes the same
+# 5 wt% natural-boron HDPE shielding grade. Both are vendor TBs and are
+# cited under `proprietary-reference-only`.
+#
+# The host-polymer values are consistent with the existing `pe.hdpe`
+# entry in this file (tensile 32 MPa, density 0.95 g/cm^3) — the boron
+# loading shifts density up by ~0.5 % and tensile down by ~14 % per the
+# vendor datasheets.
+
+[borated_pe._sources._default]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Emco Plastics published borated HDPE datasheet, 5 wt% boron grade (Mil-P-23536 reference). Density 59.6 lb/ft^3, tensile yield 4000 psi, flexural modulus 200,000 psi, elongation >600 %, HDT@66 psi 171 °F. Used here as the canonical natural-boron 5 wt% borated PE composition; cross-referenced against Shieldwerx SWX-201 family which advertises the same B loading."
+
+[borated_pe._sources."mechanical.density"]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Density 59.6 lb/ft^3 = 954.7 kg/m^3 ≈ 0.955 g/cm^3 (Emco borated-HDPE 5 wt% B datasheet). Slightly higher than the pure HDPE host (0.95) due to B4C loading."
+
+[borated_pe._sources."mechanical.tensile_strength"]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Tensile strength at yield 4000 psi = 27.58 MPa (Emco datasheet). Lower than pure HDPE (32 MPa) by ~14 % — typical knockdown for 5 wt% inorganic filler in a polyolefin."
+
+[borated_pe._sources."mechanical.youngs_modulus"]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Flexural modulus 200,000 psi = 1379 MPa = 1.38 GPa (Emco datasheet). Stored in `youngs_modulus` as the closest scalar surrogate; pure tensile-modulus measurements are not given on the vendor sheet. Flexural and tensile moduli are within ~10 % for filled HDPE, so the surrogate is engineering-grade adequate."
+
+[borated_pe._sources."mechanical.flexural_modulus"]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Flexural modulus 200,000 psi = 1379 MPa direct from the Emco datasheet."
+
+[borated_pe._sources."mechanical.elongation"]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Ultimate elongation listed as `>600 %` (Emco). Recorded as the floor; HDPE host typically reaches 700-800 %."
+
+[borated_pe._sources."thermal.max_service_temp"]
+citation = "emco_plastics_borated_hdpe"
+kind = "vendor"
+ref = "emcoplastics.com:borated-hdpe"
+license = "proprietary-reference-only"
+note = "Heat-deflection temperature at 66 psi = 171 °F = 77.2 °C (Emco datasheet). Adopted as the conservative continuous max-service temperature; HDPE host's matrix softens above this. Shieldwerx SWX-201 lists `up to ~85 °C` for the same grade — the Emco/ASTM HDT value is the more defensible primary number."
