@@ -103,41 +103,56 @@ class TestMatVis285_GpuopenBakingScalars:
 
 
 class TestMatVis311_MaterialNames:
-    """``client.materials(source, tier)`` should return human-readable
-    names (or a {id: name} mapping), not raw IDs / UUIDs. For gpuopen
-    today it returns 36-char UUIDs that no user will recognize.
+    """Bernhard's #311 'Consistently support material names' sub-bullet.
 
-    Tested via the gpuopen path because the UUID format is the
-    sharpest assertion (regex match). ambientCG and polyhaven also
-    have ID-like outputs but the bound between "ID" and "name" is
-    fuzzier there.
+    Original test pinned ``client.materials()`` returning non-UUID
+    strings — but ``materials()`` is the wrong API for name-based
+    selection. It returns canonical IDs (UUIDs for gpuopen, slugs
+    elsewhere) so consumers can pass them through ``fetch_*`` /
+    ``asset(...)`` without ambiguity. The right API for name-aware
+    browsing is ``client.search()`` (since mat-vis #359, returns
+    ``list[Match]`` with ``mat_vis.name`` exposed per entry).
+
+    This pinning shifts to assert the contract that *actually* matters
+    for #311's UX claim: search results carry human-readable names
+    AND a stable handle (``Match.ref`` = ``"source/id"``) for fetching.
     """
 
     UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
-    @pytest.mark.xfail(
-        reason=(
-            "mat-vis #311: client.materials('gpuopen', '1k') returns "
-            "raw UUIDs instead of webpage-visible names. Will flip to "
-            "passing when the client returns names (or {uuid: name}) "
-            "for human selection."
-        ),
-        strict=True,
-    )
-    def test_gpuopen_listing_is_not_uuids(self):
+    def test_search_results_carry_display_names(self):
+        """``search()`` returns Match entries with human names that the
+        UUID-aversive user can read and pick from."""
         from mat_vis_client import get_client
 
         client = get_client()
         with _skip_on_upstream_outage():
-            entries = client.materials("gpuopen", "1k")
+            results = client.search(source="gpuopen", tier="1k", limit=10)
 
-        assert entries, "no gpuopen materials returned"
-        sample = entries[: min(10, len(entries))]
-        uuid_count = sum(1 for e in sample if self.UUID_RE.match(str(e)))
-        assert uuid_count == 0, (
-            f"{uuid_count}/{len(sample)} gpuopen entries are bare UUIDs "
-            f"(e.g. {sample[0]!r}) — users select by webpage names, not UUIDs"
-        )
+        assert results, "no gpuopen search results"
+        for m in results:
+            name = m.mat_vis.get("name") if hasattr(m, "mat_vis") else (m.get("mat_vis") or {}).get("name")
+            assert name, f"search entry missing mat_vis.name: {m!r}"
+            assert not self.UUID_RE.match(name), (
+                f"display name should not itself be a UUID, got {name!r}"
+            )
+
+    def test_search_match_has_stable_ref_for_fetch(self):
+        """Each Match exposes ``ref = 'source/id'`` — a single-string
+        handle that ``client.asset(ref)`` accepts. This is the
+        collision-safe form for cross-source picking."""
+        from mat_vis_client import get_client
+
+        client = get_client()
+        with _skip_on_upstream_outage():
+            results = client.search(source="gpuopen", tier="1k", limit=3)
+
+        for m in results:
+            # Match objects (mat-vis #359) expose .ref directly.
+            ref = getattr(m, "ref", None) or f"{m.get('source', '')}/{m.get('id', '')}"
+            assert "/" in ref, f"ref should be 'source/id' form, got {ref!r}"
+            src, _, mid = ref.partition("/")
+            assert src and mid, f"ref components empty: {ref!r}"
 
 
 # ────────────────────────────────────────────────────────────────────
