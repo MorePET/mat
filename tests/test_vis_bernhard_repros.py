@@ -46,20 +46,25 @@ class TestIssue220ScalarsAccessor:
         """Bernhard's literal snippet from mat-vis#311.
 
         ``v.scalars`` returns the authored PBR scalars from the catalog
-        (``_scalars_for``), keyed by mat-vis adapter schema names.
+        (via ``client.asset(...).scalars``), keyed by mat-vis adapter
+        schema names.
         """
+
+        class FakeAsset:
+            scalars = {
+                "roughness": 0.4,
+                "metalness": 1.0,
+                "ior": 1.5,
+                "color_hex": "#cccccc",
+            }
+            textures: dict = {}
 
         class FakeClient:
             def fetch_all_textures(self, source, material_id, *, tier="1k"):
                 return {"color": b"png", "normal": b"png", "roughness": b"png"}
 
-            def _scalars_for(self, source, material_id):
-                return {
-                    "roughness": 0.4,
-                    "metalness": 1.0,
-                    "ior": 1.5,
-                    "color_hex": "#cccccc",
-                }
+            def asset(self, source, material_id, tier):
+                return FakeAsset()
 
         import mat_vis_client as _client
 
@@ -78,13 +83,17 @@ class TestIssue220ScalarsAccessor:
         texture HTTP fetch."""
         called = {"fetch": 0}
 
+        class FakeAsset:
+            scalars = {"roughness": 0.4, "metalness": 1.0}
+            textures: dict = {}
+
         class FakeClient:
             def fetch_all_textures(self, source, material_id, *, tier="1k"):
                 called["fetch"] += 1
                 return {"color": b"png"}
 
-            def _scalars_for(self, source, material_id):
-                return {"roughness": 0.4, "metalness": 1.0}
+            def asset(self, source, material_id, tier):
+                return FakeAsset()
 
         import mat_vis_client as _client
 
