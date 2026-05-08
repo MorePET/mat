@@ -62,7 +62,7 @@ class TestMatVis285_GpuopenBakingScalars:
     (``metalness=0.0``, ``roughness=0.5``, ``color=0xCCCCCC``,
     ``ior=1.5``, ``transmission=0.0``) instead of the values authored
     in the source ``.mtlx``. Visually these render as flat grey
-    plastic — see Bernhard's screenshot pair in the issue.
+    plastic — see the screenshot pair in mat-vis #285.
 
     The repro-shaped contract: two distinct gpuopen metals must NOT
     return identical default scalars. ``Aluminum Brushed`` and
@@ -114,7 +114,7 @@ class TestMatVis285_GpuopenBakingScalars:
 
 
 class TestMatVis311_MaterialNames:
-    """Bernhard's #311 'Consistently support material names' sub-bullet.
+    """mat-vis #311 'Consistently support material names' sub-bullet.
 
     Original test pinned ``client.materials()`` returning non-UUID
     strings — but ``materials()`` is the wrong API for name-based

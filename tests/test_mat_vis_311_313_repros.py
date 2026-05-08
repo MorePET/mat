@@ -1,4 +1,4 @@
-"""Red tests for Bernhard's mat-vis#311 / #313 user-surface issues.
+"""Red tests for mat-vis#311 / #313 user-surface issues.
 
 Each test is xfail(strict=True), so a fix flips it to XPASS and CI
 fails until the marker is removed — preventing accidental "fixed
@@ -10,8 +10,8 @@ Issues:
 - mat#222: scalar-only sources (physicallybased / tier=None)
 
 When a fix lands, remove the corresponding xfail marker and verify
-the test passes. Then re-run Bernhard's literal repro from the
-mat-vis issue end-to-end (forward-verify) before claiming closed —
+the test passes. Then re-run the literal repro from the mat-vis
+issue end-to-end (forward-verify) before claiming closed —
 mat-vis#287/#288 lesson.
 """
 
@@ -23,7 +23,7 @@ from pymat.vis._model import Vis
 
 
 class TestIssue220ScalarsAccessor:
-    """Bernhard's mat-vis#311 'Scalars as first class citizens' sub-bullet.
+    """mat-vis#311 'Scalars as first class citizens' sub-bullet.
 
     Closed by the dispatch refactor: ``Vis.scalars`` now delegates to
     ``client._scalars_for(source, material_id)`` (catalog-authored
@@ -41,7 +41,7 @@ class TestIssue220ScalarsAccessor:
         assert v.scalars == {}
 
     def test_scalars_returns_authored_pbr(self, monkeypatch):
-        """Bernhard's literal snippet from mat-vis#311.
+        """The literal snippet from mat-vis#311.
 
         ``v.scalars`` returns the authored PBR scalars from the catalog
         (via ``client.asset(...).scalars``), keyed by mat-vis adapter
@@ -106,7 +106,7 @@ class TestIssue220ScalarsAccessor:
 
 
 class TestIssue221ReprObservability:
-    """Bernhard's mat-vis#311 'Inconsistent outputs' sub-bullet.
+    """mat-vis#311 'Inconsistent outputs' sub-bullet.
 
     Closed by the custom ``Vis.__repr__`` that overlays lazy state
     (``fetched=`` flag, ``scalars=`` summary, ``available_textures=``)
@@ -133,7 +133,7 @@ class TestIssue221ReprObservability:
 
         r = repr(v)
         assert "fetched=True" in r
-        # Bernhard's literal expectation includes a textures summary.
+        # The literal expectation from mat-vis#311 includes a textures summary.
         assert "available_textures" in r or "scalars" in r
 
     def test_repr_changes_after_fetch(self, monkeypatch):
@@ -201,7 +201,7 @@ def _install_scalar_only_fake_client(monkeypatch):
 
 
 class TestIssue222ScalarOnlySources:
-    """Bernhard's mat-vis#313 + #311 'Support physicallybased.info'.
+    """mat-vis#313 + #311 'Support physicallybased.info'.
 
     The pymat-side half of the cascade (mat-vis-side bake fix is
     tracked separately). Acceptance:
@@ -230,7 +230,7 @@ class TestIssue222ScalarOnlySources:
         assert v.textures == {}
 
     def test_to_threejs_succeeds_for_scalar_only(self, monkeypatch):
-        """Bernhard's exact repro from mat-vis#313."""
+        """The exact repro from mat-vis#313."""
         _install_scalar_only_fake_client(monkeypatch)
         v = Vis(source="physicallybased", material_id="Aluminum")
         result = v.to_threejs()

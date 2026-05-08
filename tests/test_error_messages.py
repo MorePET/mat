@@ -1,7 +1,7 @@
 """Pin the *content* of user-facing error messages.
 
-Bernhard's mat-vis #280 / #286 are the canonical example of an error path
-that fired correctly (line coverage 100%) but said useless things to the
+mat-vis #280 / #286 are the canonical example of an error path that
+fired correctly (line coverage 100%) but said useless things to the
 user — internal UUIDs instead of the human name they typed, no
 suggestions, no actionable guidance. This suite exists so a future
 refactor can't silently regress error UX.
@@ -339,7 +339,7 @@ class TestVisTierUnknown:
     """Tier validation is the symmetric case to finish validation. Today,
     ``vis.tier = "bogus"`` succeeds silently — the bad tier reaches
     mat-vis-client at fetch time, where it surfaces a less-targeted
-    error. This is exactly the class of bug Bernhard hit (#280): the
+    error. This is exactly the class of bug from mat-vis #280: the
     error fires at the wrong layer with the wrong context.
     """
 
@@ -348,7 +348,7 @@ class TestVisTierUnknown:
         echoed and the available tiers listed — mirrors the
         ``Vis.finish`` pattern. Closes the asymmetry between the two
         identity setters and the at-wrong-layer / no-input-echo class
-        of bug Bernhard hit in mat-vis #280."""
+        of bug from mat-vis #280."""
         v = pymat.stainless.vis
         with pytest.raises(ValueError) as excinfo:
             v.tier = "definitely_not_a_real_tier"
@@ -536,7 +536,7 @@ class TestThreejsColorEncoding:
     hex string, not a hex int (which is what mat-vis-client 0.6.x
     emits — ``12566468`` for ``#bfbfc4``).
 
-    Bernhard reported this in [py-mat #99](https://github.com/MorePET/mat/issues/99);
+    Reported in [py-mat #99](https://github.com/MorePET/mat/issues/99);
     routed upstream as [mat-vis #298](https://github.com/MorePET/mat-vis/issues/298)
     with a ``color_format=Literal["hex","int","tuple"]`` proposal,
     default ``"hex"``. Three.js's ``MeshPhysicalMaterial`` constructor
@@ -578,7 +578,7 @@ class TestThreejsColorEncoding:
 
 
 # ────────────────────────────────────────────────────────────────────
-# 14. Vis.fetch / textures error envelope (Bernhard's #280 case)
+# 14. Vis.fetch / textures error envelope (mat-vis #280 case)
 # ────────────────────────────────────────────────────────────────────
 
 
@@ -586,7 +586,7 @@ class TestFetchErrorEnvelope:
     """Reach-down into a real ``Vis.textures`` access on a bad mapping.
 
     We patch the underlying mat-vis-client to RAISE the kind of error
-    Bernhard saw (a UUID-laden ``MaterialNotStagedError``). The contract
+    seen in mat-vis #280 (a UUID-laden ``MaterialNotStagedError``). The contract
     we want from py-mat: it should NOT swallow that error AND it should
     add the human name (``Material.name``) so the user can find the call
     site even if mat-vis-client's message is opaque.
@@ -599,7 +599,7 @@ class TestFetchErrorEnvelope:
             "When mat-vis-client raises (e.g. MaterialNotStagedError) on "
             "Vis.textures access, py-mat doesn't wrap or annotate the "
             "exception with the owning Material.name or the user-supplied "
-            "vis identity. Bernhard (mat-vis #280) had to read a UUID-only "
+            "vis identity. mat-vis #280 reporter had to read a UUID-only "
             "traceback to figure out WHICH material in his scene failed. "
             "Candidate issue: catch the client error in Vis._fetch and "
             "re-raise with Material.name + (source, material_id, tier) "

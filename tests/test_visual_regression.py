@@ -283,17 +283,17 @@ class TestAdapterOutput:
 
 
 # ────────────────────────────────────────────────────────────────────
-# Bernhard's mat-vis #285 multi-material grid — comprehensive matrix
+# mat-vis #285 multi-material grid — comprehensive matrix
 # https://github.com/MorePET/mat-vis/issues/285
 # ────────────────────────────────────────────────────────────────────
 
 
-# Bernhard's textured-source 24-material grid. Each entry: (label, source,
-# material_id). Texture-scale + colour overrides from his code are not
-# represented here — they're per-instance render state on the build123d
-# side, not py-mat Vis attributes (see py-mat #93 / the texture_scale
-# discussion in build123d#1270).
-BERNHARD_TEXTURED: list[tuple[str, str, str]] = [
+# Textured-source 24-material grid. Each entry: (label, source,
+# material_id). Texture-scale + colour overrides from the original
+# repro are not represented here — they're per-instance render state
+# on the build123d side, not py-mat Vis attributes (see py-mat #93 /
+# the texture_scale discussion in build123d#1270).
+TEXTURED_REGRESSION_GRID: list[tuple[str, str, str]] = [
     ("car_red", "gpuopen", "Car Paint"),
     ("car_green", "gpuopen", "Car Paint"),
     ("bronze", "gpuopen", "Bronze Oxydized"),
@@ -321,10 +321,11 @@ BERNHARD_TEXTURED: list[tuple[str, str, str]] = [
 ]
 
 # Scalar-only physicallybased.info entries. No textures — just authored
-# PBR scalars. Bernhard's repro snippet only includes acryl from this
-# source; the broader set below exercises the scalar path more fully so
-# regressions on physicallybased aren't hidden behind a single material.
-BERNHARD_SCALAR_ONLY: list[tuple[str, str]] = [
+# PBR scalars. The original mat-vis #285 repro snippet only includes
+# acryl from this source; the broader set below exercises the scalar
+# path more fully so regressions on physicallybased aren't hidden
+# behind a single material.
+SCALAR_ONLY_REGRESSION_GRID: list[tuple[str, str]] = [
     ("acryl", "Plastic (Acrylic)"),
     ("alu_pbr", "Aluminum"),
     ("gold_pbr", "Gold"),
@@ -363,13 +364,13 @@ def _is_default_grey(scalars: dict) -> bool:
 
 
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestBernhardMatVis285_AdapterStructure_Textured:
+class TestMatVis285_AdapterStructure_Textured:
     """Per-tier × per-adapter structural validation of the textured
-    portion of Bernhard's grid.
+    portion of the mat-vis #285 regression grid.
 
     Catches API drift in either direction: an adapter dropping a key
     from its output, a tier silently disappearing from the substrate,
-    or the scalar regression Bernhard documented in mat-vis #285.
+    or the scalar regression documented in mat-vis #285.
 
     The scalar assertion (≥5 of 24 materials emit non-default scalars)
     is the headline #285 catch — strict-xfail until the substrate
@@ -395,7 +396,7 @@ class TestBernhardMatVis285_AdapterStructure_Textured:
         non_default = 0
         skipped: list[str] = []
 
-        for label, source, material_id in BERNHARD_TEXTURED:
+        for label, source, material_id in TEXTURED_REGRESSION_GRID:
             try:
                 v = Vis(source=source, material_id=material_id, tier=tier)
                 out = adapter_fn(v)
@@ -436,7 +437,7 @@ class TestBernhardMatVis285_AdapterStructure_Textured:
                 non_default += 1
 
         assert non_default >= 5, (
-            f"only {non_default}/{len(BERNHARD_TEXTURED) - len(skipped)} textured "
+            f"only {non_default}/{len(TEXTURED_REGRESSION_GRID) - len(skipped)} textured "
             f"materials at tier={tier} via {adapter} have non-default scalars "
             f"(skipped={len(skipped)} due to substrate cache misses) — "
             "mat-vis #285 baker regression"
@@ -447,7 +448,7 @@ class TestBernhardMatVis285_AdapterStructure_Textured:
 
 
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestBernhardMatVis285_AdapterStructure_Scalar:
+class TestMatVis285_AdapterStructure_Scalar:
     """The physicallybased.info path is scalar-only — no texture maps,
     just authored PBR scalars. Closed by py-mat #222 (PR #225) which
     auto-resolves ``tier`` to ``"scalar"`` for sources whose manifest
@@ -457,7 +458,7 @@ class TestBernhardMatVis285_AdapterStructure_Scalar:
     """
 
     @pytest.mark.parametrize("adapter", ["to_threejs", "to_gltf"])
-    @pytest.mark.parametrize("label,material_id", BERNHARD_SCALAR_ONLY)
+    @pytest.mark.parametrize("label,material_id", SCALAR_ONLY_REGRESSION_GRID)
     def test_scalar_only_adapter(self, adapter: str, label: str, material_id: str) -> None:
         from pymat.vis import Vis, to_gltf, to_threejs
 
@@ -481,7 +482,7 @@ class TestBernhardMatVis285_AdapterStructure_Scalar:
 
 
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestBernhardMatVis285_Ktx2Bytes:
+class TestMatVis285_Ktx2Bytes:
     """At ``tier='ktx2-1k'``, texture bytes must be KTX2-encoded — not
     PNG. Catches a substrate regression where the KTX2 path silently
     falls back to PNG (consumers expecting Basis transcoding break).
@@ -496,8 +497,8 @@ class TestBernhardMatVis285_Ktx2Bytes:
     def test_ktx2_tier_returns_ktx2_bytes(self) -> None:
         from pymat.vis import Vis
 
-        # Pick a known textured material; ambientcg's Metal 007 was in
-        # Bernhard's grid and the catalog ships it across tiers.
+        # Pick a known textured material; ambientcg's Metal 007 is in
+        # the regression grid and the catalog ships it across tiers.
         v = Vis(source="ambientcg", material_id="Metal 007", tier="ktx2-1k")
         textures = v.textures
         if not textures:
@@ -517,7 +518,7 @@ class TestBernhardMatVis285_Ktx2Bytes:
 
 
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestBernhardMatVis285_MtlxExport:
+class TestMatVis285_MtlxExport:
     """``Vis.mtlx.export(dir)`` writes a self-contained .mtlx package:
     a MaterialX XML document plus PNG channel files. Validates the XML
     structure without running an actual MaterialX renderer.
@@ -568,8 +569,8 @@ class TestBernhardMatVis285_MtlxExport:
 
 
 @pytest.mark.skipif(SKIP_VISUAL, reason="MAT_VIS_SKIP_VISUAL=1 (default)")
-class TestBernhardMatVis285_Visual:
-    """Renders Bernhard's grid via headless Three.js, **bypassing
+class TestMatVis285_Visual:
+    """Renders the regression grid via headless Three.js, **bypassing
     build123d's glTF exporter entirely**. Material specs come from
     ``pymat.vis.to_threejs(vis)`` per material; the JS-side viewer
     instantiates ``THREE.MeshPhysicalMaterial`` directly. Sphere
@@ -618,19 +619,19 @@ class TestBernhardMatVis285_Visual:
         # Build the spec list
         items = []
         if scene_kind == "textured":
-            for idx, (label, source, material_id) in enumerate(BERNHARD_TEXTURED):
+            for idx, (label, source, material_id) in enumerate(TEXTURED_REGRESSION_GRID):
                 row = idx // self.GRID_COLS
                 col = idx % self.GRID_COLS
                 v = Vis(source=source, material_id=material_id, tier=tier)
                 items.append({"label": label, "row": row, "col": col, "threejs": to_threejs(v)})
         else:  # scalar
-            for idx, (label, material_id) in enumerate(BERNHARD_SCALAR_ONLY):
+            for idx, (label, material_id) in enumerate(SCALAR_ONLY_REGRESSION_GRID):
                 row = idx // self.GRID_COLS
                 col = idx % self.GRID_COLS
                 v = Vis(source="physicallybased", material_id=material_id)
                 items.append({"label": label, "row": row, "col": col, "threejs": to_threejs(v)})
 
-        spec_path = OUTPUT_DIR / f"bernhard_grid_{scene_kind}_{tier}.spec.json"
+        spec_path = OUTPUT_DIR / f"mat_vis_285_grid_{scene_kind}_{tier}.spec.json"
         # Write the full spec WITH texture data URIs (the renderer needs them)
         spec_path.write_text(json.dumps({"tier": tier, "kind": scene_kind, "items": items}))
 
@@ -645,7 +646,7 @@ class TestBernhardMatVis285_Visual:
             stripped.append(
                 {"label": it["label"], "row": it["row"], "col": it["col"], "scalars": sc}
             )
-        (OUTPUT_DIR / f"bernhard_grid_{scene_kind}_{tier}.scalars.json").write_text(
+        (OUTPUT_DIR / f"mat_vis_285_grid_{scene_kind}_{tier}.scalars.json").write_text(
             json.dumps(stripped, indent=2, default=str)
         )
 
@@ -661,7 +662,7 @@ class TestBernhardMatVis285_Visual:
 
         # canvas.toDataURL bypasses Playwright's slow compositor screenshot
         data_url = page.evaluate("() => document.querySelector('canvas').toDataURL('image/png')")
-        png = OUTPUT_DIR / f"bernhard_grid_{scene_kind}_{tier}.png"
+        png = OUTPUT_DIR / f"mat_vis_285_grid_{scene_kind}_{tier}.png"
         import base64
 
         png.write_bytes(base64.b64decode(data_url.split(",", 1)[1]))
@@ -680,7 +681,7 @@ class TestBernhardMatVis285_Visual:
             assert non_default >= 5, (
                 f"only {non_default}/{len(items)} textured materials have non-default "
                 f"scalars at tier={tier} — mat-vis #285 regression. See "
-                f"bernhard_grid_textured_{tier}.png + .scalars.json artifacts."
+                f"mat_vis_285_grid_textured_{tier}.png + .scalars.json artifacts."
             )
         else:
             assert items, "scalar scene produced no items — physicallybased path broken"
