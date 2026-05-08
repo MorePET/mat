@@ -70,6 +70,17 @@ class TestMatVis285_GpuopenBakingScalars:
     color, roughness} once the baker preserves authored scalars.
     """
 
+    @pytest.mark.xfail(
+        reason=(
+            "mat-vis #285 substrate-side: prod (v2026.04.2) gpuopen catalog "
+            "lacks authored PBR scalars in mat_vis.pbr.* — every entry "
+            "renders with baker defaults. Closed at the pymat code level "
+            "by the dispatch refactor (we now READ the catalog correctly); "
+            "flips to passing when prod re-bakes with #294 / equivalent. "
+            "Verified working on mat-vis-tst@v2026.04.99-tst-full."
+        ),
+        strict=True,
+    )
     def test_gpuopen_metals_have_distinct_scalars(self):
         from pymat.vis import Vis
 
@@ -131,7 +142,11 @@ class TestMatVis311_MaterialNames:
 
         assert results, "no gpuopen search results"
         for m in results:
-            name = m.mat_vis.get("name") if hasattr(m, "mat_vis") else (m.get("mat_vis") or {}).get("name")
+            name = (
+                m.mat_vis.get("name")
+                if hasattr(m, "mat_vis")
+                else (m.get("mat_vis") or {}).get("name")
+            )
             assert name, f"search entry missing mat_vis.name: {m!r}"
             assert not self.UUID_RE.match(name), (
                 f"display name should not itself be a UUID, got {name!r}"

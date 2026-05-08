@@ -779,10 +779,21 @@ class Vis:
         return {**self._catalog_scalars(), **self._explicit_scalars()}
 
     def _render_scalars(self) -> dict[str, Any]:
-        """Scalars dict for render adapters: ``self.scalars`` for
-        identity-bearing Vis, ``_scalars_with_defaults()`` otherwise.
+        """Scalars dict for render adapters: defaults overlaid by
+        catalog overlaid by explicit caller overrides. Always returns
+        the full 7-key shape so the dumb mat-vis adapter has something
+        complete to emit — sparse output would leave Three.js falling
+        through to *its* defaults (which may differ from ours).
+
+        Layering: ``_PBR_DEFAULTS`` < catalog < explicit overrides.
+        ``Vis.scalars`` (the public sparse view) drops the defaults;
+        only render adapters need the floor.
         """
-        return self.scalars if self.has_mapping else self._scalars_with_defaults()
+        return {
+            **self._scalars_with_defaults(),
+            **self._catalog_scalars(),
+            **self._explicit_scalars(),
+        }
 
     def to_threejs(self) -> dict[str, Any]:
         """Three.js ``MeshPhysicalMaterial`` parameter dict.
