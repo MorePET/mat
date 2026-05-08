@@ -1,5 +1,5 @@
 """Tests for the trailing-`_` chainable-method rename + deprecation
-aliases (Bernhard's py-mat #218 readability ask).
+aliases (py-mat#218 readability ask).
 
 Each old name (``grade_``, ``temper_``, ``treatment_``, ``vendor_``,
 ``variant_``) survives as a deprecation alias that:

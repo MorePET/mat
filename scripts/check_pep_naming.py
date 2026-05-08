@@ -5,8 +5,8 @@ built-in.
 PEP 8: "Trailing underscores are used by convention to avoid conflicts
 with Python keyword[s], e.g. `class_`, `type_`, `id_`." Using a
 trailing underscore as a general naming convention (e.g. `grade_`,
-`temper_`) violates this contract and confuses readers. Bernhard's
-py-mat #218 called this out explicitly.
+`temper_`) violates this contract and confuses readers. py-mat#218
+called this out explicitly.
 
 Ruff's `N` rule set covers most PEP-8 naming patterns but not this
 one specifically — `N802` accepts any `[a-z][a-z0-9_]*` form

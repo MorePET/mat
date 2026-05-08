@@ -352,7 +352,7 @@ class _MaterialInternal:
     # PEP 8 reserves trailing single underscore for keyword / built-in
     # collision disambiguation only (`class_`, `type_`, `id_`); using it
     # as a general method-naming convention reads as a violation to
-    # typed users (Bernhard's py-mat #218). Renamed to verb-form
+    # typed users (py-mat#218). Renamed to verb-form
     # `add_X`. Aliases below keep 3.x BC and emit DeprecationWarning so
     # callers migrate. Scheduled for removal in 4.0.
 
