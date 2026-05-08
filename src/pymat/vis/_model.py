@@ -373,6 +373,51 @@ class Vis:
             return
         super().__setattr__(name, value)
 
+    # ── Repr (mat#221: surface lazy state without touching field semantics) ─
+
+    def __repr__(self) -> str:
+        """Custom ``__repr__`` overlaying lazy/fetched state on top of
+        the dataclass field summary.
+
+        The dataclass-generated repr correctly shows caller-supplied
+        fields (identity + override channels: ``roughness``,
+        ``metallic``, ``base_color``, ...). What it can't show is
+        whether a fetch has happened or what the catalog returned —
+        Bernhard's mat#221 surprise that "all fields are None even
+        though ``to_threejs()`` succeeded."
+
+        This repr keeps the field section verbatim (so explicit
+        overrides stay observable as ``metallic=0.7``) and appends:
+
+        - ``fetched=True/False`` — texture fetch state
+        - ``scalars=`` — sparse catalog + override view (only when
+          fetched, to avoid index IO during repr)
+        - ``available_textures=`` — channel keys actually staged
+
+        Field semantics are unchanged: dataclass slots remain the
+        override channel; resolved values surface via :attr:`scalars`.
+        Two namespaces, two purposes — the repr just makes both
+        legible at a glance.
+        """
+        from dataclasses import fields as _fields
+
+        # Field section — same as the auto-repr would produce, honoring
+        # ``field(repr=False)`` on private cache slots.
+        field_parts = [f"{f.name}={getattr(self, f.name)!r}" for f in _fields(self) if f.repr]
+
+        # Lazy-state suffix — cheap when unfetched (just the flag);
+        # touches ``self.scalars`` (catalog dict lookup, no HTTP) only
+        # post-fetch when the index is already hot.
+        suffix = [f"fetched={self._fetched}"]
+        if self._fetched:
+            scalars = self.scalars
+            if scalars:
+                suffix.append(f"scalars={scalars!r}")
+            if self._textures:
+                suffix.append(f"available_textures={sorted(self._textures)!r}")
+
+        return f"{type(self).__name__}({', '.join(field_parts + suffix)})"
+
     # ── Identity helpers ─────────────────────────────────────────
 
     @property

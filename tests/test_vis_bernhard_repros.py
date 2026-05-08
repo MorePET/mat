@@ -17,8 +17,6 @@ mat-vis#287/#288 lesson.
 
 from __future__ import annotations
 
-import pytest
-
 from pymat.vis._model import Vis
 
 # ── #220: Vis.scalars accessor ────────────────────────────────
@@ -107,17 +105,14 @@ class TestIssue220ScalarsAccessor:
 # ── #221: repr observability ──────────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="mat#221: repr stays all-None after fetch — no fetched flag",
-)
 class TestIssue221ReprObservability:
     """Bernhard's mat-vis#311 'Inconsistent outputs' sub-bullet.
 
-    Acceptance from mat#221:
-    - Pre-fetch repr shows fetched=False
-    - Post-fetch repr shows fetched=True plus scalars=/available_textures=
-    - Override semantics unchanged
+    Closed by the custom ``Vis.__repr__`` that overlays lazy state
+    (``fetched=`` flag, ``scalars=`` summary, ``available_textures=``)
+    on top of the dataclass field section. Field semantics unchanged:
+    override channels remain the dataclass slots; resolved values
+    surface via the new repr suffix and via ``Vis.scalars``.
     """
 
     def test_pre_fetch_repr_shows_fetched_false(self):
