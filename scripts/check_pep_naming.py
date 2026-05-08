@@ -12,9 +12,10 @@ Ruff's `N` rule set covers most PEP-8 naming patterns but not this
 one specifically — `N802` accepts any `[a-z][a-z0-9_]*` form
 including `grade_`. This hook is the gap-filler.
 
-Suppression: add ``# noqa: PYMAT_TRAILING_UNDERSCORE`` (or ``# pymat-quality:
-ignore trailing-underscore``) on the same line as the `def` to
-suppress, e.g. for back-compat deprecation aliases.
+Suppression: add ``# pymat-keep-_`` on the same line as the `def`
+(short form). Long forms ``# pymat-quality: ignore trailing-underscore``
+and ``# noqa: PYMAT_TRAILING_UNDERSCORE`` are also recognized.
+Use only for back-compat deprecation aliases.
 
 Run: ``python scripts/check_pep_naming.py [PATH ...]``
 Exits 0 with no output on clean code, 1 with diagnostics on
@@ -96,9 +97,8 @@ def _check_node(
         f"PYMAT_TRAILING_UNDERSCORE: function/method `{name}` ends with `_` "
         f"but `{stripped}` is not a Python keyword or built-in. PEP 8 reserves "
         "trailing single underscore for keyword-collision avoidance only. "
-        "Rename (e.g. `add_grade` for `grade_`) or add a deprecation alias "
-        "with `# noqa: PYMAT_TRAILING_UNDERSCORE` if intentionally preserving "
-        "back-compat."
+        "Rename (e.g. `add_grade` for `grade_`) or add `# pymat-keep-_` on "
+        "the def line if this is an intentional back-compat deprecation alias."
     )
     return msg, node.lineno
 
