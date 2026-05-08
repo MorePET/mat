@@ -1,19 +1,25 @@
-"""
-Output adapters — thin wrappers that map Material to mat-vis's
-generic adapter functions.
+"""Material-aware output adapters — dispatchers that resolve a
+``Material`` (or standalone ``Vis``) to the right rendering path.
 
-The actual format logic (Three.js field names, glTF schema,
-MaterialX XML) lives in mat_vis_client.adapters (installed from
-mat-vis-client package). These wrappers extract scalars + textures
-from a ``Material`` (or a standalone ``Vis``) and pass them through.
+Per ADR-0002, mat-vis-client owns the actual rendering logic — both
+the catalog-backed ``VisAsset`` ergonomic class and the dumb free-
+function primitives. These wrappers are pure dispatch: pull the Vis +
+optional Material name out, delegate to ``Vis.to_threejs()`` /
+``to_gltf()`` / ``export_mtlx()``, which in turn pick between
+``client.asset(...).to_X()`` (catalog) and the free-function
+``mat_vis_client.adapters.to_X(scalars, textures)`` primitive (no
+identity).
+
+Usage::
 
     from pymat.vis.adapters import to_threejs, to_gltf, export_mtlx
     result = to_threejs(material)          # Material form
     result = to_threejs(material.vis)      # Vis form — same output
 
 The polymorphism lets ``Vis.to_gltf()`` / ``Vis.to_threejs()`` method
-sugar delegate here without a back-reference from ``Vis`` to its
-owning ``Material``.
+sugar work without a back-reference from ``Vis`` to its owning
+``Material``; module-level functions read ``material.name`` for
+glTF/MTLX label fields.
 """
 
 from __future__ import annotations
@@ -21,23 +27,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Union
 
-from mat_vis_client.adapters import export_mtlx as _export_mtlx
-from mat_vis_client.adapters import to_gltf as _to_gltf
-from mat_vis_client.adapters import to_threejs as _to_threejs
+from pymat.vis._model import _rgba_to_hex
 
 if TYPE_CHECKING:
     from pymat.core import _MaterialInternal as Material
     from pymat.vis._model import Vis
 
     MaterialOrVis = Union[Material, Vis]
-
-
-def _rgba_to_hex(rgba: list[float] | tuple[float, ...] | None) -> str | None:
-    """Convert [r, g, b, a?] in 0-1 range to '#RRGGBB'. Alpha dropped."""
-    if rgba is None:
-        return None
-    r, g, b = (int(round(max(0.0, min(1.0, c)) * 255)) for c in rgba[:3])
-    return f"#{r:02x}{g:02x}{b:02x}"
 
 
 def _resolve_vis_and_name(obj: MaterialOrVis) -> tuple[Vis, str]:
@@ -50,26 +46,22 @@ def _resolve_vis_and_name(obj: MaterialOrVis) -> tuple[Vis, str]:
 
 
 def _extract_scalars(obj: MaterialOrVis) -> dict[str, Any]:
-    """Extract PBR scalars from material.vis (or a plain Vis).
+    """Caller-set scalars + ``_PBR_DEFAULTS`` fallback.
 
-    Maps py-mat "metallic" → mat-vis "metalness" and our RGBA
-    base_color list → mat-vis's color_hex string (its adapters
-    only know how to emit color from the hex form).
+    Compat shim for the legacy Vis-field-only extraction. Preserved
+    because tests/test_adapters.py exercises it directly. The
+    catalog-aware path lives in ``Vis.scalars`` (which delegates
+    through ``VisAsset``); use that for new code.
     """
     vis, _ = _resolve_vis_and_name(obj)
-    return {
-        "metalness": vis.get("metallic"),
-        "roughness": vis.get("roughness"),
-        "color_hex": _rgba_to_hex(vis.get("base_color")),
-        "ior": vis.get("ior"),
-        "transmission": vis.get("transmission"),
-        "clearcoat": vis.get("clearcoat"),
-        "emissive": vis.get("emissive"),
-    }
+    return vis._scalars_with_defaults()
 
 
 def _extract_textures(obj: MaterialOrVis) -> dict[str, bytes]:
-    """Extract texture bytes from a Material's Vis (or a plain Vis)."""
+    """Texture dict from a Material's Vis (or a plain Vis).
+
+    Compat shim. Returns ``{}`` when there's no mat-vis identity.
+    """
     vis, _ = _resolve_vis_and_name(obj)
     if not vis.has_mapping:
         return {}
@@ -77,13 +69,13 @@ def _extract_textures(obj: MaterialOrVis) -> dict[str, bytes]:
 
 
 def to_threejs(obj: MaterialOrVis) -> dict[str, Any]:
-    """Format as a Three.js MeshPhysicalMaterial-compatible dict.
+    """Format as a Three.js ``MeshPhysicalMaterial`` parameter dict.
 
-    Accepts either a ``Material`` or a standalone ``Vis``. Reads PBR
-    scalars and texture maps from ``obj.vis`` (or from ``obj`` itself
-    if it's a Vis). Delegates to mat-vis's generic adapter.
+    Accepts either a ``Material`` or a standalone ``Vis``. Delegates
+    to ``Vis.to_threejs()`` which dispatches on ``has_mapping``.
     """
-    return _to_threejs(_extract_scalars(obj), _extract_textures(obj))
+    vis, _ = _resolve_vis_and_name(obj)
+    return vis.to_threejs()
 
 
 def to_gltf(obj: MaterialOrVis, *, name: str | None = None) -> dict[str, Any]:
@@ -92,12 +84,9 @@ def to_gltf(obj: MaterialOrVis, *, name: str | None = None) -> dict[str, Any]:
     Accepts either a ``Material`` (its ``.name`` is used as the glTF
     material ``name`` field) or a standalone ``Vis`` (pass ``name=``
     explicitly to populate the field; empty string otherwise).
-    Delegates to mat-vis's generic adapter.
     """
-    _, resolved_name = _resolve_vis_and_name(obj)
-    result = _to_gltf(_extract_scalars(obj), _extract_textures(obj))
-    result["name"] = name if name is not None else resolved_name
-    return result
+    vis, resolved_name = _resolve_vis_and_name(obj)
+    return vis.to_gltf(name=name if name is not None else resolved_name)
 
 
 def export_mtlx(
@@ -110,14 +99,7 @@ def export_mtlx(
 
     Accepts either a ``Material`` (its ``.name`` becomes the filename
     stem) or a standalone ``Vis`` (pass ``name=`` explicitly to name
-    the output). Delegates to mat-vis's generic adapter.
+    the output).
     """
-    _, resolved_name = _resolve_vis_and_name(obj)
-    mat_name = name if name is not None else resolved_name
-    safe_name = mat_name.replace(" ", "_").replace("/", "_") or "material"
-    return _export_mtlx(
-        _extract_scalars(obj),
-        _extract_textures(obj),
-        output_dir,
-        material_name=safe_name,
-    )
+    vis, resolved_name = _resolve_vis_and_name(obj)
+    return vis.export_mtlx(output_dir, name=name if name is not None else resolved_name)

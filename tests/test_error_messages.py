@@ -552,16 +552,6 @@ class TestThreejsColorEncoding:
       version that returns int again).
     """
 
-    @pytest.mark.xfail(
-        reason=(
-            "Pending mat-vis #298: color encoding is currently 'int' (the "
-            "Three.js wire format). Will flip to '#RRGGBB' string once "
-            "mat-vis-client 0.7.x ships color_format='hex' as the default. "
-            "py-materials consumes mat-vis-client>=0.6.3 so the dep bump is "
-            "additive."
-        ),
-        strict=True,
-    )
     def test_color_is_hex_string(self):
         import pymat
         from pymat.vis import to_threejs

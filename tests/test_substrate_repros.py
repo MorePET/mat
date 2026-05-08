@@ -70,16 +70,6 @@ class TestMatVis285_GpuopenBakingScalars:
     color, roughness} once the baker preserves authored scalars.
     """
 
-    @pytest.mark.xfail(
-        reason=(
-            "mat-vis #285: gpuopen baker returns default scalars for "
-            "all materials (metalness=0.0, color=0xCCCCCC, etc.) instead "
-            "of preserved-from-source values. Will flip to passing when "
-            "the baker correctly forwards authored scalars from the "
-            "source .mtlx through to the rowmap entries."
-        ),
-        strict=True,
-    )
     def test_gpuopen_metals_have_distinct_scalars(self):
         from pymat.vis import Vis
 

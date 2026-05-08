@@ -115,6 +115,14 @@ _IDENTITY_FIELDS = frozenset({"source", "material_id", "tier"})
 _SENTINEL: Any = object()
 
 
+def _rgba_to_hex(rgba: list[float] | tuple[float, ...] | None) -> str | None:
+    """Convert [r, g, b, a?] in 0-1 range to '#RRGGBB'. Alpha dropped."""
+    if rgba is None:
+        return None
+    r, g, b = (int(round(max(0.0, min(1.0, c)) * 255)) for c in rgba[:3])
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 def _validate_tier(value: str | None) -> None:
     """Reject an obviously-bogus ``tier`` assignment with a clear message.
 
@@ -671,43 +679,136 @@ class Vis:
         tex = self.textures.get(channel)
         return ResolvedChannel(texture=tex, scalar=scalar)
 
-    # ── Adapter sugar (delegate to module-level, method discoverability) ─
+    # ── Render dispatch (catalog vs explicit vs defaults) ───────
+
+    def _catalog_scalars(self) -> dict[str, Any]:
+        """Catalog-authored PBR scalars for this Vis (or ``{}`` when
+        there's no mat-vis identity).
+
+        Thin delegate for ``client._scalars_for(source, material_id)`` —
+        ADR-0002 Principle 3. Reads the source's ``mat_vis.pbr.*`` block
+        from the index. Best-effort: silent ``{}`` when index lookup
+        fails. Lazy / no HTTP fetch — the index is loaded once by the
+        client and cached in-memory.
+        """
+        if not self.has_mapping:
+            return {}
+        try:
+            return self.client._scalars_for(self.source, self.material_id)
+        except Exception:
+            return {}
+
+    def _explicit_scalars(self) -> dict[str, Any]:
+        """Caller-supplied PBR overrides only — None fields dropped.
+
+        Used to overlay on top of catalog scalars in the has_mapping
+        case so explicit ``vis.metallic = 0.7`` wins over the authored
+        catalog value. Maps pymat field names to mat-vis adapter keys.
+        """
+        out: dict[str, Any] = {}
+        if self.metallic is not None:
+            out["metalness"] = self.metallic
+        if self.roughness is not None:
+            out["roughness"] = self.roughness
+        if self.base_color is not None:
+            out["color_hex"] = _rgba_to_hex(self.base_color)
+        if self.ior is not None:
+            out["ior"] = self.ior
+        if self.transmission is not None:
+            out["transmission"] = self.transmission
+        if self.clearcoat is not None:
+            out["clearcoat"] = self.clearcoat
+        if self.emissive is not None:
+            out["emissive"] = self.emissive
+        return out
+
+    def _scalars_with_defaults(self) -> dict[str, Any]:
+        """Caller-overrides with ``_PBR_DEFAULTS`` fallback — for the
+        no-identity case where there's no catalog to read. Preserves
+        the historical "all-defaults grey plastic" output for materials
+        without mat-vis mapping.
+        """
+        return {
+            "metalness": self.get("metallic"),
+            "roughness": self.get("roughness"),
+            "color_hex": _rgba_to_hex(self.get("base_color")),
+            "ior": self.get("ior"),
+            "transmission": self.get("transmission"),
+            "clearcoat": self.get("clearcoat"),
+            "emissive": self.get("emissive"),
+        }
+
+    @property
+    def scalars(self) -> dict[str, Any]:
+        """PBR scalars dict in mat-vis adapter schema. Sparse: only
+        keys with authored / explicit values; no ``_PBR_DEFAULTS``
+        fallback (use ``to_threejs()`` if you want the all-defaults
+        render shape).
+
+        For a Vis with mat-vis identity: catalog-authored values from
+        the source's ``mat_vis.pbr.*`` block, with explicit caller
+        overrides merged on top. For a Vis without identity: only the
+        caller's explicit overrides (``{}`` if none).
+
+        Lazy: the has_mapping case touches ``VisAsset.scalars`` which
+        is itself lazy + cached. Reading ``.scalars`` does NOT trigger
+        a texture HTTP fetch.
+
+        Closes mat#220.
+        """
+        return {**self._catalog_scalars(), **self._explicit_scalars()}
 
     def to_threejs(self) -> dict[str, Any]:
-        """Shorthand for ``pymat.vis.to_threejs(material)`` — method form.
+        """Three.js ``MeshPhysicalMaterial`` parameter dict.
 
-        Same output as the module-level adapter. Use this when you have
-        a ``Vis`` in hand (``material.vis.to_threejs()``); use the
-        module-level form (``pymat.vis.to_threejs(material)``) in code
-        that's explicitly function-composition oriented.
+        Dispatches on ``has_mapping``:
+
+        - **with identity** → ``client.asset(...).to_threejs()`` with
+          explicit caller overrides merged on top. The catalog-aware
+          path: scalar-only sources, color-format defaults, all the
+          rendering policy lives in mat-vis-client.
+        - **without identity** → calls the dumb adapter directly with
+          caller-set fields + ``_PBR_DEFAULTS`` (the historical
+          all-grey-plastic shape).
         """
-        from pymat.vis.adapters import to_threejs
+        from mat_vis_client.adapters import to_threejs as _adapter
 
-        return to_threejs(self)
+        if self.has_mapping:
+            scalars = {**self._catalog_scalars(), **self._explicit_scalars()}
+            return _adapter(scalars, self.textures)
+        return _adapter(self._scalars_with_defaults(), {})
 
     def to_gltf(self, *, name: str | None = None) -> dict[str, Any]:
-        """Shorthand for ``pymat.vis.to_gltf(material)`` — method form.
-
-        The glTF material node's ``name`` field is populated from
-        ``name=`` if given, else left empty (the method has no
-        visibility into the owning Material's name; pass it through
-        explicitly when calling on a standalone Vis). The module-level
-        ``pymat.vis.to_gltf(material)`` reads ``material.name``
-        automatically.
+        """glTF 2.0 material dict. ``name=`` populates the node's
+        ``name`` field (left empty when unset on a standalone Vis;
+        the module-level ``pymat.vis.to_gltf(material)`` form fills
+        it from ``material.name`` automatically).
         """
-        from pymat.vis.adapters import to_gltf
+        from mat_vis_client.adapters import to_gltf as _adapter
 
-        return to_gltf(self, name=name)
+        if self.has_mapping:
+            scalars = {**self._catalog_scalars(), **self._explicit_scalars()}
+            result = _adapter(scalars, self.textures)
+        else:
+            result = _adapter(self._scalars_with_defaults(), {})
+        result["name"] = name if name is not None else ""
+        return result
 
     def export_mtlx(self, output_dir: str | Path, *, name: str | None = None) -> Path:
-        """Shorthand for ``pymat.vis.export_mtlx(material, out)``.
-
-        ``name=`` sets the MTLX filename stem. Omitted on a standalone
-        Vis → defaults to ``"material"``.
+        """Export as a MaterialX .mtlx file + PNG textures on disk.
+        ``name=`` sets the filename stem; defaults to ``"material"``.
         """
-        from pymat.vis.adapters import export_mtlx
+        from mat_vis_client.adapters import export_mtlx as _adapter
 
-        return export_mtlx(self, Path(output_dir), name=name)
+        mat_name = name if name is not None else "material"
+        safe_name = mat_name.replace(" ", "_").replace("/", "_") or "material"
+
+        if self.has_mapping:
+            scalars = {**self._catalog_scalars(), **self._explicit_scalars()}
+            return _adapter(scalars, self.textures, Path(output_dir), material_name=safe_name)
+        return _adapter(
+            self._scalars_with_defaults(), {}, Path(output_dir), material_name=safe_name
+        )
 
     # ── Discovery (py-mat's tag-aware layer over client.search) ─
 

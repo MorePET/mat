@@ -24,13 +24,12 @@ from pymat.vis._model import Vis
 # ── #220: Vis.scalars accessor ────────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="mat#220: Vis.scalars accessor not yet implemented",
-    raises=AttributeError,
-)
 class TestIssue220ScalarsAccessor:
     """Bernhard's mat-vis#311 'Scalars as first class citizens' sub-bullet.
+
+    Closed by the dispatch refactor: ``Vis.scalars`` now delegates to
+    ``client._scalars_for(source, material_id)`` (catalog-authored
+    values) merged with explicit caller overrides.
 
     Acceptance from mat#220:
     - v.scalars returns dict for any successfully-fetched Vis
@@ -41,32 +40,36 @@ class TestIssue220ScalarsAccessor:
 
     def test_scalars_attribute_exists_on_vis(self):
         v = Vis()
-        # Today: AttributeError. After fix: returns {} (no identity).
         assert v.scalars == {}
 
-    def test_scalars_returns_authored_pbr_after_fetch(self, monkeypatch):
+    def test_scalars_returns_authored_pbr(self, monkeypatch):
         """Bernhard's literal snippet from mat-vis#311.
 
-        v.textures triggers fetch; v.scalars must then return the
-        authored PBR scalars keyed by the catalog's mat_vis.pbr names.
+        ``v.scalars`` returns the authored PBR scalars from the catalog
+        (``_scalars_for``), keyed by mat-vis adapter schema names.
         """
 
         class FakeClient:
             def fetch_all_textures(self, source, material_id, *, tier="1k"):
                 return {"color": b"png", "normal": b"png", "roughness": b"png"}
 
+            def _scalars_for(self, source, material_id):
+                return {
+                    "roughness": 0.4,
+                    "metalness": 1.0,
+                    "ior": 1.5,
+                    "color_hex": "#cccccc",
+                }
+
         import mat_vis_client as _client
 
         monkeypatch.setattr(_client, "_client", FakeClient())
 
         v = Vis(source="gpuopen", material_id="Aluminum Brushed", tier="1k")
-        v.textures  # trigger fetch  # noqa: B018
-        assert v._fetched is True
-
         scalars = v.scalars
         assert isinstance(scalars, dict)
-        # Keys per the acceptance criteria in mat#220
-        for key in ("roughness", "metalness", "base_color", "ior", "transmission"):
+        # Keys per the catalog's mat_vis.pbr.* schema
+        for key in ("roughness", "metalness", "ior", "color_hex"):
             assert key in scalars
 
     def test_scalars_does_not_trigger_texture_fetch(self, monkeypatch):
@@ -79,6 +82,9 @@ class TestIssue220ScalarsAccessor:
             def fetch_all_textures(self, source, material_id, *, tier="1k"):
                 called["fetch"] += 1
                 return {"color": b"png"}
+
+            def _scalars_for(self, source, material_id):
+                return {"roughness": 0.4, "metalness": 1.0}
 
         import mat_vis_client as _client
 
