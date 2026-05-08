@@ -696,16 +696,17 @@ class Vis:
         """Catalog-authored PBR scalars via ``client.asset(...).scalars``.
 
         ADR-0002 Principle 3 thin delegate. Returns ``{}`` for no-
-        identity Vis or when index lookup fails (best-effort: defensive
-        against test mocks without ``.asset()`` and against transient
-        index errors). Lazy / no HTTP fetch — the catalog index is
-        loaded once by the client and cached in-memory.
+        identity Vis. The underlying ``_scalars_for`` is silent on
+        failure (missing index / unknown material → ``{}``) so we
+        don't need to wrap exceptions; the AttributeError fallback
+        only matters for legacy test mocks lacking ``.asset()``.
+        Lazy / no HTTP fetch — the catalog index is loaded once.
         """
         if not self.has_mapping:
             return {}
         try:
             return self.client.asset(*self._identity_args()).scalars
-        except Exception:
+        except AttributeError:
             return {}
 
     def _explicit_scalars(self) -> dict[str, Any]:
