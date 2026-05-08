@@ -679,28 +679,27 @@ class Vis:
         tex = self.textures.get(channel)
         return ResolvedChannel(texture=tex, scalar=scalar)
 
-    # ── Render dispatch ─────────────────────────────────────────
+    # ── Scalars + render adapters ───────────────────────────────
     #
-    # Three private helpers + one consolidating dispatcher, mapped to
-    # the three states a Vis can be in:
+    # Two states ``Vis`` can be in for rendering: (a) identity → catalog
+    # scalars from mat-vis VisAsset, with caller overrides on top; (b)
+    # no identity → caller fields with ``_PBR_DEFAULTS`` fallback so
+    # the dumb adapter has a complete dict to emit.
     #
-    #   has_mapping  →  _catalog_scalars()    (mat-vis VisAsset)
-    #   any state    →  _explicit_scalars()   (caller overrides, sparse)
-    #   no identity  →  _scalars_with_defaults() (caller + _PBR_DEFAULTS)
-    #
-    # Public ``Vis.scalars`` exposes only authored values (catalog +
-    # overrides, sparse). Render adapters (``to_threejs`` etc.) use
-    # ``_render_scalars()`` which fills in ``_PBR_DEFAULTS`` for the
-    # no-identity path so the dumb mat-vis adapter has something to
-    # emit.
+    # Public ``Vis.scalars`` is sparse — only authored / explicitly-set
+    # keys, no defaults. ``_render_scalars()`` adds the defaults
+    # fallback for the no-identity render path; ``Vis.textures``
+    # already returns ``{}`` for no-identity, so render adapters call
+    # it directly.
 
     def _catalog_scalars(self) -> dict[str, Any]:
-        """Catalog-authored PBR scalars via ``client.asset(...)``.
+        """Catalog-authored PBR scalars via ``client.asset(...).scalars``.
 
-        Thin delegate for ``client.asset(source, material_id, tier).scalars``
-        — ADR-0002 Principle 3. Returns ``{}`` for no-identity Vis or
-        when index lookup fails (best-effort, silent). Lazy / no HTTP
-        fetch — the catalog index is loaded once by the client.
+        ADR-0002 Principle 3 thin delegate. Returns ``{}`` for no-
+        identity Vis or when index lookup fails (best-effort: defensive
+        against test mocks without ``.asset()`` and against transient
+        index errors). Lazy / no HTTP fetch — the catalog index is
+        loaded once by the client and cached in-memory.
         """
         if not self.has_mapping:
             return {}
@@ -712,9 +711,10 @@ class Vis:
     def _explicit_scalars(self) -> dict[str, Any]:
         """Caller-supplied PBR overrides only — None fields dropped.
 
-        Used to overlay on top of catalog scalars so explicit
-        ``vis.metallic = 0.7`` wins over the authored catalog value.
-        Maps pymat field names to mat-vis adapter keys.
+        Maps pymat field names to mat-vis adapter keys (``metallic`` →
+        ``metalness``, ``base_color`` RGBA → ``color_hex`` string).
+        Layered on top of catalog scalars so ``vis.metallic = 0.7``
+        wins over the authored catalog value.
         """
         out: dict[str, Any] = {}
         if self.metallic is not None:
@@ -735,9 +735,9 @@ class Vis:
 
     def _scalars_with_defaults(self) -> dict[str, Any]:
         """Caller-overrides with ``_PBR_DEFAULTS`` fallback — for the
-        no-identity case where there's no catalog to read. Preserves
-        the historical "all-defaults grey plastic" render shape for
-        TOML-only / chemistry-only materials.
+        no-identity render path where there's no catalog to read.
+        Preserves the historical "all-defaults grey plastic" shape
+        for TOML-only / chemistry-only materials.
         """
         return {
             "metalness": self.get("metallic"),
@@ -749,22 +749,11 @@ class Vis:
             "emissive": self.get("emissive"),
         }
 
-    def _render_scalars(self) -> dict[str, Any]:
-        """Scalars dict for render adapters. Single dispatch: catalog
-        + explicit overrides if there's identity, else caller +
-        ``_PBR_DEFAULTS`` for the no-identity legacy path. Used by
-        ``to_threejs`` / ``to_gltf`` / ``export_mtlx``.
-        """
-        if self.has_mapping:
-            return {**self._catalog_scalars(), **self._explicit_scalars()}
-        return self._scalars_with_defaults()
-
     @property
     def scalars(self) -> dict[str, Any]:
         """PBR scalars dict in mat-vis adapter schema. Sparse: only
-        keys with authored / explicit values; no ``_PBR_DEFAULTS``
-        fallback (use ``to_threejs()`` if you want the all-defaults
-        render shape).
+        keys with authored / explicit values; no defaults fallback
+        (use ``to_threejs()`` for the all-defaults render shape).
 
         For a Vis with mat-vis identity: catalog-authored values from
         the source's ``mat_vis.pbr.*`` block, with explicit caller
@@ -779,24 +768,23 @@ class Vis:
         """
         return {**self._catalog_scalars(), **self._explicit_scalars()}
 
-    def _render_textures(self) -> dict[str, bytes]:
-        """Textures dict for render adapters — ``self.textures`` (lazy
-        HTTP fetch via the existing Vis-level cache) when there's
-        identity, else ``{}``.
+    def _render_scalars(self) -> dict[str, Any]:
+        """Scalars dict for render adapters: ``self.scalars`` for
+        identity-bearing Vis, ``_scalars_with_defaults()`` otherwise.
         """
-        return self.textures if self.has_mapping else {}
+        return self.scalars if self.has_mapping else self._scalars_with_defaults()
 
     def to_threejs(self) -> dict[str, Any]:
         """Three.js ``MeshPhysicalMaterial`` parameter dict.
 
         Dispatches via :meth:`_render_scalars` — catalog scalars +
         caller overrides for identity-bearing Vis, caller fields +
-        ``_PBR_DEFAULTS`` otherwise. Adapter logic (color format,
-        scalar normalization) lives in mat-vis-client.
+        ``_PBR_DEFAULTS`` otherwise. Color format, scalar
+        normalization, and texture encoding all live in mat-vis-client.
         """
         from mat_vis_client.adapters import to_threejs as _adapter
 
-        return _adapter(self._render_scalars(), self._render_textures())
+        return _adapter(self._render_scalars(), self.textures)
 
     def to_gltf(self, *, name: str | None = None) -> dict[str, Any]:
         """glTF 2.0 material dict. ``name=`` populates the node's
@@ -806,7 +794,7 @@ class Vis:
         """
         from mat_vis_client.adapters import to_gltf as _adapter
 
-        result = _adapter(self._render_scalars(), self._render_textures())
+        result = _adapter(self._render_scalars(), self.textures)
         result["name"] = name if name is not None else ""
         return result
 
@@ -820,7 +808,7 @@ class Vis:
         safe_name = mat_name.replace(" ", "_").replace("/", "_") or "material"
         return _adapter(
             self._render_scalars(),
-            self._render_textures(),
+            self.textures,
             Path(output_dir),
             material_name=safe_name,
         )
