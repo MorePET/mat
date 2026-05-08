@@ -11,7 +11,7 @@ Supports:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypeVar
 
 if TYPE_CHECKING:
     pass
@@ -137,6 +137,13 @@ class _MaterialInternal:
 
     # Provenance (#150) — keyed by dotted property path; `_default` fallback.
     _sources: Dict[str, Source] = field(default_factory=dict, repr=False)
+
+    # Multi-axial filterable tags (#132). Orthogonal to the TOML
+    # hierarchy — chemistry / function / industry / treatment /
+    # regulation labels that consumers filter on. Children INHERIT
+    # parent tags and extend at child level; the loader merges the
+    # parent chain into the effective ``tags`` value.
+    tags: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Apply convenience parameters and property groups to properties object."""
@@ -821,6 +828,7 @@ class Material(_MaterialInternal):
         parent: Optional["Material"] = None,
         _key: Optional[str] = None,
         _sources: Optional[Dict[str, Source]] = None,
+        tags: Optional[List[str]] = None,
     ):
         # Call parent init without density
         super().__init__(
@@ -843,6 +851,7 @@ class Material(_MaterialInternal):
             parent=parent,
             _key=_key,
             _sources=_sources or {},
+            tags=list(tags) if tags is not None else [],
         )
 
         # Apply density convenience param after parent init
