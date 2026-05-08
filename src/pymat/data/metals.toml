@@ -5,6 +5,7 @@
 [stainless]
 name = "Stainless Steel"
 composition = {Fe = 0.68, Cr = 0.18, Ni = 0.10, Mn = 0.02, Si = 0.01, C = 0.005}
+tags = ["ferrous", "stainless", "corrosion-resistant"]
 
 [stainless.mechanical]
 density_value = 8.0
@@ -58,6 +59,7 @@ resistivity_unit = "ohm*m"
 name = "Stainless Steel 316L"
 grade = "316L"
 composition = {Fe = 0.65, Cr = 0.17, Ni = 0.12, Mo = 0.025, Mn = 0.02, Si = 0.01, C = 0.005}
+tags = ["austenitic", "marine-grade", "molybdenum-bearing", "316-family"]
 
 [stainless.s316L.mechanical]
 density_value = 8.0
