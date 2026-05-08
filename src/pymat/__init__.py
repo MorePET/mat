@@ -59,7 +59,7 @@ from .sources import Source
 from .units import ureg
 from .vis import FinishEntry, Vis, VisDeltas
 
-__version__ = "3.10.0"  # x-release-please-version
+__version__ = "3.11.0"  # x-release-please-version
 __all__ = [
     "Material",
     "AllProperties",
