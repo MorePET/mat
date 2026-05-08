@@ -627,7 +627,12 @@ class TestModuleShape:
 # ── Discover ─────────────────────────────────────────────────
 
 
+@pytest.mark.filterwarnings("ignore:Vis.discover.*deprecated:DeprecationWarning")
 class TestDiscover:
+    """Legacy discover() — superseded by candidates()/with_match() in
+    #230. Tests preserved (with deprecation warning suppressed) to
+    catch behavioral regressions until 4.x removes the method."""
+
     def test_discover_returns_candidates(self, monkeypatch):
         import mat_vis_client as _client
 
@@ -666,6 +671,151 @@ class TestDiscover:
         candidates = v.discover(category="exotic")
         assert candidates == []
         assert v.source is None
+
+    def test_discover_emits_deprecation_warning(self, monkeypatch):
+        """Vis.discover() is superseded by Vis.candidates() + with_match()
+        per #230. Pin the deprecation signal."""
+        import mat_vis_client as _client
+
+        monkeypatch.setattr(_client, "search", lambda **kw: [])
+
+        v = Vis()
+        with pytest.warns(DeprecationWarning, match="candidates"):
+            v.discover()
+
+
+# ── Candidates / with_match (#230) ───────────────────────────
+
+
+class TestCandidates:
+    """``Vis.candidates(...)`` — auto-derives the search query from the
+    calling Vis's PBR scalars when filters aren't supplied. Returns
+    Match-typed entries (mat-vis #359) ready for ``with_match`` /
+    ``client.asset(...)``."""
+
+    def test_candidates_auto_derives_scalars_from_self(self, monkeypatch):
+        captured = {}
+
+        def fake_search(**kwargs):
+            captured.update(kwargs)
+            return []
+
+        import mat_vis_client as _client
+
+        monkeypatch.setattr(_client, "search", fake_search)
+
+        v = Vis(roughness=0.4, metallic=0.8)
+        v.candidates()
+
+        assert captured["roughness"] == 0.4
+        assert captured["metalness"] == 0.8
+
+    def test_candidates_explicit_kwarg_overrides_self(self, monkeypatch):
+        """Caller-supplied ``roughness=`` / ``metalness=`` win over the
+        auto-derived values from ``self.``."""
+        captured = {}
+
+        def fake_search(**kwargs):
+            captured.update(kwargs)
+            return []
+
+        import mat_vis_client as _client
+
+        monkeypatch.setattr(_client, "search", fake_search)
+
+        v = Vis(roughness=0.4, metallic=0.8)
+        v.candidates(roughness=0.1, metalness=0.2)
+
+        assert captured["roughness"] == 0.1
+        assert captured["metalness"] == 0.2
+
+    def test_candidates_passes_through_other_filters(self, monkeypatch):
+        captured = {}
+
+        def fake_search(**kwargs):
+            captured.update(kwargs)
+            return []
+
+        import mat_vis_client as _client
+
+        monkeypatch.setattr(_client, "search", fake_search)
+
+        v = Vis()
+        v.candidates(category="metal", source="gpuopen", tier="2k", limit=5)
+        assert captured["category"] == "metal"
+        assert captured["source"] == "gpuopen"
+        assert captured["tier"] == "2k"
+        assert captured["limit"] == 5
+
+    def test_candidates_does_not_mutate_self(self, monkeypatch):
+        """Browse-only — ``candidates()`` never writes back identity
+        (that's ``with_match``'s job)."""
+        import mat_vis_client as _client
+
+        monkeypatch.setattr(
+            _client,
+            "search",
+            lambda **kw: [
+                {"source": "gpuopen", "id": "uuid-1", "available_tiers": ["1k"]},
+            ],
+        )
+
+        v = Vis()
+        v.candidates()
+        assert v.source is None
+        assert v.material_id is None
+
+
+class TestWithMatch:
+    """``Vis.with_match(match)`` — immutable identity transfer from a
+    Match (or any dict-shaped index entry). Companion to
+    ``set_identity`` for the Match-driven flow."""
+
+    def test_with_match_returns_new_vis_with_identity(self):
+        match = {"source": "gpuopen", "id": "uuid-1", "available_tiers": ["1k"]}
+        v = Vis()
+        new_v = v.with_match(match)
+        assert new_v.source == "gpuopen"
+        assert new_v.material_id == "uuid-1"
+        assert new_v.tier == "1k"
+
+    def test_with_match_does_not_mutate_original(self):
+        match = {"source": "gpuopen", "id": "uuid-1", "available_tiers": ["1k"]}
+        v = Vis(source="other", material_id="other-id")
+        new_v = v.with_match(match)
+        assert v.source == "other"  # unchanged
+        assert v.material_id == "other-id"
+        assert new_v is not v
+
+    def test_with_match_prefers_1k_when_in_tiers(self):
+        match = {"source": "gpuopen", "id": "uuid-1", "available_tiers": ["2k", "1k", "4k"]}
+        new_v = Vis().with_match(match)
+        assert new_v.tier == "1k"
+
+    def test_with_match_falls_back_to_first_tier_when_no_1k(self):
+        match = {"source": "physicallybased", "id": "aluminum", "available_tiers": ["scalar"]}
+        new_v = Vis().with_match(match)
+        assert new_v.tier == "scalar"
+
+    def test_with_match_preserves_self_tier_when_match_has_none(self):
+        """Match without ``available_tiers`` (or empty) → keep current tier."""
+        match = {"source": "gpuopen", "id": "uuid-1"}
+        v = Vis(tier="2k")
+        new_v = v.with_match(match)
+        assert new_v.tier == "2k"
+
+    def test_with_match_invalidates_texture_cache_on_new_identity(self):
+        v = Vis(source="old", material_id="old-id", tier="1k")
+        v._textures = {"color": b"old"}
+        v._fetched = True
+
+        match = {"source": "new", "id": "new-id", "available_tiers": ["1k"]}
+        new_v = v.with_match(match)
+        # New Vis starts unfetched (override → set_identity → cache clear)
+        assert new_v._fetched is False
+        assert new_v._textures == {}
+        # Original unchanged
+        assert v._fetched is True
 
 
 # ── Material.vis wiring ──────────────────────────────────────

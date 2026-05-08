@@ -814,7 +814,70 @@ class Vis:
             material_name=safe_name,
         )
 
-    # ── Discovery (py-mat's tag-aware layer over client.search) ─
+    # ── Browse / candidates (mat-vis search() delegate, #230) ───
+
+    def candidates(
+        self,
+        *,
+        category: str | None = None,
+        roughness: float | None = None,
+        metalness: float | None = None,
+        roughness_range: tuple[float, float] | None = None,
+        metalness_range: tuple[float, float] | None = None,
+        source: str | None = None,
+        tier: str = "1k",
+        limit: int = 10,
+    ) -> list[Any]:
+        """Find catalog appearances matching this material's properties.
+
+        Auto-populates the search query from this Vis's own PBR
+        scalars when ``roughness=`` / ``metalness=`` aren't supplied.
+        Returns ``list[Match]`` (mat-vis #359) — each entry is a
+        dict-subclass with ``.ref`` / ``.id`` / ``.source`` / ``.mat_vis``
+        attributes plus full dict-key access. Hand to
+        :meth:`with_match` to apply, or to ``client.asset(...)`` to
+        fetch directly.
+
+        ``vis.candidates()`` does not trigger any HTTP texture fetches
+        — search reads the per-source index only.
+        """
+        from mat_vis_client import search
+
+        return search(
+            category=category,
+            roughness=roughness if roughness is not None else self.roughness,
+            metalness=metalness if metalness is not None else self.metallic,
+            roughness_range=roughness_range,
+            metalness_range=metalness_range,
+            source=source,
+            tier=tier,
+            limit=limit,
+        )
+
+    def with_match(self, match: Any) -> Vis:
+        """Return a new ``Vis`` with this Match's identity (source,
+        material_id, tier). Original Vis unchanged.
+
+        ``match`` is a Match (mat-vis #359) or any dict-shaped index
+        entry with ``source`` / ``id`` keys. ``tier`` is taken from
+        ``match["available_tiers"][0]`` when present (preferring
+        ``"1k"``); otherwise the calling Vis's current tier carries
+        over.
+
+        Immutable companion to :meth:`set_identity`: useful when
+        composing from a candidates list without mutating shared
+        registry instances::
+
+            picked = steel.with_vis(steel.vis.with_match(matches[0]))
+        """
+        src = match["source"]
+        mid = match["id"]
+        tiers = list(match.get("available_tiers") or [])
+        if tiers:
+            new_tier = "1k" if "1k" in tiers else tiers[0]
+        else:
+            new_tier = self.tier
+        return self.override(source=src, material_id=mid, tier=new_tier)
 
     def discover(
         self,
@@ -824,12 +887,23 @@ class Vis:
         metallic: float | None = None,
         limit: int = 5,
         auto_set: bool = False,
-    ) -> list[dict[str, Any]]:
+    ) -> list[Any]:
         """Search mat-vis for appearances matching this material's scalars.
 
-        Returns candidates with ``{source, id, category, score, ...}``.
-        Pass ``auto_set=True`` to set the top match on this Vis.
+        .. deprecated:: 3.x
+           Use :meth:`candidates` (Match-typed return, auto-derives
+           query from this Vis) and :meth:`with_match` for immutable
+           assignment from the result. Will be removed in 4.x.
         """
+        import warnings
+
+        warnings.warn(
+            "Vis.discover() is deprecated; use Vis.candidates() to browse "
+            "and Vis.with_match(m) for immutable identity assignment. "
+            "discover()'s auto_set= mutation will be removed in 4.x.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from mat_vis_client import search
 
         results = search(
