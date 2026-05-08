@@ -321,6 +321,13 @@ jobs:
         # audit window.
         run: python scripts/check_licenses.py
 
+      - name: Run check_pep_naming.py
+        # Stdlib-only AST hook. Flags trailing-`_` on names whose
+        # stripped form isn't a Python keyword/built-in — Bernhard's
+        # py-mat #218 readability ask. Ruff's N-rules don't cover
+        # this specific pattern.
+        run: python scripts/check_pep_naming.py
+
   summary:
     name: CI Summary
     runs-on: ubuntu-22.04
