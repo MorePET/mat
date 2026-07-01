@@ -281,8 +281,8 @@ class TestEndToEnd:
 class TestGpuopenNameLookup:
     """Human-readable name access for gpuopen materials.
 
-    Bernhard (build123d#1270) flagged gpuopen UX as UUID-only — see
-    mat-vis#143. mat-vis-client 0.6.3 fixed this upstream:
+    build123d#1270 flagged gpuopen UX as UUID-only — see mat-vis#143.
+    mat-vis-client 0.6.3 fixed this upstream:
     ``MatVisClient._resolve_material_id`` accepts either canonical id
     (UUID for gpuopen) or a normalized human-readable name from
     ``mat_vis.name`` in the index, and ``fetch_all_textures`` / ``mtlx``

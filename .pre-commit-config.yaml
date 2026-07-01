@@ -104,3 +104,13 @@ repos:
         language: python
         files: ^(src/pymat/data/.*\.toml|scripts/check_licenses\.py|\.github/license-ratchet\.txt)$
         pass_filenames: false
+
+      # Custom PEP-8 naming: trailing-`_` reserved for keyword-collision
+      # avoidance only. Catches the gap ruff's N-rules don't cover.
+      # Stdlib-only (ast/keyword/builtins).
+      - id: pep-naming-trailing-underscore
+        name: PEP 8 trailing-underscore (kw-collision only)
+        entry: python scripts/check_pep_naming.py
+        language: python
+        files: ^(src/|tests/|scripts/).*\.py$
+        pass_filenames: false

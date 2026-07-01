@@ -95,7 +95,31 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W", "I", "N"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scientific unit suffixes (K, C, eV, keV, Bq, ...) are intentional in
+# public API field names and method parameters per SI / domain convention.
+# PEP 8's strict-lowercase rule (N803 / N815) reads as a violation but the
+# suffixes carry meaning lowercase would erase. File-level ignore is cleaner
+# than per-field noqa.
+"src/pymat/curves.py" = ["N803", "N815"]
+"src/pymat/properties.py" = ["N803", "N815"]
+
+# Tests use domain-realistic local names (`s316L`, `mp_K`, `bp_K`, ...) and
+# may define test-local helper classes / exception types whose strict
+# adherence to PEP 8 naming would erase the test's documentary value.
+# - N802: test function names with unit suffixes (`test_parse_temperature_C`)
+# - N803 / N806 / N815: unit-suffixed identifiers
+# - N805: methods on stub classes that aren't real `self` (FakeClient, etc.)
+# - N818: test-local exception names that don't ship as public API
+"tests/**.py" = ["N801", "N802", "N803", "N805", "N806", "N815", "N818"]
+
+# Enricher scripts parse external data with unit-suffixed value names
+# (`_parse_temperature_C`, `_parse_density_g_per_cm3`, …); the suffixes
+# match the source-of-truth in the underlying scientific data and erasing
+# them via lowercase-rename would make the parser less self-documenting.
+"scripts/**.py" = ["N802", "N803", "N806", "N815"]
 
 [dependency-groups]
 dev = [

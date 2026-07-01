@@ -115,6 +115,14 @@ _IDENTITY_FIELDS = frozenset({"source", "material_id", "tier"})
 _SENTINEL: Any = object()
 
 
+def _rgba_to_hex(rgba: list[float] | tuple[float, ...] | None) -> str | None:
+    """Convert [r, g, b, a?] in 0-1 range to '#RRGGBB'. Alpha dropped."""
+    if rgba is None:
+        return None
+    r, g, b = (int(round(max(0.0, min(1.0, c)) * 255)) for c in rgba[:3])
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 def _validate_tier(value: str | None) -> None:
     """Reject an obviously-bogus ``tier`` assignment with a clear message.
 
@@ -364,6 +372,51 @@ class Vis:
             super().__setattr__("_fetched", False)
             return
         super().__setattr__(name, value)
+
+    # ── Repr (mat#221: surface lazy state without touching field semantics) ─
+
+    def __repr__(self) -> str:
+        """Custom ``__repr__`` overlaying lazy/fetched state on top of
+        the dataclass field summary.
+
+        The dataclass-generated repr correctly shows caller-supplied
+        fields (identity + override channels: ``roughness``,
+        ``metallic``, ``base_color``, ...). What it can't show is
+        whether a fetch has happened or what the catalog returned —
+        Bernhard's mat#221 surprise that "all fields are None even
+        though ``to_threejs()`` succeeded."
+
+        This repr keeps the field section verbatim (so explicit
+        overrides stay observable as ``metallic=0.7``) and appends:
+
+        - ``fetched=True/False`` — texture fetch state
+        - ``scalars=`` — sparse catalog + override view (only when
+          fetched, to avoid index IO during repr)
+        - ``available_textures=`` — channel keys actually staged
+
+        Field semantics are unchanged: dataclass slots remain the
+        override channel; resolved values surface via :attr:`scalars`.
+        Two namespaces, two purposes — the repr just makes both
+        legible at a glance.
+        """
+        from dataclasses import fields as _fields
+
+        # Field section — same as the auto-repr would produce, honoring
+        # ``field(repr=False)`` on private cache slots.
+        field_parts = [f"{f.name}={getattr(self, f.name)!r}" for f in _fields(self) if f.repr]
+
+        # Lazy-state suffix — cheap when unfetched (just the flag);
+        # touches ``self.scalars`` (catalog dict lookup, no HTTP) only
+        # post-fetch when the index is already hot.
+        suffix = [f"fetched={self._fetched}"]
+        if self._fetched:
+            scalars = self.scalars
+            if scalars:
+                suffix.append(f"scalars={scalars!r}")
+            if self._textures:
+                suffix.append(f"available_textures={sorted(self._textures)!r}")
+
+        return f"{type(self).__name__}({', '.join(field_parts + suffix)})"
 
     # ── Identity helpers ─────────────────────────────────────────
 
@@ -671,45 +724,225 @@ class Vis:
         tex = self.textures.get(channel)
         return ResolvedChannel(texture=tex, scalar=scalar)
 
-    # ── Adapter sugar (delegate to module-level, method discoverability) ─
+    # ── Scalars + render adapters ───────────────────────────────
+    #
+    # Two states ``Vis`` can be in for rendering: (a) identity → catalog
+    # scalars from mat-vis VisAsset, with caller overrides on top; (b)
+    # no identity → caller fields with ``_PBR_DEFAULTS`` fallback so
+    # the dumb adapter has a complete dict to emit.
+    #
+    # Public ``Vis.scalars`` is sparse — only authored / explicitly-set
+    # keys, no defaults. ``_render_scalars()`` adds the defaults
+    # fallback for the no-identity render path; ``Vis.textures``
+    # already returns ``{}`` for no-identity, so render adapters call
+    # it directly.
+
+    def _catalog_scalars(self) -> dict[str, Any]:
+        """Catalog-authored PBR scalars from mat-vis. ADR-0002 Principle 3
+        thin delegate.
+
+        Preferred path: ``client.asset(source, material_id, tier).scalars``
+        (mat-vis-client 0.7+ / mat-vis #93). Falls back to the legacy
+        ``client._scalars_for(source, material_id)`` for 0.6.x. Both
+        return the same shape; ``asset(...).scalars`` is the public
+        contract going forward.
+
+        Returns ``{}`` for no-identity Vis or when the client lacks
+        both surfaces (e.g. test mocks that only stub ``fetch_all_textures``).
+        Lazy / no HTTP fetch — the catalog index is loaded once.
+        """
+        if not self.has_mapping:
+            return {}
+        client = self.client
+        if hasattr(client, "asset"):
+            try:
+                return client.asset(*self._identity_args()).scalars
+            except AttributeError:
+                pass  # asset() exists but returned object lacks .scalars (test mocks)
+        if hasattr(client, "_scalars_for"):
+            return client._scalars_for(self.source, self.material_id)
+        return {}
+
+    def _explicit_scalars(self) -> dict[str, Any]:
+        """Caller-supplied PBR overrides only — None fields dropped.
+
+        Maps pymat field names to mat-vis adapter keys (``metallic`` →
+        ``metalness``, ``base_color`` RGBA → ``color_hex`` string).
+        Layered on top of catalog scalars so ``vis.metallic = 0.7``
+        wins over the authored catalog value.
+        """
+        out: dict[str, Any] = {}
+        if self.metallic is not None:
+            out["metalness"] = self.metallic
+        if self.roughness is not None:
+            out["roughness"] = self.roughness
+        if self.base_color is not None:
+            out["color_hex"] = _rgba_to_hex(self.base_color)
+        if self.ior is not None:
+            out["ior"] = self.ior
+        if self.transmission is not None:
+            out["transmission"] = self.transmission
+        if self.clearcoat is not None:
+            out["clearcoat"] = self.clearcoat
+        if self.emissive is not None:
+            out["emissive"] = self.emissive
+        return out
+
+    def _scalars_with_defaults(self) -> dict[str, Any]:
+        """Caller-overrides with ``_PBR_DEFAULTS`` fallback — for the
+        no-identity render path where there's no catalog to read.
+        Preserves the historical "all-defaults grey plastic" shape
+        for TOML-only / chemistry-only materials.
+        """
+        return {
+            "metalness": self.get("metallic"),
+            "roughness": self.get("roughness"),
+            "color_hex": _rgba_to_hex(self.get("base_color")),
+            "ior": self.get("ior"),
+            "transmission": self.get("transmission"),
+            "clearcoat": self.get("clearcoat"),
+            "emissive": self.get("emissive"),
+        }
+
+    @property
+    def scalars(self) -> dict[str, Any]:
+        """PBR scalars dict in mat-vis adapter schema. Sparse: only
+        keys with authored / explicit values; no defaults fallback
+        (use ``to_threejs()`` for the all-defaults render shape).
+
+        For a Vis with mat-vis identity: catalog-authored values from
+        the source's ``mat_vis.pbr.*`` block, with explicit caller
+        overrides merged on top. For a Vis without identity: only the
+        caller's explicit overrides (``{}`` if none).
+
+        Lazy: the has_mapping case touches ``VisAsset.scalars`` which
+        is itself lazy + cached. Reading ``.scalars`` does NOT trigger
+        a texture HTTP fetch.
+
+        Closes mat#220.
+        """
+        return {**self._catalog_scalars(), **self._explicit_scalars()}
+
+    def _render_scalars(self) -> dict[str, Any]:
+        """Scalars dict for render adapters: defaults overlaid by
+        catalog overlaid by explicit caller overrides. Always returns
+        the full 7-key shape so the dumb mat-vis adapter has something
+        complete to emit — sparse output would leave Three.js falling
+        through to *its* defaults (which may differ from ours).
+
+        Layering: ``_PBR_DEFAULTS`` < catalog < explicit overrides.
+        ``Vis.scalars`` (the public sparse view) drops the defaults;
+        only render adapters need the floor.
+        """
+        return {
+            **self._scalars_with_defaults(),
+            **self._catalog_scalars(),
+            **self._explicit_scalars(),
+        }
 
     def to_threejs(self) -> dict[str, Any]:
-        """Shorthand for ``pymat.vis.to_threejs(material)`` — method form.
+        """Three.js ``MeshPhysicalMaterial`` parameter dict.
 
-        Same output as the module-level adapter. Use this when you have
-        a ``Vis`` in hand (``material.vis.to_threejs()``); use the
-        module-level form (``pymat.vis.to_threejs(material)``) in code
-        that's explicitly function-composition oriented.
+        Dispatches via :meth:`_render_scalars` — catalog scalars +
+        caller overrides for identity-bearing Vis, caller fields +
+        ``_PBR_DEFAULTS`` otherwise. Color format, scalar
+        normalization, and texture encoding all live in mat-vis-client.
         """
-        from pymat.vis.adapters import to_threejs
+        from mat_vis_client.adapters import to_threejs as _adapter
 
-        return to_threejs(self)
+        return _adapter(self._render_scalars(), self.textures)
 
     def to_gltf(self, *, name: str | None = None) -> dict[str, Any]:
-        """Shorthand for ``pymat.vis.to_gltf(material)`` — method form.
-
-        The glTF material node's ``name`` field is populated from
-        ``name=`` if given, else left empty (the method has no
-        visibility into the owning Material's name; pass it through
-        explicitly when calling on a standalone Vis). The module-level
-        ``pymat.vis.to_gltf(material)`` reads ``material.name``
-        automatically.
+        """glTF 2.0 material dict. ``name=`` populates the node's
+        ``name`` field (left empty when unset on a standalone Vis;
+        the module-level ``pymat.vis.to_gltf(material)`` form fills
+        it from ``material.name`` automatically).
         """
-        from pymat.vis.adapters import to_gltf
+        from mat_vis_client.adapters import to_gltf as _adapter
 
-        return to_gltf(self, name=name)
+        result = _adapter(self._render_scalars(), self.textures)
+        result["name"] = name if name is not None else ""
+        return result
 
     def export_mtlx(self, output_dir: str | Path, *, name: str | None = None) -> Path:
-        """Shorthand for ``pymat.vis.export_mtlx(material, out)``.
-
-        ``name=`` sets the MTLX filename stem. Omitted on a standalone
-        Vis → defaults to ``"material"``.
+        """Export as a MaterialX .mtlx file + PNG textures on disk.
+        ``name=`` sets the filename stem; defaults to ``"material"``.
         """
-        from pymat.vis.adapters import export_mtlx
+        from mat_vis_client.adapters import export_mtlx as _adapter
 
-        return export_mtlx(self, Path(output_dir), name=name)
+        mat_name = name if name is not None else "material"
+        safe_name = mat_name.replace(" ", "_").replace("/", "_") or "material"
+        return _adapter(
+            self._render_scalars(),
+            self.textures,
+            Path(output_dir),
+            material_name=safe_name,
+        )
 
-    # ── Discovery (py-mat's tag-aware layer over client.search) ─
+    # ── Browse / candidates (mat-vis search() delegate, #230) ───
+
+    def candidates(
+        self,
+        *,
+        category: str | None = None,
+        roughness: float | None = None,
+        metalness: float | None = None,
+        roughness_range: tuple[float, float] | None = None,
+        metalness_range: tuple[float, float] | None = None,
+        source: str | None = None,
+        tier: str = "1k",
+        limit: int = 10,
+    ) -> list[Any]:
+        """Find catalog appearances matching this material's properties.
+
+        Auto-populates the search query from this Vis's own PBR
+        scalars when ``roughness=`` / ``metalness=`` aren't supplied.
+        Returns ``list[Match]`` (mat-vis #359) — each entry is a
+        dict-subclass with ``.ref`` / ``.id`` / ``.source`` / ``.mat_vis``
+        attributes plus full dict-key access. Hand to
+        :meth:`with_match` to apply, or to ``client.asset(...)`` to
+        fetch directly.
+
+        ``vis.candidates()`` does not trigger any HTTP texture fetches
+        — search reads the per-source index only.
+        """
+        from mat_vis_client import search
+
+        return search(
+            category=category,
+            roughness=roughness if roughness is not None else self.roughness,
+            metalness=metalness if metalness is not None else self.metallic,
+            roughness_range=roughness_range,
+            metalness_range=metalness_range,
+            source=source,
+            tier=tier,
+            limit=limit,
+        )
+
+    def with_match(self, match: Any) -> Vis:
+        """Return a new ``Vis`` with this Match's identity (source,
+        material_id, tier). Original Vis unchanged.
+
+        ``match`` is a Match (mat-vis #359) or any dict-shaped index
+        entry with ``source`` / ``id`` keys. ``tier`` is taken from
+        ``match["available_tiers"][0]`` when present (preferring
+        ``"1k"``); otherwise the calling Vis's current tier carries
+        over.
+
+        Immutable companion to :meth:`set_identity`: useful when
+        composing from a candidates list without mutating shared
+        registry instances::
+
+            picked = steel.with_vis(steel.vis.with_match(matches[0]))
+        """
+        src = match["source"]
+        mid = match["id"]
+        tiers = list(match.get("available_tiers") or [])
+        if tiers:
+            new_tier = "1k" if "1k" in tiers else tiers[0]
+        else:
+            new_tier = self.tier
+        return self.override(source=src, material_id=mid, tier=new_tier)
 
     def discover(
         self,
@@ -719,12 +952,23 @@ class Vis:
         metallic: float | None = None,
         limit: int = 5,
         auto_set: bool = False,
-    ) -> list[dict[str, Any]]:
+    ) -> list[Any]:
         """Search mat-vis for appearances matching this material's scalars.
 
-        Returns candidates with ``{source, id, category, score, ...}``.
-        Pass ``auto_set=True`` to set the top match on this Vis.
+        .. deprecated:: 3.x
+           Use :meth:`candidates` (Match-typed return, auto-derives
+           query from this Vis) and :meth:`with_match` for immutable
+           assignment from the result. Will be removed in 4.x.
         """
+        import warnings
+
+        warnings.warn(
+            "Vis.discover() is deprecated; use Vis.candidates() to browse "
+            "and Vis.with_match(m) for immutable identity assignment. "
+            "discover()'s auto_set= mutation will be removed in 4.x.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from mat_vis_client import search
 
         results = search(

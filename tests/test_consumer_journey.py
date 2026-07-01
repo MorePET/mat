@@ -7,9 +7,9 @@ typos. The unit tests cover each piece in isolation; this file walks the
 journey from first to last so a breakage at *any* step in the sequence
 surfaces here, not in a downstream PR review.
 
-Bernhard's nine mat-vis issues (#280–#288) and py-mat #98 all stem from
-this gap. Tests below pin the steps that work today and ``xfail`` the
-ones that don't, with the gap reason on each.
+The mat-vis #280–#288 cluster and py-mat #98 all stem from this gap.
+Tests below pin the steps that work today and ``xfail`` the ones
+that don't, with the gap reason on each.
 
 No network: all texture-fetch points are mocked via ``mat_vis_client``'s
 shared singleton, mirroring the pattern in ``tests/test_vis.py``.
@@ -345,8 +345,8 @@ class TestErrorJourney:
         setter now validates against the manifest's tier list at
         assignment time so a typo (``vis.tier = "99k"``) echoes back to
         the consumer instead of surfacing deep inside mat-vis-client on
-        the next ``.textures`` access. Mirrors the asymmetry Bernhard
-        flagged in the broader build123d#1270 / mat-vis #280 thread."""
+        the next ``.textures`` access. Mirrors the asymmetry flagged
+        in the broader build123d#1270 / mat-vis #280 thread."""
         steel = pymat["Stainless Steel 304"]
         with pytest.raises(ValueError, match="Unknown tier"):
             steel.vis.override(tier="99k")  # no such tier in the manifest
@@ -371,9 +371,9 @@ class TestPublicImports:
 
     def test_vis_module_path_is_public(self):
         """``type(m.vis).__module__`` must read ``pymat.vis`` — not
-        ``pymat.vis._model``. Closes py-mat #98 — Bernhard's complaint
-        was that ``stainless.vis`` reported its class as living in a
-        private module, pushing him toward the underscore path."""
+        ``pymat.vis._model``. Closes py-mat #98 — the complaint was
+        that ``stainless.vis`` reported its class as living in a
+        private module, pushing consumers toward the underscore path."""
         steel = pymat["Stainless Steel 304"]
         assert type(steel.vis).__module__ == "pymat.vis"
 

@@ -74,12 +74,12 @@ def _make_material(
     # batched through set_identity so construction never exposes a
     # half-assigned (source-but-no-material_id) state.
     if vis:
-        _IDENTITY_KEYS = {"source", "material_id", "tier"}
-        identity_kwargs = {k: vis[k] for k in _IDENTITY_KEYS if k in vis}
+        _identity_keys = {"source", "material_id", "tier"}
+        identity_kwargs = {k: vis[k] for k in _identity_keys if k in vis}
         if identity_kwargs:
             mat.vis.set_identity(**identity_kwargs)
         for key, value in vis.items():
-            if key in _IDENTITY_KEYS:
+            if key in _identity_keys:
                 continue
             setattr(mat.vis, key, value)
 
@@ -335,25 +335,93 @@ class _MaterialInternal:
     # Chainable Methods
     # =========================================================================
 
-    def grade_(self, key: str, **props) -> _MaterialInternal:
+    def add_grade(self, key: str, **props) -> _MaterialInternal:
         """Add a grade variant (e.g., 304, 316L, 6061, a7075)."""
         return self._add_child(key, grade=key, **props)
 
-    def temper_(self, key: str, **props) -> _MaterialInternal:
-        """Add a temper/heat treatment (e.g., T6, O, annealed)."""
+    def add_temper(self, key: str, **props) -> _MaterialInternal:
+        """Add a temper / heat treatment (e.g., T6, O, annealed)."""
         return self._add_child(key, temper=key, **props)
 
-    def treatment_(self, key: str, **props) -> _MaterialInternal:
+    def add_treatment(self, key: str, **props) -> _MaterialInternal:
         """Add a surface treatment (e.g., passivated, anodized, electropolished)."""
         return self._add_child(key, treatment=key, **props)
 
-    def vendor_(self, key: str, **props) -> _MaterialInternal:
+    def add_vendor(self, key: str, **props) -> _MaterialInternal:
         """Add a vendor-specific variant."""
         return self._add_child(key, vendor=key, **props)
 
-    def variant_(self, key: str, **props) -> _MaterialInternal:
+    def add_variant(self, key: str, **props) -> _MaterialInternal:
         """Add a generic variant (dopant, alloy composition, etc.)."""
         return self._add_child(key, **props)
+
+    # ─── Deprecated trailing-underscore aliases ────────────────────────
+    # PEP 8 reserves trailing single underscore for keyword / built-in
+    # collision disambiguation only (`class_`, `type_`, `id_`); using it
+    # as a general method-naming convention reads as a violation to
+    # typed users (py-mat#218). Renamed to verb-form
+    # `add_X`. Aliases below keep 3.x BC and emit DeprecationWarning so
+    # callers migrate. Scheduled for removal in 4.0.
+
+    def grade_(self, key: str, **props) -> _MaterialInternal:  # pymat-keep-_ (deprecated alias)
+        """Deprecated alias for :meth:`add_grade`. Removed in 4.0."""
+        import warnings
+
+        warnings.warn(
+            "Material.grade_() is deprecated; use Material.add_grade() instead. "
+            "Will be removed in 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.add_grade(key, **props)
+
+    def temper_(self, key: str, **props) -> _MaterialInternal:  # pymat-keep-_
+        """Deprecated alias for :meth:`add_temper`. Removed in 4.0."""
+        import warnings
+
+        warnings.warn(
+            "Material.temper_() is deprecated; use Material.add_temper() instead. "
+            "Will be removed in 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.add_temper(key, **props)
+
+    def treatment_(self, key: str, **props) -> _MaterialInternal:  # pymat-keep-_
+        """Deprecated alias for :meth:`add_treatment`. Removed in 4.0."""
+        import warnings
+
+        warnings.warn(
+            "Material.treatment_() is deprecated; use Material.add_treatment() instead. "
+            "Will be removed in 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.add_treatment(key, **props)
+
+    def vendor_(self, key: str, **props) -> _MaterialInternal:  # pymat-keep-_
+        """Deprecated alias for :meth:`add_vendor`. Removed in 4.0."""
+        import warnings
+
+        warnings.warn(
+            "Material.vendor_() is deprecated; use Material.add_vendor() instead. "
+            "Will be removed in 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.add_vendor(key, **props)
+
+    def variant_(self, key: str, **props) -> _MaterialInternal:  # pymat-keep-_
+        """Deprecated alias for :meth:`add_variant`. Removed in 4.0."""
+        import warnings
+
+        warnings.warn(
+            "Material.variant_() is deprecated; use Material.add_variant() instead. "
+            "Will be removed in 4.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.add_variant(key, **props)
 
     # =========================================================================
     # Application to Shapes
@@ -535,6 +603,32 @@ class _MaterialInternal:
         # having gone through it.
         new._vis = deepcopy(vis)
         return new
+
+    # =========================================================================
+    # Rendering shortcuts (delegate to self.vis with material name auto-fill)
+    # =========================================================================
+
+    def to_threejs(self) -> dict:
+        """Render as a Three.js ``MeshPhysicalMaterial`` parameter dict.
+
+        Sugar for ``self.vis.to_threejs()``. Equivalent to
+        ``pymat.vis.to_threejs(self)`` but stays on the Material
+        surface so callers don't have to learn the ``.vis`` namespace
+        for the common "render this material" case.
+        """
+        return self.vis.to_threejs()
+
+    def to_gltf(self) -> dict:
+        """Render as a glTF 2.0 material dict; ``name`` field auto-
+        filled from ``self.name``.
+        """
+        return self.vis.to_gltf(name=self.name)
+
+    def export_mtlx(self, output_dir):
+        """Export as a MaterialX ``.mtlx`` file + PNG textures on disk.
+        Filename stem is ``self.name``.
+        """
+        return self.vis.export_mtlx(output_dir, name=self.name)
 
     # =========================================================================
     # Information & Inspection
@@ -768,11 +862,11 @@ class Material(_MaterialInternal):
         # Identity keys batch through set_identity (single invalidation,
         # no half-assigned intermediate state).
         if vis:
-            _IDENTITY_KEYS = {"source", "material_id", "tier"}
-            identity_kwargs = {k: vis[k] for k in _IDENTITY_KEYS if k in vis}
+            _identity_keys = {"source", "material_id", "tier"}
+            identity_kwargs = {k: vis[k] for k in _identity_keys if k in vis}
             if identity_kwargs:
                 self.vis.set_identity(**identity_kwargs)
             for key, value in vis.items():
-                if key in _IDENTITY_KEYS:
+                if key in _identity_keys:
                     continue
                 setattr(self.vis, key, value)

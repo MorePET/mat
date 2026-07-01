@@ -1,4 +1,4 @@
-"""Red tests for Bernhard's mat-vis#311 / #313 user-surface issues.
+"""Red tests for mat-vis#311 / #313 user-surface issues.
 
 Each test is xfail(strict=True), so a fix flips it to XPASS and CI
 fails until the marker is removed — preventing accidental "fixed
@@ -10,27 +10,24 @@ Issues:
 - mat#222: scalar-only sources (physicallybased / tier=None)
 
 When a fix lands, remove the corresponding xfail marker and verify
-the test passes. Then re-run Bernhard's literal repro from the
-mat-vis issue end-to-end (forward-verify) before claiming closed —
+the test passes. Then re-run the literal repro from the mat-vis
+issue end-to-end (forward-verify) before claiming closed —
 mat-vis#287/#288 lesson.
 """
 
 from __future__ import annotations
-
-import pytest
 
 from pymat.vis._model import Vis
 
 # ── #220: Vis.scalars accessor ────────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="mat#220: Vis.scalars accessor not yet implemented",
-    raises=AttributeError,
-)
 class TestIssue220ScalarsAccessor:
-    """Bernhard's mat-vis#311 'Scalars as first class citizens' sub-bullet.
+    """mat-vis#311 'Scalars as first class citizens' sub-bullet.
+
+    Closed by the dispatch refactor: ``Vis.scalars`` now delegates to
+    ``client._scalars_for(source, material_id)`` (catalog-authored
+    values) merged with explicit caller overrides.
 
     Acceptance from mat#220:
     - v.scalars returns dict for any successfully-fetched Vis
@@ -41,32 +38,41 @@ class TestIssue220ScalarsAccessor:
 
     def test_scalars_attribute_exists_on_vis(self):
         v = Vis()
-        # Today: AttributeError. After fix: returns {} (no identity).
         assert v.scalars == {}
 
-    def test_scalars_returns_authored_pbr_after_fetch(self, monkeypatch):
-        """Bernhard's literal snippet from mat-vis#311.
+    def test_scalars_returns_authored_pbr(self, monkeypatch):
+        """The literal snippet from mat-vis#311.
 
-        v.textures triggers fetch; v.scalars must then return the
-        authored PBR scalars keyed by the catalog's mat_vis.pbr names.
+        ``v.scalars`` returns the authored PBR scalars from the catalog
+        (via ``client.asset(...).scalars``), keyed by mat-vis adapter
+        schema names.
         """
+
+        class FakeAsset:
+            scalars = {
+                "roughness": 0.4,
+                "metalness": 1.0,
+                "ior": 1.5,
+                "color_hex": "#cccccc",
+            }
+            textures: dict = {}
 
         class FakeClient:
             def fetch_all_textures(self, source, material_id, *, tier="1k"):
                 return {"color": b"png", "normal": b"png", "roughness": b"png"}
+
+            def asset(self, source, material_id, tier):
+                return FakeAsset()
 
         import mat_vis_client as _client
 
         monkeypatch.setattr(_client, "_client", FakeClient())
 
         v = Vis(source="gpuopen", material_id="Aluminum Brushed", tier="1k")
-        v.textures  # trigger fetch  # noqa: B018
-        assert v._fetched is True
-
         scalars = v.scalars
         assert isinstance(scalars, dict)
-        # Keys per the acceptance criteria in mat#220
-        for key in ("roughness", "metalness", "base_color", "ior", "transmission"):
+        # Keys per the catalog's mat_vis.pbr.* schema
+        for key in ("roughness", "metalness", "ior", "color_hex"):
             assert key in scalars
 
     def test_scalars_does_not_trigger_texture_fetch(self, monkeypatch):
@@ -75,10 +81,17 @@ class TestIssue220ScalarsAccessor:
         texture HTTP fetch."""
         called = {"fetch": 0}
 
+        class FakeAsset:
+            scalars = {"roughness": 0.4, "metalness": 1.0}
+            textures: dict = {}
+
         class FakeClient:
             def fetch_all_textures(self, source, material_id, *, tier="1k"):
                 called["fetch"] += 1
                 return {"color": b"png"}
+
+            def asset(self, source, material_id, tier):
+                return FakeAsset()
 
         import mat_vis_client as _client
 
@@ -92,17 +105,14 @@ class TestIssue220ScalarsAccessor:
 # ── #221: repr observability ──────────────────────────────────
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="mat#221: repr stays all-None after fetch — no fetched flag",
-)
 class TestIssue221ReprObservability:
-    """Bernhard's mat-vis#311 'Inconsistent outputs' sub-bullet.
+    """mat-vis#311 'Inconsistent outputs' sub-bullet.
 
-    Acceptance from mat#221:
-    - Pre-fetch repr shows fetched=False
-    - Post-fetch repr shows fetched=True plus scalars=/available_textures=
-    - Override semantics unchanged
+    Closed by the custom ``Vis.__repr__`` that overlays lazy state
+    (``fetched=`` flag, ``scalars=`` summary, ``available_textures=``)
+    on top of the dataclass field section. Field semantics unchanged:
+    override channels remain the dataclass slots; resolved values
+    surface via the new repr suffix and via ``Vis.scalars``.
     """
 
     def test_pre_fetch_repr_shows_fetched_false(self):
@@ -123,7 +133,7 @@ class TestIssue221ReprObservability:
 
         r = repr(v)
         assert "fetched=True" in r
-        # Bernhard's literal expectation includes a textures summary.
+        # The literal expectation from mat-vis#311 includes a textures summary.
         assert "available_textures" in r or "scalars" in r
 
     def test_repr_changes_after_fetch(self, monkeypatch):
@@ -191,7 +201,7 @@ def _install_scalar_only_fake_client(monkeypatch):
 
 
 class TestIssue222ScalarOnlySources:
-    """Bernhard's mat-vis#313 + #311 'Support physicallybased.info'.
+    """mat-vis#313 + #311 'Support physicallybased.info'.
 
     The pymat-side half of the cascade (mat-vis-side bake fix is
     tracked separately). Acceptance:
@@ -220,7 +230,7 @@ class TestIssue222ScalarOnlySources:
         assert v.textures == {}
 
     def test_to_threejs_succeeds_for_scalar_only(self, monkeypatch):
-        """Bernhard's exact repro from mat-vis#313."""
+        """The exact repro from mat-vis#313."""
         _install_scalar_only_fake_client(monkeypatch)
         v = Vis(source="physicallybased", material_id="Aluminum")
         result = v.to_threejs()

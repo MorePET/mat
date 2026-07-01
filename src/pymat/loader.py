@@ -132,18 +132,18 @@ def _build_properties_from_dict(
         consumed_stddev = set()
 
         # Keys that signal a uncertainty/range dict — anything else stays as-is.
-        _UFLOAT_KEYS = {"nominal", "stddev", "min", "max"}
+        _ufloat_keys = {"nominal", "stddev", "min", "max"}
 
         def assign(base_key: str, raw_value):
             """Parse a value (possibly a {nominal, stddev} dict), fold sibling
             stddev if present, and setattr on prop_obj.
 
-            Only dicts whose top-level keys overlap with `_UFLOAT_KEYS` are
+            Only dicts whose top-level keys overlap with `_ufloat_keys` are
             routed through `_parse_value`. Structured-data dicts (e.g.
             `emission_spectrum = {wavelengths_nm, intensities}` from #153)
             are passed through verbatim.
             """
-            if isinstance(raw_value, dict) and (set(raw_value) & _UFLOAT_KEYS):
+            if isinstance(raw_value, dict) and (set(raw_value) & _ufloat_keys):
                 parsed = _parse_value(raw_value)
             else:
                 parsed = raw_value

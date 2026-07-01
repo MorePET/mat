@@ -204,8 +204,8 @@ class TestMergeFromToml:
 
 
 class TestInheritedVisEndToEnd:
-    """Realistic flow: search → grade → use. The core flow Bernhard
-    reported broken in #88."""
+    """Realistic flow: search → grade → use. The core flow reported
+    broken in py-mat #88."""
 
     def test_search_results_all_have_vis(self):
         import pymat
@@ -218,7 +218,7 @@ class TestInheritedVisEndToEnd:
                 f"{m.name} has vis.source=None even after #88 — inheritance regression"
             )
 
-    def test_bernhards_workaround_no_longer_needed(self):
+    def test_workaround_no_longer_needed(self):
         """Previously build123d had to walk the parent chain manually
         to find a non-None vis.source. That should now be unnecessary."""
         import pymat
