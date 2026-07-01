@@ -354,3 +354,50 @@ class TestPublicAPISurface:
             f"pymat.materials class lives at private module path "
             f"{cls.__module__!r} — rewrite to public via __module__ assignment"
         )
+
+
+# ── 8. Cold-import discovery (no prior load) ─────────────────────
+
+
+class TestColdImportDiscovery:
+    """The registry's whole reason for existing (bernhard's #218: "the
+    Readme focuses on *creating* materials, but aren't there existing
+    materials?") is discovery **without prior knowledge**. A fresh
+    consumer types ``pymat.materials(category="metals")`` as their first
+    line and must get results — not ``[]`` because nothing's loaded yet.
+
+    These run in a subprocess so the module-level ``load_all()`` fixture
+    can't mask the cold path (the bug it hid: iter/len/filter read the
+    lazily-populated registry directly instead of load_all()-ing like
+    ``search()`` does).
+    """
+
+    @staticmethod
+    def _cold(expr: str) -> str:
+        import subprocess
+        import sys
+
+        out = subprocess.run(
+            [sys.executable, "-c", f"import pymat; print({expr})"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return out.stdout.strip()
+
+    def test_cold_len_is_nonempty(self):
+        # Fresh interpreter, no prior attribute access or load_all().
+        assert int(self._cold("len(pymat.materials)")) > 0
+
+    def test_cold_filter_by_category_nonempty(self):
+        assert int(self._cold("len(pymat.materials(category='metals'))")) > 0
+
+    def test_cold_iter_is_nonempty(self):
+        assert int(self._cold("len(list(pymat.materials))")) > 0
+
+    def test_cold_all_matches_warm(self):
+        # Cold `materials()` (all) must equal the count after an explicit
+        # load_all() — proves the catalog verb is self-materialising.
+        cold = int(self._cold("len(pymat.materials())"))
+        warm = int(self._cold("(pymat.load_all(), len(pymat.materials()))[1]"))
+        assert cold == warm and cold > 0

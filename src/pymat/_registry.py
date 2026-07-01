@@ -59,13 +59,20 @@ class _Materials(Mapping[str, "Material"]):
         return _lookup(key)
 
     def __iter__(self) -> Iterator[str]:
-        from pymat import registry
+        from pymat import load_all, registry
 
+        # Materialise every category first. Lazy per-category loading is a
+        # perf feature for attribute access (``pymat.stainless``), but the
+        # registry surface is the explicit "show me the whole catalog" verb —
+        # iterating must not silently omit un-touched categories. Mirrors
+        # ``search()``, which load_all()s for the same reason.
+        load_all()
         return iter(registry.list_all())
 
     def __len__(self) -> int:
-        from pymat import registry
+        from pymat import load_all, registry
 
+        load_all()  # full catalog — see __iter__ for rationale
         return len(registry.list_all())
 
     def __contains__(self, key: object) -> bool:
@@ -116,7 +123,7 @@ class _Materials(Mapping[str, "Material"]):
         the intent is ambiguous (lookup-with-filter doesn't have a clear
         meaning), and the static overloads above also reject it.
         """
-        from pymat import _lookup, registry
+        from pymat import _lookup, load_all, registry
 
         if name is not None:
             # Reject mixed positional + filter — ambiguous semantics
@@ -130,6 +137,9 @@ class _Materials(Mapping[str, "Material"]):
 
         # Filter form — pull the full registry, apply AND across non-None
         # filters. Empty filters fall through and return everything.
+        # load_all() first so a cold `pymat.materials(category="metals")`
+        # sees every category, not just whatever happened to be touched.
+        load_all()
         all_materials = registry.list_all()  # dict[str, Material]
         result = list(all_materials.values())
 
