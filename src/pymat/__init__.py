@@ -41,6 +41,12 @@ if TYPE_CHECKING:
 
 # Exports
 from . import factories, registry, vis
+
+# `pymat.materials` — typed registry surface (Mapping + callable + filterable).
+# Imported here AFTER `_lookup` is in scope (defined further down in this file)
+# AND after `registry` is imported, because the class delegates to both at
+# call-time. See the trifecta usage in tests/test_materials_registry.py.
+from ._registry import _Materials as _MaterialsClass  # noqa: E402
 from .core import Material
 from .enrichers import enrich_all, enrich_from_matproj, enrich_from_periodictable
 from .loader import load_category, load_toml
@@ -59,6 +65,11 @@ from .sources import Source
 from .units import ureg
 from .vis import FinishEntry, Vis, VisDeltas
 
+# Rewrite __module__ so consumers (and Sphinx, IDE autoimport, pyright)
+# see the canonical public path. Same convention as Vis/Source/etc.
+_MaterialsClass.__module__ = "pymat"
+materials = _MaterialsClass()
+
 __version__ = "3.10.0"  # x-release-please-version
 __all__ = [
     "Material",
@@ -75,6 +86,7 @@ __all__ = [
     "load_toml",
     "load_category",
     "search",
+    "materials",
     "enrich_from_periodictable",
     "enrich_from_matproj",
     "enrich_all",

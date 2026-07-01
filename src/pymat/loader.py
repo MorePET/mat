@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -329,6 +329,26 @@ def _resolve_material_node(
     else:
         sources = dict(parent_sources)
 
+    # Tags (#132). Multi-axial filterable labels orthogonal to the
+    # TOML hierarchy. Children INHERIT parent tags and EXTEND at
+    # child level — declare only what's new. Order-preserving union
+    # so the inherited tags appear first (parent context first, then
+    # the child's specific labels). Duplicates dropped silently.
+    parent_tags: List[str] = list(parent_material.tags) if parent_material is not None else []
+    raw_tags = data.get("tags")
+    if raw_tags is None:
+        tags = parent_tags
+    else:
+        if not isinstance(raw_tags, list) or not all(isinstance(t, str) for t in raw_tags):
+            raise ValueError(f"{key}.tags must be a list of strings, got {type(raw_tags).__name__}")
+        # Order-preserving union: parent first, then own (skip dups)
+        seen = set(parent_tags)
+        tags = list(parent_tags)
+        for t in raw_tags:
+            if t not in seen:
+                tags.append(t)
+                seen.add(t)
+
     # Create material
     material = Material(
         name=name,
@@ -342,6 +362,7 @@ def _resolve_material_node(
         parent=parent_material,
         _key=key,
         _sources=sources,
+        tags=tags,
     )
 
     # Populate vis — inherit from parent, overlay any TOML overrides (#88).
@@ -388,6 +409,7 @@ def _resolve_material_node(
                 "treatment",
                 "vendor",
                 "vis",
+                "tags",
             ):
                 child_material = _resolve_material_node(
                     child_key,

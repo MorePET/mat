@@ -390,6 +390,7 @@ MATERIAL_INIT_KWARGS = frozenset(
         "parent",
         "_key",
         "_sources",
+        "tags",  # #132 — multi-axial filterable tags
     }
 )
 

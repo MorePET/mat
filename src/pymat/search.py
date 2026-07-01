@@ -113,7 +113,16 @@ def _score(tokens: list[str], targets: list[tuple[str, int]]) -> float:
     return total
 
 
-def search(query: str, *, exact: bool = False, limit: int = 10) -> list[Material]:
+def search(
+    query: str,
+    *,
+    exact: bool = False,
+    limit: int = 10,
+    category: str | None = None,
+    grade: str | None = None,
+    tags: list[str] | None = None,
+    with_vis: bool | None = None,
+) -> list[Material]:
     """Find Materials in the loaded library by name, key, or grade.
 
     - **Fuzzy (default)**: tokenize ``query`` on whitespace; every token
@@ -125,9 +134,22 @@ def search(query: str, *, exact: bool = False, limit: int = 10) -> list[Material
       this to resolve a single known material without the list noise of
       fuzzy mode.
 
-    Normalization: NFKC + case-fold + whitespace-collapse. Curly quotes,
-    em-dashes, non-breaking spaces, leading/trailing and internal-run
-    whitespace all fold away before comparison.
+    Filter kwargs (#127) narrow the candidate set BEFORE the fuzzy /
+    exact match runs:
+
+    - ``category``: domain category from ``pymat._CATEGORY_BASES`` —
+      ``"metals"``, ``"scintillators"``, ``"plastics"``, etc.
+    - ``grade``: exact match on ``Material.grade`` (e.g. ``"316L"``).
+    - ``tags``: list of tag strings, ALL must be present on the
+      material's effective (parent-merged) tag list.
+    - ``with_vis``: when ``True``, only materials whose ``vis`` has a
+      complete mapping; when ``False``, only those without.
+
+    Visual filters (``source``, ``tier``, PBR scalars) belong on
+    :func:`pymat.vis.search` — that's a different namespace
+    (mat-vis substrate, not the py-mat domain library).
+
+    Normalization: NFKC + case-fold + whitespace-collapse.
 
     Returns an empty list for an empty / whitespace-only query.
 
@@ -137,44 +159,90 @@ def search(query: str, *, exact: bool = False, limit: int = 10) -> list[Material
         # → [stainless, s304, s316L, s410, ...]
 
         pymat.search("stainless 316")
-        # → [s316L]  — all tokens must match
+        # → [s316L]
 
-        pymat.search("304", exact=True)
-        # → [s304]  — grade match, no fuzz
+        pymat.search("polished", category="metals")
+        # → fuzzy "polished" within metals only
 
-        pymat.search("Stainless Steel", exact=True)
-        # → [stainless]  — exact parent name
+        pymat.search("alloy", grade="6061")
+        # → fuzzy "alloy" matches with grade=6061
+
+        pymat.search("steel", tags=["austenitic"])
+        # → austenitic steels matching "steel"
 
     Triggers ``load_all()`` on first call so results are exhaustive
     across categories.
     """
     normalized = _normalize(query)
-    if not normalized:
-        return []
 
     # Import lazily to avoid circular import at module load: pymat's
     # __init__.py hasn't finished initializing when this module loads.
-    from . import load_all, registry
+    from . import _CATEGORY_BASES, load_all, registry
 
     load_all()
     all_materials = registry.list_all()
+
+    # Build the candidate set by applying filters BEFORE scoring.
+    # Filters use AND semantics; missing kwargs fall through.
+    candidates: dict[str, Material] = dict(all_materials)
+
+    if category is not None:
+        cat_keys = set(_CATEGORY_BASES.get(category, []))
+
+        def _in_category(m: Material) -> bool:
+            if m._key in cat_keys:
+                return True
+            parent = getattr(m, "parent", None)
+            while parent is not None:
+                if getattr(parent, "_key", None) in cat_keys:
+                    return True
+                parent = getattr(parent, "parent", None)
+            return False
+
+        candidates = {k: m for k, m in candidates.items() if _in_category(m)}
+
+    if grade is not None:
+        candidates = {k: m for k, m in candidates.items() if getattr(m, "grade", None) == grade}
+
+    if tags is not None:
+        required = set(tags)
+        candidates = {
+            k: m
+            for k, m in candidates.items()
+            if required.issubset(set(getattr(m, "tags", []) or []))
+        }
+
+    if with_vis is not None:
+
+        def _has_vis(m: Material) -> bool:
+            v = getattr(m, "vis", None)
+            return bool(v is not None and getattr(v, "has_mapping", False))
+
+        candidates = {k: m for k, m in candidates.items() if _has_vis(m) == with_vis}
+
+    # Empty query: documented contract is to return [] regardless of
+    # filters. Browse / filter-only is what ``pymat.materials(...)``
+    # is for; ``search`` is a fuzzy/exact text-match verb that needs
+    # input text. Preserve back-compat with 3.4-3.10 empty-query
+    # semantics.
+    if not normalized:
+        return []
 
     scored: list[tuple[float, int, str, Material]] = []
 
     if exact:
         # Full-string equality against key / name / grade. Same three
         # targets the fuzzy path cares about.
-        for key, material in all_materials.items():
-            candidates = [key, material.name or ""]
-            grade = getattr(material, "grade", None)
-            if grade:
-                candidates.append(str(grade))
-            if any(_normalize(c) == normalized for c in candidates):
-                # Single-match: tie-break by shorter key for determinism.
+        for key, material in candidates.items():
+            cand_strings = [key, material.name or ""]
+            grade_val = getattr(material, "grade", None)
+            if grade_val:
+                cand_strings.append(str(grade_val))
+            if any(_normalize(c) == normalized for c in cand_strings):
                 scored.append((0.0, len(key), key, material))
     else:
         tokens = normalized.split()
-        for key, material in all_materials.items():
+        for key, material in candidates.items():
             targets = _targets(key, material)
             s = _score(tokens, targets)
             if s > 0:
