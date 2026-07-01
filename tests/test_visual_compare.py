@@ -10,9 +10,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PIL import Image
 
-from tests._visual_compare import (
+# PIL is an optional viz dependency — pulled transitively (build123d on
+# py<=3.12, Playwright in the render jobs), but absent on a bare py3.13
+# core checkout. Skip this whole module rather than erroring collection
+# for the entire suite when it's missing. `tests._visual_compare` also
+# imports PIL at top, so the importorskip must gate its import too.
+Image = pytest.importorskip("PIL.Image")
+
+from tests._visual_compare import (  # noqa: E402 — deferred past importorskip guard
     DEFAULT_RMS_TOLERANCE,
     _rms,
     assert_matches_baseline,
