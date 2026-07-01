@@ -300,10 +300,8 @@ class TestSearchFilters:
         # (i.e., not a polymer or scintillator named "stainless"-something)
         results = pymat.search("stainless", category="metals")
         assert results
-        # Ranked list of Materials
-        from pymat import Material as _M
-
-        assert all(isinstance(m, _M) for m in results)
+        # Ranked list of Materials (Material imported at module top)
+        assert all(isinstance(m, Material) for m in results)
 
     def test_search_filter_excludes_off_category(self):
         """If the fuzzy match would otherwise return materials from
