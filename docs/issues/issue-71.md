@@ -1,19 +1,19 @@
 ---
 type: issue
-state: open
+state: closed
 created: 2026-04-18T23:02:15Z
-updated: 2026-04-18T23:02:15Z
+updated: 2026-07-01T10:14:58Z
 author: gerchowl
 author_url: https://github.com/gerchowl
 url: https://github.com/MorePET/mat/issues/71
-comments: 0
+comments: 1
 labels: documentation
 assignees: none
 milestone: 3.1.2 — post-audit follow-ups
 projects: none
 parent: none
 children: none
-synced: 2026-04-19T04:44:00.850Z
+synced: 2026-07-02T05:48:56.068Z
 ---
 
 # [Issue 71]: [pymat.vis.client() (module function) vs .client (Vis property) — same concept, two spellings](https://github.com/MorePET/mat/issues/71)
@@ -58,3 +58,11 @@ Naming stays the same — both spellings earn their keep:
 
 The duplication is the feature; the docs should acknowledge it
 explicitly.
+---
+
+# [Comment #1]() by [gerchowl]()
+
+_Posted on July 1, 2026 at 10:14 AM_
+
+Resolved on `main`: both docstrings now carry the side-by-side cross-reference this issue asked for — `pymat.vis.client()` points to `material.vis.client` and vice-versa (see `src/pymat/vis/__init__.py:154` and `src/pymat/vis/_model.py:637`). No code change was needed per the issue's own "No code change" note; the duplication is intentional (module-level entry before a material is picked vs. instance property in material-keyed contexts) and is now documented on both ends.
+
