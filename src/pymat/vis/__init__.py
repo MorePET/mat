@@ -52,18 +52,48 @@ may change without notice.
 
 from typing import Any
 
-from mat_vis_client import (
-    MatVisClient,
-    get_manifest,
-    prefetch,
-    rowmap_entry,
-    seed_indexes,
-)
+# ``mat_vis_client`` is an OPTIONAL dependency, guarded the same way PIL is in the
+# test suite (#242): importing ``pymat`` must not require it.
+#
+# ``pymat/__init__.py`` does ``from . import factories, registry, vis`` eagerly, so an
+# unguarded import here makes the whole materials library unusable anywhere the
+# visualisation client is not installed — headless exports, CI, and any consumer that
+# only wants ``pmma`` / ``water()``. Material data has no dependency on a vis client;
+# only the client-backed helpers below do, and those now fail on USE with an
+# actionable message instead of at import.
+try:
+    from mat_vis_client import (
+        MatVisClient,
+        get_manifest,
+        prefetch,
+        rowmap_entry,
+        seed_indexes,
+    )
 
-# Shared-singleton accessor: ``get_client`` became public in
-# mat-vis-client 0.5.0 (see mat-vis#84). Pinned in pyproject.toml.
-from mat_vis_client import get_client as _shared_client
-from mat_vis_client import search as _client_search
+    # Shared-singleton accessor: ``get_client`` became public in
+    # mat-vis-client 0.5.0 (see mat-vis#84). Pinned in pyproject.toml.
+    from mat_vis_client import get_client as _shared_client
+    from mat_vis_client import search as _client_search
+
+    _HAVE_VIS_CLIENT = True
+except ImportError as _exc:  # pragma: no cover - exercised only without the extra
+    _HAVE_VIS_CLIENT = False
+    _VIS_CLIENT_ERR = _exc
+
+    def _requires_vis_client(*_a: Any, **_k: Any) -> Any:
+        raise ImportError(
+            "this pymat.vis helper needs the optional `mat_vis_client` package "
+            f"(install the vis extra); original import error: {_VIS_CLIENT_ERR}"
+        )
+
+    # Names are still bound so module-level references resolve; calling one raises.
+    MatVisClient = _requires_vis_client  # type: ignore[assignment]
+    get_manifest = _requires_vis_client  # type: ignore[assignment]
+    prefetch = _requires_vis_client  # type: ignore[assignment]
+    rowmap_entry = _requires_vis_client  # type: ignore[assignment]
+    seed_indexes = _requires_vis_client  # type: ignore[assignment]
+    _shared_client = _requires_vis_client
+    _client_search = _requires_vis_client
 
 # Domain types: re-exported so consumers can construct or type-hint
 # without reaching into the private ``_model`` module.
