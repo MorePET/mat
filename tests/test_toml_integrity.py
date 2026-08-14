@@ -19,6 +19,7 @@ section name, or adds a vis entry that would 404 on the CDN.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 import warnings
 from pathlib import Path
@@ -33,7 +34,8 @@ else:  # pragma: no cover — 3.10 path
 from pymat import _CATEGORY_BASES, load_all
 from pymat.loader import load_category
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "src" / "pymat" / "data"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "src" / "pymat" / "data"
 
 # Material-catalogue TOMLs. `surfaces.toml` (#243) lives in the same directory
 # but is not a material catalogue — its nodes are `Surface` entries with their
@@ -268,60 +270,41 @@ def _looks_like_material_node(d: dict) -> bool:
 # all: "every key is adjacent to its table header" needs no domain knowledge.
 
 
-def _is_section_banner(comment: str) -> bool:
-    """True for a section-divider comment (`# ======`), false for prose.
+def _load_check_data_shape():
+    """Import `scripts/check_data_shape.py` as a module.
 
-    This is the whole subtlety of the check. A prose comment before a key is
-    normal and desirable — most values in these files carry one. A BANNER
-    before a key means the key sits on the far side of a section boundary from
-    the table it actually belongs to. Only the second is a defect.
+    The unit-level placement tests below exercise the same function the
+    pre-commit hook runs. Duplicating the logic here is what would let the
+    hook and the suite drift apart.
     """
-    body = comment.lstrip("#").strip()
-    return len(body) >= 8 and set(body) <= set("=-— ")
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / "check_data_shape.py"
+    spec = importlib.util.spec_from_file_location("check_data_shape", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def _keys_separated_from_their_header(text: str):
-    """Yield (line_no, key, table) for keys a SECTION BANNER separates from
-    their table header.
-
-    Such a key parses as part of the preceding table but reads as part of the
-    following section. Correct to the machine, misleading to a human, and a
-    trap for the next person who inserts a table beside it.
-    """
-    table = None
-    saw_banner = False
-    depth = 0
-    for n, raw in enumerate(text.splitlines(), 1):
-        line = raw.strip()
-        # Skip continuation lines inside multi-line arrays.
-        if depth > 0:
-            depth += line.count("[") - line.count("]")
-            continue
-        if line.startswith("["):
-            table = line
-            saw_banner = False
-            continue
-        if line.startswith("#"):
-            if _is_section_banner(line):
-                saw_banner = True
-            continue
-        if not line or "=" not in line:
-            continue
-        if saw_banner and table is not None:
-            yield n, line.split("=")[0].strip(), table
-        depth += line.count("[") - line.count("]")
+_shape = _load_check_data_shape()
+misplaced_keys = _shape.misplaced_keys
 
 
 class TestStructuralPlacement:
-    @pytest.mark.parametrize("toml_path", sorted(DATA_DIR.glob("*.toml")))
-    def test_no_key_is_separated_from_its_table_by_a_banner(self, toml_path):
-        offenders = list(_keys_separated_from_their_header(toml_path.read_text()))
-        assert not offenders, (
-            f"{toml_path.name}: key(s) filed under the wrong heading — they parse "
-            f"as part of the preceding table but read as part of the following "
-            f"section, and an insertion beside them would capture them:\n"
-            + "\n".join(f"  line {n}: {k!r} actually belongs to {t}" for n, k, t in offenders)
+    """Exercises `scripts/check_data_shape.py` through its real entry point.
+
+    The logic lives in the script, not here, so the pre-commit hook and the
+    test suite cannot disagree about what the invariant is — which would be
+    the exact drift these gates exist to prevent.
+    """
+
+    def test_the_shipped_corpus_is_clean(self):
+        proc = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "scripts" / "check_data_shape.py")],
+            capture_output=True,
+            text=True,
         )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
 
     def test_the_check_detects_a_planted_misplacement(self):
         """Auditing the auditor: a structural check that cannot fail is worth
@@ -331,7 +314,7 @@ class TestStructuralPlacement:
             "# ====================\n# SECTION B\n# ====================\n"
             'absorption_length = 200.0\n\n[b]\nname = "B"\n'
         )
-        found = list(_keys_separated_from_their_header(planted))
+        found = list(misplaced_keys(planted))
         assert len(found) == 1
         assert found[0][1] == "absorption_length"
         assert found[0][2] == "[a.optical]"
@@ -347,7 +330,7 @@ class TestStructuralPlacement:
             "# A second explanatory note, several words long.\n"
             "light_yield = 32000\n"
         )
-        assert list(_keys_separated_from_their_header(ok)) == []
+        assert list(misplaced_keys(ok)) == []
 
     def test_multiline_arrays_do_not_trip_it(self):
         """`decay_components` spans lines; its continuations are not keys."""
@@ -358,4 +341,4 @@ class TestStructuralPlacement:
             "    { tau_ns = 42.0, fraction = 0.7 },\n"
             "]\n"
         )
-        assert list(_keys_separated_from_their_header(arr)) == []
+        assert list(misplaced_keys(arr)) == []

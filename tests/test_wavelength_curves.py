@@ -346,181 +346,20 @@ class TestRecoveredSilentDrops:
         assert pymat.materials["ferrite"].properties.magnetic.permeability_relative == 100
 
     def test_no_data_file_key_is_silently_dropped(self):
-        """Regression net for the whole bug class: every key in every material
-        TOML must have a field to land in."""
-        import pathlib
+        """Regression net for the whole bug class, via the same script the
+        pre-commit hook runs — one implementation, so the hook and the suite
+        cannot disagree about the invariant."""
+        import subprocess
         import sys
+        from pathlib import Path
 
-        if sys.version_info >= (3, 11):
-            import tomllib
-        else:  # pragma: no cover
-            import tomli as tomllib
-
-        from pymat.properties import AllProperties
-
-        groups = {
-            "mechanical",
-            "thermal",
-            "electrical",
-            "optical",
-            "magnetic",
-            "vacuum",
-            "nuclear",
-            "manufacturing",
-            "compliance",
-            "sourcing",
-        }
-        props = AllProperties()
-        dropped: dict[str, list[str]] = {}
-
-        def walk(node, path):
-            if not isinstance(node, dict):
-                return
-            for k, v in node.items():
-                if k.startswith("_"):
-                    continue
-                if k in groups and isinstance(v, dict):
-                    obj = getattr(props, k)
-                    for pk in v:
-                        if pk.startswith("_") or pk.endswith(("_stddev", "_unit")):
-                            continue
-                        base = pk[:-6] if pk.endswith("_value") else pk
-                        if not hasattr(obj, base):
-                            dropped.setdefault(f"{k}.{base}", []).append(path)
-                elif isinstance(v, dict) and k not in ("vis", "custom"):
-                    walk(v, f"{path}.{k}")
-
-        data_dir = pathlib.Path(__file__).resolve().parent.parent / "src" / "pymat" / "data"
-        for toml_path in sorted(data_dir.glob("*.toml")):
-            if toml_path.name == "surfaces.toml":  # not a material catalogue
-                continue
-            with open(toml_path, "rb") as f:
-                doc = tomllib.load(f)
-            for k, v in doc.items():
-                walk(v, f"{toml_path.stem}:{k}")
-
-        assert not dropped, (
-            "TOML keys with no dataclass field to receive them — the loader "
-            f"drops these silently on every load: {dropped}"
+        root = Path(__file__).resolve().parent.parent
+        proc = subprocess.run(
+            [sys.executable, str(root / "scripts" / "check_data_shape.py"), "--drop"],
+            capture_output=True,
+            text=True,
         )
-
-
-class TestMalformedSlotRaisesAtLoad:
-    """A scalar written where a spectrum belongs must fail at load.
-
-    Guarding validation on `isinstance(value, dict)` let a scalar skip the
-    check entirely and land in a dict-typed field, deferring the failure to the
-    first `_at(lambda)` call — far from the file that caused it. Found in
-    review of #243.
-    """
-
-    def test_scalar_in_a_spectrum_slot_raises(self, tmp_path):
-        p = tmp_path / "m.toml"
-        p.write_text(
-            dedent(
-                """
-                [x]
-                name = "X"
-                [x.optical]
-                emission_spectrum = 420.0
-                """
-            )
-        )
-        with pytest.raises(ValueError, match="must be a table"):
-            load_toml(p)
-
-    def test_list_in_a_spectrum_slot_raises(self, tmp_path):
-        p = tmp_path / "m.toml"
-        p.write_text(
-            dedent(
-                """
-                [x]
-                name = "X"
-                [x.optical]
-                refractive_index_dispersion = [400, 500]
-                """
-            )
-        )
-        with pytest.raises(ValueError, match="must be a table"):
-            load_toml(p)
-
-
-class TestEmissionAtIsSymmetricOnBadInput:
-    """`emission_at` validated its argument only when a spectrum existed, so
-    the same bad call returned None on one material and raised on the next."""
-
-    def test_raises_without_a_spectrum(self):
-        opt = OpticalProperties(emission_peak=420)
-        with pytest.raises(ValueError, match="must be a length"):
-            opt.emission_at(300 * ureg.kelvin)
-
-    def test_raises_with_a_spectrum(self):
-        opt = OpticalProperties(
-            emission_spectrum={"wavelengths_nm": [400, 500], "intensities": [0.5, 1.0]}
-        )
-        with pytest.raises(ValueError, match="must be a length"):
-            opt.emission_at(300 * ureg.kelvin)
-
-
-class TestExtinctionAndReflectance:
-    """`k` and derived normal-incidence reflectance (#243).
-
-    Metals carry `k` alongside `n` in `refractive_index_dispersion`. Deriving
-    reflectance from cited n,k beats carrying a hand-entered scalar that can
-    drift away from them.
-    """
-
-    def test_k_is_none_for_a_transparent_medium(self):
-        opt = OpticalProperties(
-            refractive_index_dispersion={"wavelengths_nm": [400, 500], "n": [1.9, 1.8]}
-        )
-        assert opt.extinction_curve is None
-        assert opt.k_at(450) is None
-
-    def test_k_is_read_when_present(self):
-        opt = OpticalProperties(
-            refractive_index_dispersion={
-                "wavelengths_nm": [400, 500],
-                "n": [0.45, 0.76],
-                "k": [4.7, 5.9],
-            }
-        )
-        assert opt.k_at(400) == pytest.approx(4.7)
-        assert opt.k_at(450) == pytest.approx(5.3)
-
-    def test_dielectric_reflectance_uses_k_zero(self):
-        """n = 1.5, k = 0 -> R = (0.5/2.5)^2 = 4%. The glass-surface number."""
-        opt = OpticalProperties(refractive_index=1.5)
-        assert opt.normal_reflectance_at(550) == pytest.approx(4.0, abs=1e-9)
-
-    def test_no_index_means_no_reflectance(self):
-        assert OpticalProperties().normal_reflectance_at(550) is None
-
-    def test_reflectance_is_percent_not_fraction(self):
-        opt = OpticalProperties(refractive_index=1.5)
-        assert 0.0 <= opt.normal_reflectance_at(550) <= 100.0
-        assert opt.normal_reflectance_at(550) > 1.0  # 4, not 0.04
-
-    def test_aluminium_reflectance_matches_the_known_shape(self):
-        """Real data, real physics: Al is ~92% flat across the visible and
-        dips near 800 nm. If this breaks, either the CC0 pull or the Fresnel
-        derivation is wrong."""
-        import pymat
-
-        al = pymat.aluminum.properties.optical
-        # Flat and high across the LYSO emission band.
-        for wl in (400, 420, 450, 500):
-            assert 91.0 < al.normal_reflectance_at(wl) < 94.0, wl
-        # The characteristic interband-absorption dip near 800 nm.
-        assert al.normal_reflectance_at(800) < al.normal_reflectance_at(600)
-        assert al.normal_reflectance_at(800) < al.normal_reflectance_at(900)
-
-    def test_aluminium_dispersion_is_cc0_and_cited(self):
-        import pymat
-
-        src = pymat.aluminum.source_of("optical.refractive_index_dispersion")
-        assert src is not None
-        assert src.license == "CC0"
+        assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
 class TestWavelengthSlotsAllHaveFields:

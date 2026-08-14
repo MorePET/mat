@@ -105,6 +105,24 @@ repos:
         files: ^(src/pymat/data/.*\.toml|scripts/check_licenses\.py|\.github/license-ratchet\.txt)$
         pass_filenames: false
 
+      # Structural gates on the data corpus (#243). Two failure modes that
+      # stayed invisible for months because neither produces an error:
+      #   - a TOML key with no dataclass field is parsed then DISCARDED by the
+      #     loader's `hasattr` guard (`[esr.optical] reflectivity` was dropped
+      #     on every load from #147 until #243)
+      #   - a key appended past a section banner parses correctly but reads as
+      #     part of the next section, and the next insertion beside it captures
+      #     it (hand-fixed twice before being written down)
+      # Runs pre-commit rather than only in CI because both defects appear at
+      # the moment an adjacent thing moves, which is the moment of the edit.
+      # Stdlib-only — parses properties.py with `ast`, never imports pymat.
+      - id: check-data-shape
+        name: data shape (no dropped keys, no misfiled keys)
+        entry: python scripts/check_data_shape.py
+        language: python
+        files: ^(src/pymat/data/.*\.toml|src/pymat/properties\.py|scripts/check_data_shape\.py)$
+        pass_filenames: false
+
       # Custom PEP-8 naming: trailing-`_` reserved for keyword-collision
       # avoidance only. Catches the gap ruff's N-rules don't cover.
       # Stdlib-only (ast/keyword/builtins).
