@@ -695,3 +695,84 @@ field to land in.
 The lesson generalises past this repo: a scan over *existing data* cannot find a
 gap that only opens when new data arrives. The invariant has to be checked
 against the schema, not against the corpus.
+
+
+---
+
+# Round 5 — the discrepancy did not exist
+
+The consumer retracted a fourth time, and this one resolves the whole thread:
+**the measured ~15% crosstalk was per direct neighbour normalised to the
+central crystal**, while the simulation reported direct-neighbour light as a
+fraction of *total collected*. Those differ by roughly (neighbour count ×
+own-fraction) — a factor of ~3.4.
+
+With the target corrected, and using Patterson's coefficients unmodified at the
+nominal 0.2 mm:
+
+| quantity | model | measured |
+|---|---|---|
+| crosstalk, per direct neighbour | 15.95% | ~15% |
+| energy resolution FWHM @ 511 keV | 7.80% (Poisson) | ~10% |
+
+**Two independent measurements, one model, zero fitted parameters.**
+
+## What this repository got wrong
+
+Three mechanisms were invented to explain a discrepancy that was never there —
+loose packing, grazing incidence, effective thickness. This document already
+records the first two dying. The third died here, and **this repository
+endorsed it**:
+
+> *"the first version of this story that predicts something outside the model it
+> was fitted to. A microscope on the septum can refute it."*
+
+That endorsement was correct on its merits and wrong in outcome, in a
+particular way worth recording. The microscope would have come back at 0.2 mm.
+The consumer would then have concluded that Patterson's coefficients fail for
+their geometry — **a false refutation of correct data, arrived at through a
+sound falsification test.** One measurement away, and the data would have been
+blamed.
+
+## The lesson, which supersedes the earlier four in scope
+
+> **A wrong comparison manufactures physics to explain itself, and every
+> falsification test downstream of it inherits the error.**
+
+Rule 4 said *a test the wrong model passes is a non-test.* This is the worse
+case: **a test the right model fails, because the target is wrong.** Three
+plausible, physically-motivated, independently-falsifiable mechanisms all
+survived review by two parties — because each was falsifiable only against a
+target that was itself wrong. The falsifications were sound and useless.
+
+Every method in this document was applied correctly and none could see it: the
+mutation audits, the angle instrumentation, the degeneracy analysis, the
+mechanism-prediction rule. All downstream of the comparison.
+
+The tell was present twice and read as physics both times. The "wrong tail
+shape" that killed mechanism (1) was the same normalisation error: totals
+compared across 4 direct crystals versus 59 further ones, which inverts the
+ordering combinatorially. Per crystal the shape had always been right. **A
+combinatorial artefact was read as evidence and used to kill a hypothesis.**
+
+### The practical form
+
+Before modelling a discrepancy, confirm the two numbers are the same *kind* of
+quantity — same normalisation, same denominator, same population. It is the
+cheapest check available and it was on the consumer's own candidate list,
+skipped three times because it was not interesting. **Cheap checks get skipped
+in proportion to how uninteresting they are, which is uncorrelated with how
+often they are the answer.**
+
+## What this says about the data
+
+Nothing in this repository moved. Patterson's `k` and `s`, Grum & Luckey's
+reflectance, the two-lab spread, the 588 mm self-absorption channel, the
+aluminium n,k — every value survived four retractions unchanged, and the
+schema decisions that refused three fitted parameters (`s = 279 /cm`,
+`default_surface`, `contact.grease_sipm`) all held.
+
+That is the strongest available argument for the line drawn in ADR-0004 §1:
+**a fit against one module measures that module.** Had any of the three been
+accepted as material data, this repository would now carry a cited constant
+manufactured to explain a comparison error.
