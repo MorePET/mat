@@ -122,8 +122,8 @@ means you have a bug to fix on your side.
    `mat.cite("radiation_length")` silently resolved to a path no TOML writes.
    Fixed here.
 
-And one found while implementing, which is the strongest possible argument for
-your own §P2 point, from the opposite direction:
+And three found while implementing, the first of which is the strongest possible
+argument for your own §P2 point, from the opposite direction:
 
 4. **`[esr.optical] reflectivity = 98.5` had been on disk since #147 and was
    silently dropped on every single load** — `OpticalProperties` had no
@@ -133,6 +133,32 @@ your own §P2 point, from the opposite direction:
    `compliance.flammable`, `compliance.toxic`, plus `electrical.permeability`
    filed under the wrong group). All fixed, and there is now a test that fails if
    any TOML key anywhere lacks a field to land in.
+
+5. **Every *root* material silently lost its `grade`, `temper`, `treatment` and
+   `vendor`.** `loader.py` wrote `grade or parent.grade if parent else None`,
+   which Python parses as `(grade or parent.grade) if parent else None` — so
+   with no parent the whole expression collapsed to `None` and the node's own
+   value was thrown away. `pymat.beryllium.grade` was `None` despite the TOML
+   saying `"S-200F"`. Eleven grades and six vendors across the corpus. Child
+   materials were unaffected, which is why it survived this long.
+
+6. **The Rust side merged child `tags` over the parent's instead of unioning
+   them**, so `stainless.s316L` reported 4 tags where py-mat reports 7 —
+   a divergence from the #132 inherit-and-extend rule.
+
+**Neither of those last two was found by reading code.** They fell out of a
+mechanical cross-check, which is now a permanent gate:
+`tests/test_rs_python_parity.py` drives the Rust loader and diffs 26 fields
+across every material against the Python loader — 144 materials, ~3700 value
+pairs, zero tolerance. It runs in the `rust` CI job, the only one with both
+toolchains, and it was mutation-tested by reintroducing bug 5 and confirming it
+fails with a readable diff.
+
+That gate is the real answer to the drift complaint behind your brief. The
+schema already had provenance, uncertainty and curves; what it did not have was
+anything checking that the two readers of the same file agreed about what it
+said. Now it does, and the next time the Rust side lags you will find out from
+CI rather than from a downstream simulation being quietly wrong.
 
 ---
 
@@ -375,7 +401,7 @@ is now stated once at the top of `scintillators.toml` rather than per-material.
   you were relying on it, you were relying on a bug. Whether Python *should*
   inherit formula is a separate question worth raising as an issue.
 
-**Tests:** 1059 Python (134 new), 99 Rust (62 new). License gate passes on all
+**Tests:** 1064 Python (139 new, incl. the loader-parity gate), 101 Rust (64 new). License gate passes on all
 8 TOMLs — `surfaces.toml` is covered automatically because the gate globs
 `data/*.toml`. `CC-BY-3.0` was added to the allow-list for JINST.
 
