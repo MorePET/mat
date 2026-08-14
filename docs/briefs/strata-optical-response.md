@@ -431,3 +431,109 @@ is now stated once at the top of `scintillators.toml` rather than per-material.
 Open the PR discussion on ADR-0004 if you want to contest either narrowing. §3b
 in particular is a judgement call, and it is your brief's own reasoning that
 decided it.
+
+---
+
+# Round 2 — the concrete detector
+
+strata came back with a specific module to support (8×8 LYSO 3×3×25 mm, 0.2 mm
+BaSO4 septa, aluminium outer wrap, grease-coupled SiPM on the −z end) and,
+more usefully, with a **sensitivity result that re-ordered the work**.
+
+## What changed the priorities
+
+Their measurement, 20k photons, identical seeds, absorption length swept:
+
+| absorption length | mean CE | readout end | far end | DOI ratio |
+|---|---|---|---|---|
+| 200 mm (MC convention) | 0.2206 | 0.6139 | 0.0730 | 8.4 : 1 |
+| 588 mm (measured Ce channel) | 0.2590 | 0.6470 | 0.1039 | 6.2 : 1 |
+
+A 2.9× change in absorption length moves mean collection efficiency by only
++17% relative. **The reflector dominates**: reflector loss runs 25% at the
+readout end to 63% at the far end, against 13→29% for bulk. On an 8.3 aspect
+ratio with a *diffuse* reflector the photon random-walks instead of
+light-piping, so it is `R^~40` doing the damage.
+
+So reflector reflectance provenance outranked more scintillator bulk data, and
+the work was re-ordered accordingly. This is the single best argument in the
+whole exchange for stating sensitivity before requesting data.
+
+## BaSO4 — the number that mattered
+
+Grum & Luckey 1968 (doi:10.1364/AO.7.002289), the primary reference for pressed
+BaSO4 as a reflectance standard: **0.999 at 420–470 nm**, 0.985 at 350 nm.
+strata's working estimate was **0.97**.
+
+    0.970 ^ 40 = 0.296
+    0.999 ^ 40 = 0.961
+
+That is not a refinement, it is a different model. Three caveats travel with it
+in the TOML header, and they matter more than the headline: the cited values are
+pressed powder at high packing density measured in an integrating sphere; the
+paper's own BaSO4/PVA *paint* measures 0.992; and a septum is bounded by crystal
+faces rather than open to a sphere. The honest bracket is ~0.98–0.999. Every
+point of it is above 0.97, so the *direction* is certain even where the value is
+not — which is the right way to hand over a number like this.
+
+## A question that decided model structure, not just a value
+
+Patterson 1977 (doi:10.1364/AO.16.000729) gives Kubelka-Munk coefficients:
+`s = 572 cm⁻¹` at 500 nm → a ~17 µm scattering mean free path → **0.2 mm is
+~12 scattering lengths, so the septum is effectively optically thick.** No need
+to transport into it; a surface entry suffices.
+
+But only just. Coating vendors specify 0.5–0.6 mm because real coatings pack
+looser than a pressed pellet. If the septum is paint or a loaded binder, light
+leaks through into the neighbouring crystal — **an inter-crystal crosstalk
+channel the model does not currently have**. That is a gap in the physics, not
+in the data, and it would surface as crosstalk that cannot be reproduced.
+
+## Aluminium — derived, not stored
+
+The `--write` enricher run put Rakić CC0 n,k on disk, so reflectance became
+derivable rather than typed:
+
+    OpticalProperties.normal_reflectance_at(420)  ->  92.46 %
+
+92.29% mean over 400–500 nm, with the interband dip at 800 nm (now a test —
+if either the CC0 pull or the Fresnel derivation breaks, that shape is what
+stops looking right). strata replaced its own 0.88 estimate with it.
+
+Derived beats stored here: a hand-entered scalar can drift from the n,k it is
+supposed to be consistent with, and nothing would notice. The surface entry
+carries an explicit `_absent` on `reflectivity` saying exactly that.
+
+## Where the line got drawn again
+
+**A photodetector is not a material** (ADR-0004 §11). PDE is a device response
+at an operating point — it survives moving the part and does not survive
+re-biasing it. The window *is* a substance and is now present in both variants,
+which caught a real error: the S13360 **CS** package window is silicone at
+**n = 1.41**, not the 1.55 both sides were carrying (that is the **PE** epoxy
+variant). From BC-630 grease at 1.465 those are qualitatively different — CS
+steps the index down and puts a TIR cone at the readout face, PE does not.
+
+An independent fact settles the same question without appeal to principle:
+**no redistributable tabulated PDE(λ) exists for the S13360-3050CS at all.**
+Datasheet figure, no table, no CC-BY paper on that exact part. Putting it here
+would mean shipping a digitised proprietary figure — the thing we refused to do
+for LYSO's emission spectrum.
+
+**`contact.grease_sipm` was requested and refused.** It would carry no measured
+number of its own — the grease index is on `bc630`, the window index is on
+`sipm_window_silicone` — only the pairing, and pairing is assembly. A test pins
+its absence so the reasoning cannot be quietly reversed.
+
+## Self-inflicted bug, worth recording
+
+`reflectivity_spectrum` was registered in the loader's validation table with no
+dataclass field behind it: validated, then silently dropped. **That is the exact
+bug class this branch audited the corpus for, reintroduced by me**, in the one
+direction the corpus scan cannot see — no shipped file used the slot yet, so
+nothing failed. There is now a structural test that every validated slot has a
+field to land in.
+
+The lesson generalises past this repo: a scan over *existing data* cannot find a
+gap that only opens when new data arrives. The invariant has to be checked
+against the schema, not against the corpus.
