@@ -99,6 +99,7 @@ _WAVELENGTH_SLOTS: Dict[str, str] = {
     "absorption_length_matrix_spectrum": "values",
     "absorption_length_reabs_spectrum": "values",
     "reflectivity_spectrum": "values",
+    "transparency_spectrum": "values",
 }
 
 

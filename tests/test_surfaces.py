@@ -65,9 +65,32 @@ ANALYTIC_FINISHES = {
 }
 
 
+# Entries that carry measured reflectance but no angular look-up table
+# (ADR-0004 §3 — the test is measurement, not LUT-backing).
+NON_LUT_KEYS = {"diffuse.baso4_air", "specular.aluminium_air"}
+
+
+def lut_entries():
+    """Every entry backed by a G4RealSurface look-up table."""
+    return [s for s in surfaces.values() if s.lut_family is not None]
+
+
 class TestCatalogueCompleteness:
-    def test_has_exactly_thirty_entries(self):
-        assert len(surfaces) == 30
+    def test_thirty_lut_entries(self):
+        assert len(lut_entries()) == 30
+
+    def test_non_lut_entries_are_exactly_the_known_set(self):
+        """Non-LUT entries are cheap to add and easy to add carelessly, so the
+        set is pinned. Adding one should be a deliberate edit here too."""
+        got = {s.key for s in surfaces.values() if s.lut_family is None}
+        assert got == NON_LUT_KEYS
+
+    def test_every_entry_is_lut_backed_or_names_a_reflector(self):
+        """The §3 test in executable form: an entry earns its place by carrying
+        measured numbers — either a LUT, or a reflector whose reflectance is
+        measured and cited on the material it names."""
+        for s in surfaces.values():
+            assert s.lut_family is not None or s.reflector_material is not None, s.key
 
     def test_all_21_lbnl_lut_names_present(self):
         got = {s.lut_surface for s in surfaces(lut_family="lbnl")}
@@ -89,27 +112,38 @@ class TestCatalogueCompleteness:
         assert not (got & ANALYTIC_FINISHES)
 
     def test_lut_surface_names_are_unique(self):
-        names = [s.lut_surface for s in surfaces.values()]
+        names = [s.lut_surface for s in lut_entries()]
         assert len(names) == len(set(names))
+        assert all(names), "every LUT entry must name its G4 finish"
 
-    def test_every_entry_declares_its_dataset(self):
-        for s in surfaces.values():
+    def test_every_lut_entry_declares_its_dataset(self):
+        for s in lut_entries():
             assert s.lut_dataset == "G4RealSurface-2.2", s.key
 
+    def test_non_lut_entries_claim_no_dataset(self):
+        """A dataset name on a non-LUT entry would claim a measurement file
+        that does not exist for it."""
+        for key in NON_LUT_KEYS:
+            assert surfaces[key].lut_dataset is None
+            assert surfaces[key].lut_surface is None
+
     def test_g4_surface_types_match_family(self):
-        for s in surfaces.values():
+        for s in lut_entries():
             expected = "dielectric_LUT" if s.lut_family == "lbnl" else "dielectric_LUTDAVIS"
             assert s.g4_surface_type == expected, s.key
 
 
 class TestProvenance:
-    def test_every_entry_cites_its_lut_name(self):
-        for s in surfaces.values():
+    def test_every_lut_entry_cites_its_name_and_family(self):
+        for s in lut_entries():
             assert s.source_of("lut_surface") is not None, s.key
-
-    def test_every_entry_cites_its_family(self):
-        for s in surfaces.values():
             assert s.source_of("lut_family") is not None, s.key
+
+    def test_every_non_lut_entry_cites_its_reflector(self):
+        """Their measured content is the reflector's reflectance, so that is
+        what has to carry a citation."""
+        for key in NON_LUT_KEYS:
+            assert surfaces[key].source_of("reflector_material") is not None, key
 
     def test_every_entry_produces_bibtex(self):
         for s in surfaces.values():
@@ -148,7 +182,8 @@ class TestCouplingDistinction:
     physically different and must be distinguishable."""
 
     def test_air_gap_and_contact_are_both_represented(self):
-        assert len(surfaces(coupling="air_gap")) == 19
+        # 15 LBNL air + 4 DAVIS air + 2 non-LUT (BaSO4, aluminium)
+        assert len(surfaces(coupling="air_gap")) == 21
         assert len(surfaces(coupling="optical_contact")) == 8
         assert len(surfaces(coupling="none")) == 2
 
@@ -203,10 +238,12 @@ class TestInheritance:
         assert "davis" not in surfaces
 
     def test_identity_fields_do_not_leak_to_children(self):
-        """A child must never inherit a parent's `lut_surface` or `name` —
-        that is what makes each entry a distinct measurement."""
-        parents = {s.lut_surface for s in surfaces.values()}
-        assert len(parents) == len(surfaces)
+        """A child must never inherit a parent's `lut_surface`, `name` or
+        `note` — those are what make each entry a distinct measurement."""
+        luts = [s.lut_surface for s in lut_entries()]
+        assert len(set(luts)) == len(luts)
+        names = [s.name for s in surfaces.values()]
+        assert len(set(names)) == len(names), "two entries share a name"
 
     def test_parent_is_recorded(self):
         assert surfaces["lbnl.polished.teflon_air"]._parent == "lbnl.polished"
@@ -435,3 +472,73 @@ class TestInheritedVariant:
         assert crystal.properties.optical.n_at(420) == 1.82
         assert finish.treatment == crystal.treatment == "polished"
         assert finish.is_optical_contact
+
+
+class TestConcreteDetectorConfiguration:
+    """The 8x8 LYSO / 0.2 mm BaSO4 septum / Al wrap / grease-SiPM module that
+    strata simulates first. Every key it needs must resolve, and the numbers
+    must be the cited ones."""
+
+    def test_crystal_resolves_with_its_optics(self):
+        c = pymat.lyso.Ce.polished
+        assert c.treatment == "polished"
+        assert c.properties.optical.n_at(420) == 1.82
+        assert c.properties.optical.light_yield == 33000
+
+    def test_septum_reflector_resolves_and_is_cited(self):
+        s = surfaces["diffuse.baso4_air"]
+        assert s.model == "diffuse"
+        assert s.coupling == "air_gap"
+        baso4 = pymat.materials[s.reflector_material]
+        # The number that dominates the whole light-collection model.
+        assert baso4.properties.optical.reflectivity_at(420) == pytest.approx(99.90)
+        assert baso4.properties.optical.reflectivity_at(450) == pytest.approx(99.90)
+        assert baso4.source_of("optical.reflectivity_spectrum").ref == "10.1364/AO.7.002289"
+
+    def test_baso4_reflectance_is_far_above_a_naive_estimate(self):
+        """0.97^40 = 0.30 against 0.999^40 = 0.96. Pinned because the whole
+        reflector-loss story turns on which of those is right."""
+        r = pymat.baso4.properties.optical.reflectivity_at(420) / 100.0
+        assert r > 0.99
+        assert r**40 > 0.9
+
+    def test_outer_wrap_resolves_with_derived_reflectance(self):
+        s = surfaces["specular.aluminium_air"]
+        assert s.model == "specular"
+        al = pymat.materials[s.reflector_material]
+        r = al.properties.optical.normal_reflectance_at(420)
+        assert 92.0 < r < 93.0
+        # Derived, never stored — so it cannot drift from the n,k it comes from.
+        assert al.properties.optical.reflectivity is None
+        assert s.absent("reflectivity").reason == "not-measured"
+
+    def test_readout_stack_indices_resolve_on_both_sides(self):
+        """grease -> window. The CS part steps DOWN in index (1.465 -> 1.41),
+        which puts a TIR cone at the readout face; the PE part steps UP and
+        does not. Getting the variant wrong changes the physics."""
+        grease = pymat.materials["bc630"].properties.optical.refractive_index
+        cs = pymat.materials["sipm_window_silicone"].properties.optical.refractive_index
+        pe = pymat.materials["sipm_window_epoxy"].properties.optical.refractive_index
+        assert grease == 1.465
+        assert cs == 1.41 and cs < grease  # TIR at this boundary
+        assert pe == 1.55 and pe > grease  # no TIR at this boundary
+
+    def test_the_alternative_couplant_is_worse_in_the_blue(self):
+        """Q2-3067 transmits only 70% at 400 nm against BC-630's flat ~95%,
+        which matters for a 420 nm emitter."""
+        q = pymat.materials["q2_3067"].properties.optical
+        assert q.transparency_at(400) == pytest.approx(70.0)
+        assert q.transparency_at(500) == pytest.approx(87.0)
+        assert q.refractive_index == pytest.approx(1.4658)
+
+    def test_no_photodetector_is_in_the_material_registry(self):
+        """ADR-0004 §11. The window is a material; the device is not."""
+        for key in ("s13360", "s13360_3050cs", "sipm", "mppc"):
+            assert key not in pymat.materials
+
+    def test_no_assembly_pairing_is_catalogued(self):
+        """`contact.grease_sipm` was requested and refused: it would carry no
+        measured number of its own, only a pairing of two materials that each
+        already carry theirs. Pairing is the consumer's job (ADR-0004 §3)."""
+        assert "contact.grease_sipm" not in surfaces
+        assert not [s for s in surfaces.values() if s.key.startswith("contact.")]

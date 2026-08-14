@@ -515,12 +515,20 @@ class OpticalProperties:
     # Basic optical properties
     refractive_index: Optional[float] = None  # n at 550nm (default)
     transparency: Optional[float] = None  # % transmission (0-100) - MEASURED VALUE
+    # Wavelength-resolved transmission, % — {wavelengths_nm: [...], values: [...]}.
+    # Couplants and windows are quoted at a stated path length; record it in the
+    # `_sources` note, since the number is meaningless without it.
+    transparency_spectrum: Optional[Dict[str, List[float]]] = None
     # Bulk specular/total reflectivity, % (0-100) — same percent convention as
     # `transparency` above. Reflector films (ESR, Teflon, Tyvek) carry this.
     # NOTE (#243): `[esr.optical] reflectivity = 98.5` has been on disk since
     # #147 but there was no field to receive it, so the loader silently
     # dropped it on every load. Adding the field is the fix.
     reflectivity: Optional[float] = None  # %
+    # Wavelength-resolved reflectivity, % — {wavelengths_nm: [...], values: [...]}.
+    # Reflector films and diffuse standards are strongly wavelength-dependent at
+    # the blue end, which is exactly where scintillators emit.
+    reflectivity_spectrum: Optional[Dict[str, List[float]]] = None
     absorption_coefficient: Optional[float] = None  # 1/cm
     absorption_length: Optional[float] = None  # mm (inverse of coefficient)
     absorption_length_unit: str = "mm"
@@ -676,6 +684,39 @@ class OpticalProperties:
     def absorption_length_curve(self) -> Optional[WavelengthCurve]:
         """`absorption_length_spectrum` as a `WavelengthCurve`, or None."""
         return _as_wl_curve(self.absorption_length_spectrum, "values")
+
+    @property
+    def transparency_curve(self) -> Optional[WavelengthCurve]:
+        """`transparency_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.transparency_spectrum, "values")
+
+    def transparency_at(self, wavelength: Any) -> Optional[float]:
+        """Transmission (%) at a wavelength. Spectrum > scalar fallback.
+
+        The path length the figure was measured over lives in the `_sources`
+        note, because a transmission percentage without one is not a number.
+        """
+        return _eval_wl_or_scalar(
+            self.transparency_spectrum, "values", self.transparency, None, wavelength
+        )
+
+    @property
+    def reflectivity_curve(self) -> Optional[WavelengthCurve]:
+        """`reflectivity_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.reflectivity_spectrum, "values")
+
+    def reflectivity_at(self, wavelength: Any) -> Optional[float]:
+        """Reflectivity (%) at a wavelength. Spectrum > scalar fallback.
+
+        Distinct from `normal_reflectance_at`, which *derives* reflectance from
+        n,k. This one returns a *measured* reflectivity where the data carries
+        one — for a diffuse reflector like pressed BaSO4 there is no meaningful
+        n,k to derive from, because the reflectance comes from multiple
+        scattering in a powder rather than a Fresnel step at a smooth surface.
+        """
+        return _eval_wl_or_scalar(
+            self.reflectivity_spectrum, "values", self.reflectivity, None, wavelength
+        )
 
     def n_at(self, wavelength: Any) -> Optional[float]:
         """Refractive index at a wavelength. Dispersion > scalar fallback.

@@ -412,6 +412,8 @@ fn parse_optical(t: &toml::Table) -> OpticalProperties {
         }),
         transparency: scalar(t, "transparency", &mut sd),
         reflectivity: scalar(t, "reflectivity", &mut sd),
+        reflectivity_spectrum: wl_curve(t, "reflectivity_spectrum"),
+        transparency_spectrum: wl_curve(t, "transparency_spectrum"),
         absorption_length: scalar(t, "absorption_length", &mut sd),
         absorption_coefficient: scalar(t, "absorption_coefficient", &mut sd),
         scattering_length: scalar(t, "scattering_length", &mut sd),
@@ -434,6 +436,10 @@ fn parse_optical(t: &toml::Table) -> OpticalProperties {
         ),
         hygroscopic: t.get("hygroscopic").and_then(|v| v.as_bool()),
         refractive_index_dispersion: wl_curve(t, "refractive_index_dispersion"),
+        extinction: t
+            .get("refractive_index_dispersion")
+            .and_then(|v| v.as_table())
+            .and_then(|tt| Curve::from_wavelength_toml_keyed(tt, "k")),
         emission_spectrum: wl_curve(t, "emission_spectrum"),
         absorption_length_spectrum: wl_curve(t, "absorption_length_spectrum"),
         absorption_length_matrix_spectrum: wl_curve(t, "absorption_length_matrix_spectrum"),

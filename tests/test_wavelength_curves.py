@@ -520,3 +520,47 @@ class TestExtinctionAndReflectance:
         src = pymat.aluminum.source_of("optical.refractive_index_dispersion")
         assert src is not None
         assert src.license == "CC0"
+
+
+class TestWavelengthSlotsAllHaveFields:
+    """Structural guard for the silent-drop bug class, in the direction the
+    corpus scan cannot see.
+
+    `test_no_data_file_key_is_silently_dropped` only checks keys that appear in
+    a shipped TOML. A slot registered for validation in the loader but never
+    given a dataclass field would pass that scan (no file uses it yet) and then
+    silently drop the first time someone wrote it. That happened during #243
+    with `reflectivity_spectrum`.
+    """
+
+    def test_every_validated_slot_has_a_field_to_land_in(self):
+        from pymat.loader import _WAVELENGTH_SLOTS
+
+        opt = OpticalProperties()
+        missing = [slot for slot in _WAVELENGTH_SLOTS if not hasattr(opt, slot)]
+        assert not missing, (
+            "these slots are validated by the loader but have no dataclass "
+            f"field, so the value is dropped after validation: {missing}"
+        )
+
+    def test_reflectivity_spectrum_round_trips(self, tmp_path):
+        p = tmp_path / "m.toml"
+        p.write_text(
+            dedent(
+                """
+                [x]
+                name = "X"
+                [x.optical]
+                reflectivity = 97.0
+                reflectivity_spectrum = { wavelengths_nm = [400, 500], values = [99.5, 99.8] }
+                """
+            )
+        )
+        opt = load_toml(p)["x"].properties.optical
+        assert opt.reflectivity_spectrum is not None
+        assert opt.reflectivity_at(450) == pytest.approx(99.65)
+        assert opt.reflectivity_at(200) == pytest.approx(99.5)  # clamped
+
+    def test_reflectivity_at_falls_back_to_the_scalar(self):
+        assert OpticalProperties(reflectivity=98.5).reflectivity_at(420) == 98.5
+        assert OpticalProperties().reflectivity_at(420) is None

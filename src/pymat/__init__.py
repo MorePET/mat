@@ -185,6 +185,7 @@ _CATEGORY_BASES: Dict[str, list[str]] = {
         "ltcc951",
         "sapphire",
         "si3n4",
+        "baso4",
         "concrete_ordinary",
     ],
     "electronics": ["fr4", "rogers", "kapton", "copper_pcb", "solder"],

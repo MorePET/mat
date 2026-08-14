@@ -1239,3 +1239,67 @@ kind = "handbook"
 ref = "pdg.lbl.gov:atomic-nuclear/shielding-concrete"
 license = "CC-BY-4.0"
 note = "Z_eff ≈ 11 reported as the working effective-Z value for ordinary/shielding concrete in the PDG-derived simulation community (Geant4, MCNP). Computed via Mayneord-style weighting of the NIST composition; documented but not directly tabulated by NIST/PDG, so cited as a PDG-community-derived scalar."
+
+
+# ============================================================================
+# Barium sulfate (BaSO4) — the classic diffuse reflectance standard (#243)
+# ============================================================================
+# Pressed BaSO4 powder is the reference white Lambertian diffuse reflector; it
+# was the working reflectance standard before sintered PTFE (Spectralon)
+# replaced it for NIST calibrations. In detector construction it is the usual
+# inter-crystal septum material in a PET block.
+#
+# IMPORTANT — the reflectance below is a property of PRESSED POWDER at high
+# packing density, measured in an integrating sphere as a total hemispherical
+# diffuse reflectance standard. A real septum is packed looser, may be
+# binder-loaded, and is bounded by crystal faces rather than open to a sphere.
+# Grum & Luckey's own BaSO4/PVA *paint* measures 0.992, not the 0.995-0.999 of
+# pressed powder. Treat the values here as the best-case laboratory artifact
+# and the upper bound on what a septum achieves.
+#
+# There is no CC-licensed tabulated (lambda, R) source for BaSO4. The values
+# are cited from the Optica-paywalled primary; facts are not copyrightable, so
+# the numbers travel, but the table is not ours to redistribute.
+
+[baso4]
+name = "Barium Sulfate (BaSO4)"
+formula = "BaSO4"
+tags = ["reflector", "diffuse-reflector", "reflectance-standard", "ceramic"]
+
+[baso4.mechanical]
+density_value = 4.49
+density_unit = "g/cm^3"
+hardness_vickers = 125
+
+[baso4.thermal]
+melting_point_value = 1580
+melting_point_unit = "degC"
+
+[baso4.optical]
+# Total hemispherical diffuse reflectance, PERCENT, pressed powder.
+# Peaks 0.999 at 420-470 nm — squarely on the LYSO emission band.
+reflectivity = 99.9
+reflectivity_spectrum = { wavelengths_nm = [350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500, 550, 600, 650, 700], values = [98.50, 98.79, 99.07, 99.27, 99.39, 99.50, 99.72, 99.90, 99.92, 99.90, 99.90, 99.90, 99.90, 99.89, 99.85, 99.80, 99.80, 99.80, 99.80, 99.80] }
+# Kubelka-Munk scattering coefficient s = 572 /cm at 500 nm gives a scattering
+# mean free path of ~17 um, so a 0.2 mm layer is ~12 scattering lengths. That
+# is effectively optically thick, but only marginally — coating vendors
+# recommend 0.5-0.6 mm because real coatings pack looser than a pressed pellet.
+scattering_length = 0.00175
+scattering_length_unit = "cm"
+absorption_coefficient = 0.100
+
+[baso4.vis]
+base_color = [1.0, 1.0, 1.0, 1.0]
+metallic = 0.0
+roughness = 0.95
+transmission = 0.0
+
+[baso4._sources]
+"mechanical.density" = { citation = "crc_handbook_baso4", kind = "handbook", ref = "CRC Handbook of Chemistry and Physics, barium sulfate (barite)", license = "proprietary-reference-only", note = "4.49 g/cm^3 for the barite mineral form. A pressed powder septum is far less dense — this is the crystal density, not the packed-layer density." }
+"optical.reflectivity" = { citation = "grum_luckey_1968", kind = "doi", ref = "10.1364/AO.7.002289", license = "proprietary-reference-only", note = "F. Grum & G. W. Luckey, 'Optical Sphere Paint and a Working Standard of Reflectance', Appl. Opt. 7(11) 2289-2294 (1968). THE primary reference for pressed BaSO4 as a reflectance standard. Absolute luminous reflectance 0.995 +/- 0.001 for pressed powder; the paper's own BaSO4/PVA paint formulation measures 0.992. Values cited, table not redistributed." }
+"optical.reflectivity_spectrum" = { citation = "grum_luckey_1968", kind = "doi", ref = "10.1364/AO.7.002289", license = "proprietary-reference-only", note = "Table I, pressed BaSO4 (Eastman white reflectance standard #6091). Transcribed via the Purdue LARS FRData reflectance calibration tables, which reproduce the paper's grid; the 10 nm rows are on Grum & Luckey's own measurement grid. PRESSED POWDER, integrating sphere, total hemispherical — see the header comment before using this for a septum." }
+"optical.scattering_length" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "E. M. Patterson, C. E. Shelden, B. H. Stockton, 'Kubelka-Munk optical properties of a barium sulfate white reflectance standard', Appl. Opt. 16(3) 729-732 (1977). Table I gives s = 619 /cm at 300 nm, 572 /cm at 500 nm, 517 /cm at 700 nm. 1/s at 500 nm = 17.5 um, recorded here as 0.00175 cm. NOTE this is the Kubelka-Munk two-flux scattering coefficient for a compressed pellet, not a single-scatter transport mean free path, and not a photon-transport length in a looser coating." }
+"optical.absorption_coefficient" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "Kubelka-Munk k = 0.100 /cm at 500 nm (0.455 at 300 nm, 0.062 at 700 nm). Same two-flux caveat as the scattering coefficient." }
+
+[baso4._absent]
+"optical.refractive_index" = { reason = "not-applicable", note = "A pressed powder has no single bulk refractive index that is useful for transport — its reflectance comes from multiple scattering between grains and voids, not from a Fresnel step at a smooth surface. The barite crystal is biaxial (n ~ 1.63-1.65), but that is the grain index, not the layer's optical behaviour. Use reflectivity_spectrum, not a Fresnel calculation." }

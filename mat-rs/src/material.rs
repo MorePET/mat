@@ -52,6 +52,11 @@ pub struct OpticalProperties {
     pub transparency: Option<f64>,
     /// Bulk reflectivity, % (0-100).
     pub reflectivity: Option<f64>,
+    /// Reflectivity vs lambda, % — diffuse reflectors are strongly
+    /// wavelength-dependent at the blue end, where scintillators emit.
+    pub reflectivity_spectrum: Option<Curve>,
+    /// Transmission vs lambda, % at the path length named in `_sources`.
+    pub transparency_spectrum: Option<Curve>,
     /// Lumped bulk attenuation length (mm).
     pub absorption_length: Option<f64>,
     /// Absorption coefficient (1/cm).
@@ -85,6 +90,8 @@ pub struct OpticalProperties {
     // --- wavelength-resolved (nm abscissa) --------------------------------
     /// n(lambda).
     pub refractive_index_dispersion: Option<Curve>,
+    /// k(lambda) — the extinction column of the same dispersion table.
+    pub extinction: Option<Curve>,
     /// Relative emission intensity vs lambda.
     pub emission_spectrum: Option<Curve>,
     /// Lumped attenuation length vs lambda (mm).
@@ -143,6 +150,38 @@ impl OpticalProperties {
             Some(c) => Some(c.interpolate(wavelength_nm)),
             None => self.absorption_length_reabs,
         }
+    }
+
+    /// Reflectivity (%) at a wavelength (nm). Spectrum beats the scalar.
+    pub fn reflectivity_at(&self, wavelength_nm: f64) -> Option<f64> {
+        match &self.reflectivity_spectrum {
+            Some(c) => Some(c.interpolate(wavelength_nm)),
+            None => self.reflectivity,
+        }
+    }
+
+    /// Transmission (%) at a wavelength (nm). Spectrum beats the scalar.
+    pub fn transparency_at(&self, wavelength_nm: f64) -> Option<f64> {
+        match &self.transparency_spectrum {
+            Some(c) => Some(c.interpolate(wavelength_nm)),
+            None => self.transparency,
+        }
+    }
+
+    /// Extinction coefficient at a wavelength (nm), or None if transparent.
+    pub fn k_at(&self, wavelength_nm: f64) -> Option<f64> {
+        Some(self.extinction.as_ref()?.interpolate(wavelength_nm))
+    }
+
+    /// Normal-incidence reflectance from vacuum, PERCENT.
+    ///
+    /// `R = ((n-1)^2 + k^2) / ((n+1)^2 + k^2)`. Derived rather than stored, so
+    /// it cannot drift from the n,k it comes from. This is the smooth,
+    /// optically-thick, normal-incidence ceiling — a real wrap measures lower.
+    pub fn normal_reflectance_at(&self, wavelength_nm: f64) -> Option<f64> {
+        let n = self.n_at(wavelength_nm)?;
+        let k = self.k_at(wavelength_nm).unwrap_or(0.0);
+        Some(100.0 * ((n - 1.0).powi(2) + k * k) / ((n + 1.0).powi(2) + k * k))
     }
 
     /// Relative emission intensity at a wavelength (nm).

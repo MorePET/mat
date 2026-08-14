@@ -337,3 +337,55 @@ note = "The crystal-to-photodetector boundary rather than a crystal-to-reflector
 [surface.davis.detector._absent]
 coupling = { reason = "not-measured", note = "The DAVIS papers do not state the coupling medium for Detector_LUT in a citable form. Left unset rather than guessed: assuming optical contact would silently import a Fresnel step that may not be in the measurement." }
 coupling_index = { reason = "not-measured", note = "See `coupling`." }
+
+
+# ============================================================================
+# Non-LUT measured interfaces (#243)
+# ============================================================================
+# These carry no angular look-up table, but they do carry measured, cited
+# reflectance — which is the test (ADR-0004 §3), not LUT-backing.
+#
+# They deliberately do NOT copy R(lambda). The reflectance is a property of the
+# reflector substance and lives on the material named by `reflector_material`;
+# these entries add the INTERFACE facts a bulk entry cannot express: whether
+# the gap is air or index-filled, and whether the reflector is diffuse or
+# specular. Copying the spectrum here would create a second copy to drift.
+#
+#     R = pymat.materials[s.reflector_material].properties.optical.reflectivity_at(420)
+#
+# NAMING: named for the reflector and the coupling, never for the crystal. A
+# BaSO4 septum is not a LYSO fact — the Fresnel term comes from whatever
+# crystal you pair it with, and pairing is the consumer's job. Naming these
+# `lyso_*` would force `bgo_*`, `gagg_*`, ... each duplicating one measured
+# curve.
+
+[surface.diffuse]
+abstract = true
+model = "diffuse"
+coupling = "air_gap"
+
+[surface.diffuse.baso4_air]
+name = "Crystal / pressed BaSO4, air gap"
+reflector = "Pressed barium sulfate powder"
+reflector_material = "baso4"
+note = "The classic Lambertian white standard, and the usual inter-crystal septum in a PET block. Reflectance peaks at 0.999 over 420-470 nm — see the `baso4` material for the spectrum and, importantly, for the caveat that the cited values are pressed powder at high packing density and are an upper bound on what a real septum achieves. Kubelka-Munk scattering gives a ~17 um scattering mean free path, so a 0.2 mm layer is ~12 scattering lengths: effectively optically thick, but inside the margin. A looser-packed or binder-loaded layer at that thickness may transmit, which shows up as inter-crystal crosstalk."
+
+[surface.diffuse.baso4_air._sources]
+reflector_material = { citation = "grum_luckey_1968", kind = "doi", ref = "10.1364/AO.7.002289", license = "proprietary-reference-only", note = "Reflectance data lives on the `baso4` material; this row records which measurement the interface is built on." }
+
+[surface.specular]
+abstract = true
+model = "specular"
+coupling = "air_gap"
+
+[surface.specular.aluminium_air]
+name = "Crystal / aluminium, air gap"
+reflector = "Aluminium (evaporated or foil wrap)"
+reflector_material = "aluminum"
+note = "Reflectance is DERIVED from the material's CC0 n,k rather than stored, via OpticalProperties.normal_reflectance_at(lambda): 92.5% at 420 nm, 92.3% mean over 400-500 nm, with the characteristic interband dip near 800 nm. That figure is the ceiling — bulk, normal-incidence, optically thick, perfectly smooth, freshly evaporated. Air-exposed aluminium grows a native oxide and drops to ~88-89% (Hass 1955, doi:10.1364/JOSA.45.000945), and rolled foil in a real wrap is commonly quoted at 85-88% with no clean primary. The gap between 92.5% and what a given wrap achieves is a modelling assumption, and belongs in the consumer's config where it is visible."
+
+[surface.specular.aluminium_air._sources]
+reflector_material = { citation = "rakic_1995", kind = "doi", ref = "10.1364/AO.34.004755", license = "CC0", note = "A. D. Rakic, 'Algorithm for the determination of intrinsic optical constants of metal films: application to aluminum', Appl. Opt. 34, 4755-4767 (1995). The n,k tables are redistributed CC0 by refractiveindex.info and are on the `aluminum` material; reflectance is derived from them by Fresnel, not stored separately, so the two cannot drift apart." }
+
+[surface.specular.aluminium_air._absent]
+reflectivity = { reason = "not-measured", note = "Deliberately not a stored number. Derive it from the material's n,k with normal_reflectance_at(lambda). No measurement exists for aluminium AS WRAPPED — oxidised, rolled, struck at all angles — that we could cite; closing that gap needs an integrating-sphere measurement of the actual foil batch." }

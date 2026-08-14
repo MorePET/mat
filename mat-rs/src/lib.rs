@@ -47,7 +47,7 @@
 //!
 //! // Air-gap and index-filled coupling are physically different and are
 //! // distinguishable here.
-//! assert_eq!(surfaces.with_coupling(Coupling::AirGap).len(), 19);
+//! assert_eq!(surfaces.with_coupling(Coupling::AirGap).len(), 21);
 //! ```
 //!
 //! ## Quick start

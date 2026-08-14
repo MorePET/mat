@@ -409,11 +409,54 @@ fn raw_has_parent_fields_applied() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn surface_catalogue_loads_thirty_measured_entries() {
+fn surface_catalogue_loads_thirty_lut_entries() {
     let sdb = SurfaceDb::builtin();
-    assert_eq!(sdb.len(), 30);
     assert_eq!(sdb.family(rs_materials::LutFamily::Lbnl).len(), 21);
     assert_eq!(sdb.family(rs_materials::LutFamily::Davis).len(), 9);
+}
+
+#[test]
+fn non_lut_entries_carry_a_reflector_instead_of_a_table() {
+    // ADR-0004 §3: the test is measurement, not LUT-backing. These carry no
+    // angular table; their measured content is the reflector's reflectance,
+    // which lives on the material they name.
+    let sdb = SurfaceDb::builtin();
+    let non_lut: Vec<&rs_materials::Surface> =
+        sdb.values().filter(|s| s.lut_family.is_none()).collect();
+    assert_eq!(non_lut.len(), 2);
+    for s in &non_lut {
+        assert!(s.lut_surface.is_none(), "{}", s.key);
+        assert!(s.reflector_material.is_some(), "{}", s.key);
+    }
+
+    let baso4 = sdb.get("diffuse.baso4_air").unwrap();
+    assert_eq!(baso4.reflector_material.as_deref(), Some("baso4"));
+    assert!(baso4.is_air_gap());
+
+    // ...and the reflectance really is reachable on that material.
+    let mdb = MaterialDb::builtin();
+    let opt = mdb.get("baso4").unwrap().optical().unwrap();
+    assert_eq!(opt.reflectivity, Some(99.9));
+    let curve = opt.reflectivity_spectrum.as_ref().expect("BaSO4 spectrum");
+    assert!((curve.interpolate(420.0) - 99.90).abs() < 0.01);
+}
+
+#[test]
+fn readout_stack_indices_resolve() {
+    // grease -> window. CS steps down (TIR at that boundary), PE steps up.
+    let db = MaterialDb::builtin();
+    let n = |k: &str| {
+        db.get(k)
+            .unwrap()
+            .optical()
+            .unwrap()
+            .refractive_index
+            .unwrap()
+    };
+    let grease = n("bc630");
+    assert_eq!(grease, 1.465);
+    assert!(n("sipm_window_silicone") < grease);
+    assert!(n("sipm_window_epoxy") > grease);
 }
 
 #[test]
@@ -440,7 +483,7 @@ fn surface_lookup_by_g4_finish_name() {
 #[test]
 fn air_gap_and_optical_contact_are_distinguishable() {
     let sdb = SurfaceDb::builtin();
-    assert_eq!(sdb.with_coupling(rs_materials::Coupling::AirGap).len(), 19);
+    assert_eq!(sdb.with_coupling(rs_materials::Coupling::AirGap).len(), 21);
     assert_eq!(
         sdb.with_coupling(rs_materials::Coupling::OpticalContact)
             .len(),
@@ -460,8 +503,13 @@ fn air_gap_and_optical_contact_are_distinguishable() {
 fn every_surface_carries_provenance() {
     let sdb = SurfaceDb::builtin();
     for s in sdb.values() {
-        assert!(s.source_of("lut_surface").is_some(), "{}", s.key);
-        assert!(s.source_of("lut_family").is_some(), "{}", s.key);
+        if s.lut_family.is_some() {
+            assert!(s.source_of("lut_surface").is_some(), "{}", s.key);
+            assert!(s.source_of("lut_family").is_some(), "{}", s.key);
+        } else {
+            // Non-LUT entries cite the reflector whose reflectance they use.
+            assert!(s.source_of("reflector_material").is_some(), "{}", s.key);
+        }
         if s.coupling_index.is_some() {
             assert!(s.source_of("coupling_index").is_some(), "{}", s.key);
         }
