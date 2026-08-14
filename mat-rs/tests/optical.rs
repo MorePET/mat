@@ -717,3 +717,50 @@ fn thick_layer_survives_extreme_thickness() {
     }
     assert!((opt.km_reflectance_at(420.0, 1e6, 0.0).unwrap() - r_inf).abs() < 1e-12);
 }
+
+#[test]
+fn child_sidecars_merge_with_disjoint_parent_entries() {
+    // Found by mutation audit: replacing the `_absent` overlay with a plain
+    // replacement left BOTH language suites green, and the cross-language
+    // parity gate green too. The parity gate compares what the CORPUS
+    // exercises, and no shipped material declares its own `_absent` under a
+    // parent that also has one — so the merge branch is dead data-side and the
+    // gate cannot see it. This is a synthetic fixture for that reason.
+    let dir = std::env::temp_dir().join("rs_materials_sidecar_merge");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(
+        dir.join("metals.toml"),
+        r#"
+        [x]
+        name = "X"
+        [x._absent]
+        "optical.reemit_qe" = { reason = "not-measured" }
+        [x._sources]
+        "optical.light_yield" = { citation = "a", kind = "doi", ref = "10.1/a", license = "CC0" }
+        [x.child]
+        name = "Child"
+        [x.child._absent]
+        "optical.emission_spectrum" = { reason = "proprietary" }
+        [x.child._sources]
+        "optical.decay_time" = { citation = "b", kind = "doi", ref = "10.1/b", license = "CC0" }
+        "#,
+    )
+    .unwrap();
+    let db = MaterialDb::open(&dir).unwrap();
+    let child = db.get("x.child").unwrap();
+
+    // Own entries present...
+    assert!(child.is_absent("optical.emission_spectrum"));
+    assert_eq!(child.source_of("optical.decay_time").unwrap().citation, "b");
+    // ...and inherited ones NOT dropped.
+    assert!(
+        child.is_absent("optical.reemit_qe"),
+        "inherited absence was dropped when the child declared its own"
+    );
+    assert_eq!(
+        child.source_of("optical.light_yield").unwrap().citation,
+        "a",
+        "inherited source was dropped when the child declared its own"
+    );
+    std::fs::remove_dir_all(&dir).ok();
+}

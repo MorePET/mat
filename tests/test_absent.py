@@ -265,3 +265,77 @@ class TestStaleAliasFixed:
 
         assert resolve_path("radiation_length") == "nuclear.radiation_length"
         assert resolve_path("interaction_length") == "nuclear.interaction_length"
+
+
+class TestSidecarMergeIsPartialNotWholesale:
+    """A child declaring its OWN entry must keep the parent's other entries.
+
+    Found by mutation audit: replacing `{**parent, **child}` with
+    `dict(child)` in the loader left all 1217 tests green. The existing
+    override test used the SAME key on parent and child, where a merge and a
+    replacement are indistinguishable — the distinguishing case is DISJOINT
+    keys, which nothing exercised.
+
+    Failure mode if this regresses: a material that declares one absence
+    silently loses every absence and citation it inherited. Nothing raises;
+    provenance just quietly thins out down the tree.
+    """
+
+    def _load(self, tmp_path, body):
+        p = tmp_path / "m.toml"
+        p.write_text(dedent(body))
+        return load_toml(p)
+
+    def test_child_absences_merge_with_disjoint_parent_absences(self, tmp_path):
+        mats = self._load(
+            tmp_path,
+            """
+            [x]
+            name = "X"
+            [x._absent]
+            "optical.reemit_qe" = { reason = "not-measured" }
+            "optical.decay_components" = { reason = "not-measured" }
+            [x.child]
+            name = "Child"
+            [x.child._absent]
+            "optical.emission_spectrum" = { reason = "proprietary" }
+            """,
+        )
+        child = mats["x"]._children["child"]
+        assert sorted(child._absent) == [
+            "optical.decay_components",
+            "optical.emission_spectrum",
+            "optical.reemit_qe",
+        ]
+        assert child.is_absent("optical.reemit_qe"), "inherited absence was dropped"
+        assert child.is_absent("optical.emission_spectrum"), "own absence missing"
+
+    def test_child_sources_merge_with_disjoint_parent_sources(self, tmp_path):
+        """Same shape, same risk, for `_sources` — audited together because a
+        gap in one implies a gap in the other."""
+        mats = self._load(
+            tmp_path,
+            """
+            [x]
+            name = "X"
+            [x._sources]
+            "optical.light_yield" = { citation = "a", kind = "doi", ref = "10.1/a", license = "CC0"}
+            [x.child]
+            name = "Child"
+            [x.child._sources]
+            "optical.decay_time" = { citation = "b", kind = "doi", ref = "10.1/b", license = "CC0" }
+            """,
+        )
+        child = mats["x"]._children["child"]
+        assert child.source_of("optical.light_yield").citation == "a", "inherited source dropped"
+        assert child.source_of("optical.decay_time").citation == "b"
+
+    def test_the_real_corpus_exercises_the_merge(self):
+        """`lyso.Ce` declares its own `_sources` rows while `lyso` declares
+        others, so the shipped data depends on this merge rather than only the
+        synthetic fixtures above."""
+        own = pymat.lyso.Ce.source_of("optical.rise_time")
+        inherited = pymat.lyso.Ce.source_of("optical.absorption_length_reabs")
+        assert own is not None and own.citation == "seifert_2012"
+        assert inherited is not None and inherited.citation == "bosca_lopez_2023"
+        assert pymat.lyso.Ce.is_absent("optical.emission_spectrum")
