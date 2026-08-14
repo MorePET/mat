@@ -459,3 +459,64 @@ class TestEmissionAtIsSymmetricOnBadInput:
         )
         with pytest.raises(ValueError, match="must be a length"):
             opt.emission_at(300 * ureg.kelvin)
+
+
+class TestExtinctionAndReflectance:
+    """`k` and derived normal-incidence reflectance (#243).
+
+    Metals carry `k` alongside `n` in `refractive_index_dispersion`. Deriving
+    reflectance from cited n,k beats carrying a hand-entered scalar that can
+    drift away from them.
+    """
+
+    def test_k_is_none_for_a_transparent_medium(self):
+        opt = OpticalProperties(
+            refractive_index_dispersion={"wavelengths_nm": [400, 500], "n": [1.9, 1.8]}
+        )
+        assert opt.extinction_curve is None
+        assert opt.k_at(450) is None
+
+    def test_k_is_read_when_present(self):
+        opt = OpticalProperties(
+            refractive_index_dispersion={
+                "wavelengths_nm": [400, 500],
+                "n": [0.45, 0.76],
+                "k": [4.7, 5.9],
+            }
+        )
+        assert opt.k_at(400) == pytest.approx(4.7)
+        assert opt.k_at(450) == pytest.approx(5.3)
+
+    def test_dielectric_reflectance_uses_k_zero(self):
+        """n = 1.5, k = 0 -> R = (0.5/2.5)^2 = 4%. The glass-surface number."""
+        opt = OpticalProperties(refractive_index=1.5)
+        assert opt.normal_reflectance_at(550) == pytest.approx(4.0, abs=1e-9)
+
+    def test_no_index_means_no_reflectance(self):
+        assert OpticalProperties().normal_reflectance_at(550) is None
+
+    def test_reflectance_is_percent_not_fraction(self):
+        opt = OpticalProperties(refractive_index=1.5)
+        assert 0.0 <= opt.normal_reflectance_at(550) <= 100.0
+        assert opt.normal_reflectance_at(550) > 1.0  # 4, not 0.04
+
+    def test_aluminium_reflectance_matches_the_known_shape(self):
+        """Real data, real physics: Al is ~92% flat across the visible and
+        dips near 800 nm. If this breaks, either the CC0 pull or the Fresnel
+        derivation is wrong."""
+        import pymat
+
+        al = pymat.aluminum.properties.optical
+        # Flat and high across the LYSO emission band.
+        for wl in (400, 420, 450, 500):
+            assert 91.0 < al.normal_reflectance_at(wl) < 94.0, wl
+        # The characteristic interband-absorption dip near 800 nm.
+        assert al.normal_reflectance_at(800) < al.normal_reflectance_at(600)
+        assert al.normal_reflectance_at(800) < al.normal_reflectance_at(900)
+
+    def test_aluminium_dispersion_is_cc0_and_cited(self):
+        import pymat
+
+        src = pymat.aluminum.source_of("optical.refractive_index_dispersion")
+        assert src is not None
+        assert src.license == "CC0"

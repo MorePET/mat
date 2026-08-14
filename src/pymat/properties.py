@@ -654,6 +654,20 @@ class OpticalProperties:
         return _as_wl_curve(self.refractive_index_dispersion, "n")
 
     @property
+    def extinction_curve(self) -> Optional[WavelengthCurve]:
+        """The `k` column of `refractive_index_dispersion`, or None.
+
+        Absorbing media (metals) carry `k` alongside `n` in the same table;
+        transparent ones omit it. The #164 enricher writes both when the
+        upstream CC0 entry has them.
+        """
+        if self.refractive_index_dispersion is None:
+            return None
+        if "k" not in self.refractive_index_dispersion:
+            return None
+        return _as_wl_curve(self.refractive_index_dispersion, "k")
+
+    @property
     def emission_spectrum_curve(self) -> Optional[WavelengthCurve]:
         """`emission_spectrum` as a `WavelengthCurve`, or None."""
         return _as_wl_curve(self.emission_spectrum, "intensities")
@@ -675,6 +689,41 @@ class OpticalProperties:
         return _eval_wl_or_scalar(
             self.refractive_index_dispersion, "n", self.refractive_index, None, wavelength
         )
+
+    def k_at(self, wavelength: Any) -> Optional[float]:
+        """Extinction coefficient at a wavelength, or None for a transparent medium."""
+        curve = self.extinction_curve
+        if curve is None:
+            return None
+        return curve.interpolate(_to_nm(wavelength))
+
+    def normal_reflectance_at(self, wavelength: Any) -> Optional[float]:
+        """Normal-incidence reflectance from vacuum, in PERCENT (0-100).
+
+        Derived, not stored — the Fresnel result for a semi-infinite medium
+        with complex index `n - ik` against vacuum::
+
+            R = ((n - 1)^2 + k^2) / ((n + 1)^2 + k^2)
+
+        Returned as a percent to match the `reflectivity` / `transparency`
+        convention on this dataclass. This is the number a wrap or mirror
+        contributes per bounce, so it is worth deriving from cited n,k rather
+        than carrying a separate hand-entered scalar that can drift from them.
+
+        A dielectric with no `k` uses k = 0, which is the correct limit.
+        Returns None when there is no refractive index at all.
+
+        NOTE: this is a *bulk, normal-incidence, optically-thick, perfectly
+        smooth* reflectance. A real wrap is rough, oxidised, and struck at all
+        angles, so it will measure lower — treat this as the ceiling, and
+        prefer a measured surface entry where one exists (ADR-0004 §3).
+        """
+        n = self.n_at(wavelength)
+        if n is None:
+            return None
+        k = self.k_at(wavelength) or 0.0
+        r = ((n - 1.0) ** 2 + k**2) / ((n + 1.0) ** 2 + k**2)
+        return 100.0 * r
 
     def absorption_length_at(self, wavelength: Any) -> Optional["Quantity"]:
         """Bulk attenuation length at a wavelength. Spectrum > scalar fallback.

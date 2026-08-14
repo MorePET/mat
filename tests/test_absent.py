@@ -223,10 +223,27 @@ class TestLysoDeclaredAbsences:
         src = pymat.lyso.source_of("optical.absorption_length")
         assert "CONVENTION" in src.note
 
-    def test_bgo_dispersion_is_left_to_the_enricher(self):
+    def test_bgo_dispersion_came_from_the_enricher(self):
         """ADR-0004 §10: bgo is in the refractiveindex.info enricher's scope,
-        so hand-authored dispersion would mask the automated pull."""
-        assert pymat.bgo.properties.optical.refractive_index_dispersion is None
+        so its dispersion must arrive via the automated CC0 pull, never
+        hand-authored. The citation is the check — a hand-written table would
+        not carry this source row."""
+        opt = pymat.bgo.properties.optical
+        assert opt.refractive_index_dispersion is not None
+        src = pymat.bgo.source_of("optical.refractive_index_dispersion")
+        assert src.license == "CC0"
+        assert "refractiveindex.info" in src.citation or "refractiveindex.info" in src.ref
+
+    def test_bgo_scalar_understates_n_at_the_blue_end(self):
+        """Why running the enricher mattered: the single scalar was fitted near
+        the emission peak, so a monochromatic-at-peak simulation is roughly
+        right, but anything sampling the blue edge of the band gets a critical
+        angle built on an n that is ~2% low."""
+        opt = pymat.bgo.properties.optical
+        assert opt.refractive_index == 2.15
+        assert opt.n_at(420) == pytest.approx(2.198, abs=0.005)
+        assert opt.n_at(480) == pytest.approx(2.154, abs=0.005)
+        assert opt.n_at(420) > opt.refractive_index
 
 
 class TestStaleAliasFixed:

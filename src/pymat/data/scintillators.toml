@@ -191,6 +191,7 @@ hygroscopic = false
 # THE ACTION IS TO RUN THE ENRICHER, not to type the numbers:
 #     python scripts/enrich_from_refractiveindex.py --key bgo --dry-run
 #     python scripts/enrich_from_refractiveindex.py --key bgo --write
+refractive_index_dispersion = {wavelengths_nm = [305.0, 312.4815, 320.1465, 327.9996, 336.0453, 344.2883, 352.7336, 361.386, 370.2506, 379.3327, 388.6376, 398.1707, 407.9376, 417.9441, 428.1961, 438.6996, 449.4607, 460.4858, 471.7813, 483.3539, 495.2103, 507.3576, 519.8029, 532.5534, 545.6167, 559.0005, 572.7125, 586.7609, 601.1539, 615.8999, 631.0077, 646.486, 662.344, 678.591, 695.2366, 712.2904, 729.7626, 747.6633, 766.0032, 784.7929, 804.0435, 823.7664, 843.973, 864.6753, 885.8854, 907.6158, 929.8792, 952.6887, 976.0577, 1000.0], n = [2.410454, 2.385429, 2.362493, 2.341416, 2.322001, 2.304077, 2.287495, 2.272127, 2.257859, 2.244592, 2.232237, 2.220716, 2.209958, 2.199903, 2.190492, 2.181677, 2.173412, 2.165655, 2.158369, 2.15152, 2.145077, 2.139012, 2.133299, 2.127915, 2.122837, 2.118046, 2.113523, 2.109251, 2.105214, 2.101398, 2.097789, 2.094375, 2.091144, 2.088085, 2.085188, 2.082444, 2.079844, 2.077379, 2.075043, 2.072827, 2.070725, 2.068731, 2.066839, 2.065044, 2.063339, 2.06172, 2.060183, 2.058723, 2.057337, 2.056019]}
 
 [bgo.nuclear]
 radiation_length = 1.12
@@ -224,6 +225,7 @@ refractive_index = 1.85
 light_yield = 38000
 decay_time = 230
 emission_peak = 410
+refractive_index_dispersion = {wavelengths_nm = [250.0, 277.2822, 307.5418, 341.1035, 378.3277, 419.6142, 465.4063, 516.1956, 572.5275, 635.0068, 704.3044, 781.1644, 866.4121, 960.9627, 1065.8316, 1182.1446, 1311.1508, 1454.2353, 1612.9345, 1788.9524, 1984.1789, 2200.7102, 2440.8714, 2707.2411, 3002.6795, 3330.3588, 3693.7973, 4096.8975, 4543.9876, 5039.8682, 5589.8638, 6199.8797, 6876.4661, 7626.8876, 8459.2018, 9382.3456, 10406.2311, 11541.8521, 12801.4023, 14198.4059, 15747.863, 17466.4107, 19372.5017, 21486.6025, 23831.4128, 26432.1098, 29316.6181, 32515.9098, 36064.3369, 40000.0], n = [2.080304, 1.983085, 1.919381, 1.875156, 1.843232, 1.81954, 1.801597, 1.787798, 1.77706, 1.768628, 1.761957, 1.756648, 1.752401, 1.748989, 1.746236, 1.744003, 1.742185, 1.740693, 1.739458, 1.738425, 1.737546, 1.736782, 1.7361, 1.735468, 1.73486, 1.734249, 1.733609, 1.73291, 1.732123, 1.731214, 1.730142, 1.728859, 1.727309, 1.725421, 1.72311, 1.720268, 1.716762, 1.712425, 1.707043, 1.700344, 1.691975, 1.681478, 1.668243, 1.651449, 1.629965, 1.602191, 1.565789, 1.517187, 1.45061, 1.355947]}
 
 [nai.nuclear]
 radiation_length = 2.59
@@ -245,6 +247,7 @@ light_yield = 38000
 decay_time = 230
 dopant = "Tl"
 dopant_pct = 0.05
+refractive_index_dispersion = {wavelengths_nm = [250.0, 277.2822, 307.5418, 341.1035, 378.3277, 419.6142, 465.4063, 516.1956, 572.5275, 635.0068, 704.3044, 781.1644, 866.4121, 960.9627, 1065.8316, 1182.1446, 1311.1508, 1454.2353, 1612.9345, 1788.9524, 1984.1789, 2200.7102, 2440.8714, 2707.2411, 3002.6795, 3330.3588, 3693.7973, 4096.8975, 4543.9876, 5039.8682, 5589.8638, 6199.8797, 6876.4661, 7626.8876, 8459.2018, 9382.3456, 10406.2311, 11541.8521, 12801.4023, 14198.4059, 15747.863, 17466.4107, 19372.5017, 21486.6025, 23831.4128, 26432.1098, 29316.6181, 32515.9098, 36064.3369, 40000.0], n = [2.080304, 1.983085, 1.919381, 1.875156, 1.843232, 1.81954, 1.801597, 1.787798, 1.77706, 1.768628, 1.761957, 1.756648, 1.752401, 1.748989, 1.746236, 1.744003, 1.742185, 1.740693, 1.739458, 1.738425, 1.737546, 1.736782, 1.7361, 1.735468, 1.73486, 1.734249, 1.733609, 1.73291, 1.732123, 1.731214, 1.730142, 1.728859, 1.727309, 1.725421, 1.72311, 1.720268, 1.716762, 1.712425, 1.707043, 1.700344, 1.691975, 1.681478, 1.668243, 1.651449, 1.629965, 1.602191, 1.565789, 1.517187, 1.45061, 1.355947]}
 
 [nai.Tl.saint_gobain]
 name = "Saint-Gobain NaI(Tl)"
@@ -270,6 +273,7 @@ density_unit = "g/cm^3"
 [csi.optical]
 refractive_index = 1.95
 emission_peak = 420
+refractive_index_dispersion = {wavelengths_nm = [250.0, 280.2165, 314.0853, 352.0475, 394.5982, 442.2918, 495.7499, 555.6693, 622.8309, 698.1101, 782.4881, 877.0644, 983.0719, 1101.892, 1235.0735, 1384.3521, 1551.6735, 1739.2184, 1949.4311, 2185.0514, 2449.1503, 2745.1698, 3076.968, 3448.8694, 3865.7211, 4332.9561, 4856.664, 5443.6706, 6101.6263, 6839.1067, 7665.7235, 8592.2503, 9630.7629, 10794.7966, 12099.5225, 13561.9458, 15201.1266, 17038.4289, 19097.799, 21406.0773, 23993.3484, 26893.3332, 30143.828, 33787.1978, 37870.9279, 42448.2429, 47578.8005, 53329.4691, 59775.1991, 67000.0], n = [2.209377, 2.038658, 1.948334, 1.892185, 1.854323, 1.827527, 1.807959, 1.793356, 1.782289, 1.773805, 1.767246, 1.76214, 1.758146, 1.755007, 1.752532, 1.750574, 1.749019, 1.74778, 1.746787, 1.745986, 1.745334, 1.744795, 1.744339, 1.743944, 1.743589, 1.743253, 1.74292, 1.742572, 1.742191, 1.741757, 1.741246, 1.740631, 1.739881, 1.738954, 1.737801, 1.736359, 1.734549, 1.73227, 1.729393, 1.725753, 1.721134, 1.715256, 1.707747, 1.698107, 1.685658, 1.669456, 1.648153, 1.61976, 1.581219, 1.527552]}
 
 [csi.nuclear]
 radiation_length = 1.86
@@ -293,6 +297,7 @@ dopant = "Tl"
 dopant_pct = 0.06
 
 # CsI(Na) - Sodium-doped
+refractive_index_dispersion = {wavelengths_nm = [250.0, 280.2165, 314.0853, 352.0475, 394.5982, 442.2918, 495.7499, 555.6693, 622.8309, 698.1101, 782.4881, 877.0644, 983.0719, 1101.892, 1235.0735, 1384.3521, 1551.6735, 1739.2184, 1949.4311, 2185.0514, 2449.1503, 2745.1698, 3076.968, 3448.8694, 3865.7211, 4332.9561, 4856.664, 5443.6706, 6101.6263, 6839.1067, 7665.7235, 8592.2503, 9630.7629, 10794.7966, 12099.5225, 13561.9458, 15201.1266, 17038.4289, 19097.799, 21406.0773, 23993.3484, 26893.3332, 30143.828, 33787.1978, 37870.9279, 42448.2429, 47578.8005, 53329.4691, 59775.1991, 67000.0], n = [2.209377, 2.038658, 1.948334, 1.892185, 1.854323, 1.827527, 1.807959, 1.793356, 1.782289, 1.773805, 1.767246, 1.76214, 1.758146, 1.755007, 1.752532, 1.750574, 1.749019, 1.74778, 1.746787, 1.745986, 1.745334, 1.744795, 1.744339, 1.743944, 1.743589, 1.743253, 1.74292, 1.742572, 1.742191, 1.741757, 1.741246, 1.740631, 1.739881, 1.738954, 1.737801, 1.736359, 1.734549, 1.73227, 1.729393, 1.725753, 1.721134, 1.715256, 1.707747, 1.698107, 1.685658, 1.669456, 1.648153, 1.61976, 1.581219, 1.527552]}
 [csi.Na]
 name = "CsI(Na)"
 formula = "CsI:Na"
@@ -307,6 +312,7 @@ dopant_pct = 0.04
 # ============================================================================
 # LaBr3 (Lanthanum Bromide)
 # ============================================================================
+refractive_index_dispersion = {wavelengths_nm = [250.0, 280.2165, 314.0853, 352.0475, 394.5982, 442.2918, 495.7499, 555.6693, 622.8309, 698.1101, 782.4881, 877.0644, 983.0719, 1101.892, 1235.0735, 1384.3521, 1551.6735, 1739.2184, 1949.4311, 2185.0514, 2449.1503, 2745.1698, 3076.968, 3448.8694, 3865.7211, 4332.9561, 4856.664, 5443.6706, 6101.6263, 6839.1067, 7665.7235, 8592.2503, 9630.7629, 10794.7966, 12099.5225, 13561.9458, 15201.1266, 17038.4289, 19097.799, 21406.0773, 23993.3484, 26893.3332, 30143.828, 33787.1978, 37870.9279, 42448.2429, 47578.8005, 53329.4691, 59775.1991, 67000.0], n = [2.209377, 2.038658, 1.948334, 1.892185, 1.854323, 1.827527, 1.807959, 1.793356, 1.782289, 1.773805, 1.767246, 1.76214, 1.758146, 1.755007, 1.752532, 1.750574, 1.749019, 1.74778, 1.746787, 1.745986, 1.745334, 1.744795, 1.744339, 1.743944, 1.743589, 1.743253, 1.74292, 1.742572, 1.742191, 1.741757, 1.741246, 1.740631, 1.739881, 1.738954, 1.737801, 1.736359, 1.734549, 1.73227, 1.729393, 1.725753, 1.721134, 1.715256, 1.707747, 1.698107, 1.685658, 1.669456, 1.648153, 1.61976, 1.581219, 1.527552]}
 
 [labr3]
 name = "LaBr3:Ce"
@@ -678,6 +684,7 @@ license = "proprietary-reference-only"
 [bgo._sources]
 "optical.emission_range" = { citation = "luxium_bgo", kind = "vendor", ref = "https://luxiumsolutions.com/radiation-detection-scintillators/crystal-scintillators/bgo-bismuth-germanate", license = "proprietary-reference-only", note = "Practical band support around the 480 nm peak. Neither the Luxium nor the Berkeley Nucleonics BGO datasheet states an emission FWHM — see _absent." }
 "optical.hygroscopic" = { citation = "luxium_bgo", kind = "vendor", ref = "https://luxiumsolutions.com/radiation-detection-scintillators/crystal-scintillators/bgo-bismuth-germanate", license = "proprietary-reference-only", note = "Non-hygroscopic." }
+"optical.refractive_index_dispersion" = {citation = "Williams 1996 (BGO ord. ray) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/Bi4Ge3O12/nk/Williams", license = "CC0", note = "n,k tabulated 50 rows, 305-1000 nm, fetched 2026-08-14"}
 
 [bgo._absent]
 "optical.emission_spectrum" = { reason = "not-measured", note = "Same situation as LYSO: peak (480 nm) is universally published, a tabulated (wavelength, intensity) curve is not, and neither vendor datasheet states an FWHM. Unlike LYSO, BGO's refractive-index dispersion IS available under CC0 (Williams et al. 1996, doi:10.1364/AO.35.003562) — but it is the automated enricher's to write, not this file's. See the comment on [bgo.optical]." }
@@ -704,6 +711,9 @@ license = "proprietary-reference-only"
 
 # --- NaI / NaI:Tl ------------------------------------------------------------
 
+[nai._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (NaI, 297 K) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/NaI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-40000 nm, fetched 2026-08-14"}
+
 [nai._sources."optical.light_yield"]
 citation = "hofstadter_1948"
 kind = "doi"
@@ -722,6 +732,9 @@ citation = "hofstadter_1948"
 kind = "doi"
 ref = "10.1103/PhysRev.74.100"
 license = "proprietary-reference-only"
+
+[nai.Tl._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (NaI, 297 K) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/NaI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-40000 nm, fetched 2026-08-14"}
 
 [nai.Tl._sources."optical.light_yield"]
 citation = "hofstadter_1948"
@@ -749,6 +762,9 @@ license = "proprietary-reference-only"
 
 # --- CsI / CsI:Tl / CsI:Na ---------------------------------------------------
 
+[csi._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (CsI) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/CsI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-67000 nm, fetched 2026-08-14"}
+
 [csi._sources."optical.light_yield"]
 citation = "holl_lorenz_mageras_1988"
 kind = "doi"
@@ -761,6 +777,9 @@ citation = "holl_lorenz_mageras_1988"
 kind = "doi"
 ref = "10.1109/23.12684"
 license = "proprietary-reference-only"
+
+[csi.Tl._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (CsI) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/CsI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-67000 nm, fetched 2026-08-14"}
 
 [csi.Tl._sources."optical.light_yield"]
 citation = "holl_lorenz_mageras_1988"
@@ -777,6 +796,9 @@ license = "proprietary-reference-only"
 # CsI:Na — Holl 1988 covered CsI(Tl), not CsI(Na). No verified primary cite at
 # this time; keep the audit placeholder. TODO(#170): locate primary CsI:Na
 # scintillation paper (Hofstadter et al. 1950s era? Brinckmann?) and replace.
+[csi.Na._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (CsI) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/CsI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-67000 nm, fetched 2026-08-14"}
+
 [csi.Na._sources._default]
 citation = "py-mat-curation-3.x"
 kind = "handbook"
