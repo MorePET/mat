@@ -311,6 +311,50 @@ hand-authoring with a citation is the expectation. The sapphire comment was
 right and should be read as scoped to the enricher's material list, not as a
 freeze on dispersion data.
 
+### 11. A photodetector is not a material — PDE does not belong here
+
+Asked directly by strata, and decided here rather than by default.
+
+**A SiPM does not go in py-mat.** Three reasons, in order of weight:
+
+1. **PDE is not a property of a substance.** It is a manufactured device's
+   response at an operating point — PDE(λ, V_over, T). Change the overvoltage,
+   which is a run-time choice in a config file, and PDE moves by tens of
+   percent; Hamamatsu's own "40% at 450 nm" is quoted *at V_over = 3 V* and is
+   roughly 50% at 5–6 V. Against the §1 test — did someone measure it, and does
+   the number survive moving the part? — PDE survives being moved and does not
+   survive being re-biased. Bias is policy.
+2. **DCR, crosstalk and afterpulse are worse on the same axis.** All are
+   strongly temperature- and voltage-dependent, and dark count rate varies
+   2–3× unit to unit *within one part number*. Those are facts about a specific
+   die at a specific temperature, not facts about matter.
+3. **A `Material` has density, formula, composition.** What is the chemical
+   formula of an S13360-3050CS? The question does not type-check. The device is
+   an assembly: silicon epi, quench resistors, a window, a package.
+
+**But the parts of it that are substances do belong here, and are now present:**
+
+- `sipm_window_silicone` (n = 1.41) and `sipm_window_epoxy` (n = 1.55). The
+  window is what an optical photon actually crosses — the boundary is
+  grease→window, not grease→"SiPM" — so the Fresnel step at the readout face is
+  computed from cited indices on both sides.
+- The crystal↔photodetector interface already exists as `davis.detector`.
+
+**Where PDE(λ) goes:** the consuming engine's config, for now. Not a separate
+devices repo — one datasheet curve does not justify a repo's overhead (CI,
+releases, versioning, a second citation policy). The revisit trigger is real
+and stated: ~5 devices, or a second consumer needing the same curve.
+
+`pymat.curves.WavelengthCurve` is public and importable precisely so a consumer
+can hold that curve with the same clamp-never-extrapolate contract and the same
+load-time validation used here, without the device itself crossing the line.
+
+There is a supporting fact worth recording: **no redistributable tabulated
+PDE(λ) exists for the S13360-3050CS at all.** The datasheet gives a figure, not
+a table, and no CC-BY paper we could find measures that exact part. So even a
+consumer who wanted this in py-mat would be putting a digitised proprietary
+figure here — which §P2's own standard forbids.
+
 ## Non-goals (unchanged from the brief, and honoured)
 
 No geometry. No per-volume or per-face assignment. No SiPM or electronics
