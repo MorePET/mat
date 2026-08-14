@@ -68,7 +68,7 @@ nesting it under one of them forces an arbitrary choice of owner and duplicates
 every entry across every crystal it could touch. ESR-with-grease would appear
 under `lyso`, `bgo`, `gagg`, … as separate copies that drift.
 
-### 3. The catalogue holds **measured** interfaces only — a narrowing
+### 3. The catalogue holds interfaces whose optical numbers are **measured and cited** — a narrowing
 
 Geant4's `G4OpticalSurfaceFinish` enum has 39 values. They are not all the same
 kind of thing:
@@ -85,9 +85,30 @@ kind of thing:
 - **9 DAVIS LUT surfaces** (Roncali & Cherry 2013; Roncali/Stockhoff 2017;
   Stockhoff 2017) — all measured.
 
-So the catalogue ships **30 entries: 21 LBNL + 9 DAVIS**, each carrying its exact
-`G4OpticalSurfaceFinish` spelling, its LUT family, the `G4RealSurface-2.2` data
-set it comes from, and a DOI.
+So the catalogue ships the **21 LBNL + 9 DAVIS** LUT entries, each carrying its
+exact `G4OpticalSurfaceFinish` spelling, its LUT family, the
+`G4RealSurface-2.2` data set it comes from, and a DOI.
+
+**The test is measurement, not LUT-backing.** A `lut` entry is one shape a
+measured interface can take; it is not the only one. An entry qualifies when
+the optical numbers it carries — a reflectance scalar or spectrum — are
+measured and citable. So `model = "diffuse"` and `model = "specular"` entries
+belong here too, provided their `reflectivity` / `reflectivity_spectrum` has a
+source. A pressed-BaSO4 reflector or an aluminium wrap is exactly as measured
+as a Janecek goniometer sweep; it simply produces `R(λ)` rather than an angular
+table, and the `Surface` schema had those fields from the start.
+
+What stays out is unchanged and is the actual line: **an entry whose only
+content is a fitted model parameter with no measurement behind it.** `polished`
+with a `sigma_alpha` tuned until the simulation matched is a knob, not a fact,
+and it belongs in the consuming engine's config.
+
+The practical consequence for a consumer: a `lut` entry hands you an angular
+reflectance distribution and you use it directly; a `diffuse`/`specular` entry
+hands you `R(λ)` and the *consumer* composes it with the crystal's `n(λ)` to
+get the Fresnel step. That composition depends on both materials, so it belongs
+on the side that knows which two are being joined — which is also why these
+entries are named for the reflector and coupling, never for the crystal.
 
 ### 4. `WavelengthCurve` — the λ twin of `TempCurve`
 
