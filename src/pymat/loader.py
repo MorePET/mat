@@ -394,10 +394,16 @@ def _resolve_material_node(
         name=name,
         formula=formula,
         composition=composition,
-        grade=grade or parent_material.grade if parent_material else None,
-        temper=temper or parent_material.temper if parent_material else None,
-        treatment=treatment or parent_material.treatment if parent_material else None,
-        vendor=vendor or parent_material.vendor if parent_material else None,
+        # Own value first, then the parent's. The parentheses are load-bearing:
+        # `a or b.x if b else None` parses as `(a or b.x) if b else None`, so
+        # every ROOT material silently discarded its own grade/temper/treatment/
+        # vendor — `pymat.beryllium.grade` was None despite the TOML declaring
+        # "S-200F", and `pymat.esr.vendor` was None despite "3M". Child
+        # materials were unaffected, which is why it went unnoticed (#243).
+        grade=grade or (parent_material.grade if parent_material else None),
+        temper=temper or (parent_material.temper if parent_material else None),
+        treatment=treatment or (parent_material.treatment if parent_material else None),
+        vendor=vendor or (parent_material.vendor if parent_material else None),
         properties=properties,
         parent=parent_material,
         _key=key,

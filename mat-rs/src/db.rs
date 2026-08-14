@@ -224,6 +224,15 @@ fn resolve_node(
         treatment: str_field("treatment"),
         grade: str_field("grade"),
         vendor: str_field("vendor"),
+        tags: merged
+            .get("tags")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|t| t.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default(),
         optical: group(&merged, "optical").map(parse_optical),
         nuclear: group(&merged, "nuclear").map(parse_nuclear),
         mechanical,
@@ -283,11 +292,37 @@ fn merge_node(inherited: &toml::Table, node: &toml::Table) -> toml::Table {
             merged.insert(key.clone(), toml::Value::Table(group));
             continue;
         }
+        // `tags` is the one leaf key that UNIONS with the parent rather than
+        // replacing it — a child declares only what is new and inherits the
+        // rest (#132). Replacing would make `stainless.s316L` claim four tags
+        // where py-mat reports seven, and `raw()` promises the merged view.
+        if key == "tags" {
+            merged.insert(key.clone(), toml::Value::Array(union_tags(&merged, value)));
+            continue;
+        }
         if LEAF_KEYS.contains(&key.as_str()) {
             merged.insert(key.clone(), value.clone());
         }
     }
     merged
+}
+
+/// Order-preserving union of inherited tags and a node's own: parent context
+/// first, then the child's specific labels, duplicates dropped.
+fn union_tags(merged: &toml::Table, own: &toml::Value) -> Vec<toml::Value> {
+    let mut out: Vec<toml::Value> = merged
+        .get("tags")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    if let Some(own_tags) = own.as_array() {
+        for tag in own_tags {
+            if !out.contains(tag) {
+                out.push(tag.clone());
+            }
+        }
+    }
+    out
 }
 
 fn group<'a>(table: &'a toml::Table, name: &str) -> Option<&'a toml::Table> {

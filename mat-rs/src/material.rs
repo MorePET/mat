@@ -281,6 +281,10 @@ pub struct Material {
     pub grade: Option<String>,
     /// Vendor key.
     pub vendor: Option<String>,
+    /// Multi-axial filterable labels (#132), orthogonal to the TOML hierarchy.
+    /// Children inherit their ancestors' tags and extend — parent context
+    /// first, then the child's own, duplicates dropped.
+    pub tags: Vec<String>,
     /// Optical / scintillator properties.
     pub optical: Option<OpticalProperties>,
     /// Nuclear / radiation-physics scalars.

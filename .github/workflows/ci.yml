@@ -262,6 +262,16 @@ jobs:
       - name: Run tests
         run: cargo test --manifest-path mat-rs/Cargo.toml
 
+      # The Python and Rust loaders parse the same TOMLs independently, and
+      # have drifted before (#157, and the strata brief of 2026-08-14). This
+      # job is the only one with both toolchains, so the parity gate lives
+      # here. See tests/test_rs_python_parity.py.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Cross-check Rust and Python loaders resolve the same values
+        run: uv run --extra dev pytest tests/test_rs_python_parity.py -v
+
   pymat-mcp:
     name: "Tests (pymat-mcp)"
     runs-on: ubuntu-22.04
