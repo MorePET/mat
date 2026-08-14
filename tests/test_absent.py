@@ -339,3 +339,51 @@ class TestSidecarMergeIsPartialNotWholesale:
         assert own is not None and own.citation == "seifert_2012"
         assert inherited is not None and inherited.citation == "bosca_lopez_2023"
         assert pymat.lyso.Ce.is_absent("optical.emission_spectrum")
+
+
+class TestIntrinsicResolutionProvenance:
+    """`intrinsic_resolution` is a DERIVED quantity, and the schema has to make
+    that visible or it will be compared across incompatible extractions.
+
+    It is the residual after subtracting an assumed photostatistical term, so
+    two labs can publish different values for the same crystal purely by using
+    different photodetectors. A consumer comparing their own extracted value
+    against a literature one is comparing two numbers that were each produced
+    under different assumptions — the same class of error as comparing two
+    differently-normalised crosstalk figures.
+    """
+
+    def test_lso_value_carries_its_extraction_method(self):
+        src = pymat.lso.Ce.source_of("optical.intrinsic_resolution_pct_at_662keV")
+        assert src.ref == "10.1016/j.phpro.2011.11.035"
+        # The method is the load-bearing part, not the number.
+        for token in ("N_pe = 6610", "EXTRACTION METHOD", "transfer term assumed zero"):
+            assert token in src.note, token
+
+    def test_the_uncertainty_is_not_the_papers_error_bar(self):
+        """The paper quotes ±0.3 on the TOTAL. The ±1.0 here is a deliberate
+        widening for extraction-assumption and sample-to-sample spread, and the
+        note must say so — otherwise it reads as a measurement precision it is
+        not."""
+        opt = pymat.lso.Ce.properties.optical
+        assert opt.intrinsic_resolution_pct_at_662keV.nominal_value == pytest.approx(7.7)
+        assert opt.intrinsic_resolution_pct_at_662keV.std_dev == pytest.approx(1.0)
+        note = pymat.lso.Ce.source_of("optical.intrinsic_resolution_pct_at_662keV").note
+        assert "NOT THE PAPER ERROR BAR" in note
+
+    def test_511_kev_is_declared_absent_on_both_materials(self):
+        for mat in (pymat.lso.Ce, pymat.lyso):
+            a = mat.absent("optical.intrinsic_resolution_pct_at_511keV")
+            assert a is not None and a.reason == "not-measured"
+
+    def test_lyso_does_not_silently_inherit_the_lso_number(self):
+        """LYSO is expected to be BETTER than LSO, so borrowing the LSO figure
+        would bias high. The absence says so rather than leaving a consumer to
+        assume they are interchangeable."""
+        assert pymat.lyso.properties.optical.intrinsic_resolution_pct_at_662keV is None
+        note = pymat.lyso.absent("optical.intrinsic_resolution_pct_at_662keV").note
+        assert "BIASED HIGH" in note
+
+    def test_non_proportionality_is_the_stated_cause(self):
+        assert pymat.lso.Ce.properties.optical.non_proportionality == 43.0
+        assert pymat.lso.Ce.source_of("optical.non_proportionality") is not None
