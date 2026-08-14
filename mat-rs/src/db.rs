@@ -223,6 +223,7 @@ fn resolve_node(
         density,
         treatment: str_field("treatment"),
         grade: str_field("grade"),
+        temper: str_field("temper"),
         vendor: str_field("vendor"),
         tags: merged
             .get("tags")
@@ -377,8 +378,20 @@ fn scalar(table: &toml::Table, key: &str, sd: &mut HashMap<String, f64>) -> Opti
     Some(nominal)
 }
 
+/// The ordinate column each structured wavelength slot uses on disk. Mirrors
+/// `pymat.loader._WAVELENGTH_SLOTS` — naming the column explicitly means a file
+/// that writes the wrong one yields no curve instead of a curve interpolated
+/// against the wrong data.
+fn wl_value_key(slot: &str) -> &'static str {
+    match slot {
+        "refractive_index_dispersion" => "n",
+        "emission_spectrum" => "intensities",
+        _ => "values",
+    }
+}
+
 fn wl_curve(table: &toml::Table, key: &str) -> Option<Curve> {
-    Curve::from_wavelength_toml(table.get(key)?.as_table()?)
+    Curve::from_wavelength_toml_keyed(table.get(key)?.as_table()?, wl_value_key(key))
 }
 
 fn temp_curve(table: &toml::Table, key: &str) -> Option<Curve> {

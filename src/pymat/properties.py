@@ -722,10 +722,15 @@ class OpticalProperties:
         point on a band, not a stand-in for its shape. A caller with only a
         peak should sample monochromatically and know that it is doing so.
         """
+        # Validate the argument before the early return, so a bad wavelength
+        # fails the same way regardless of whether this particular material
+        # happens to have a spectrum. Otherwise the same call silently returns
+        # None on LYSO and raises on the next material along.
+        nm = _to_nm(wavelength)
         curve = self.emission_spectrum_curve
         if curve is None:
             return None
-        return curve.interpolate(_to_nm(wavelength))
+        return curve.interpolate(nm)
 
 
 @dataclass

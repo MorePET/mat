@@ -12,6 +12,14 @@
 //!
 //!     cargo run --example dump_parity
 
+/// Sorted, comma-joined keys — so a dropped provenance row shows up as a diff
+/// rather than as nothing at all.
+fn sorted_join<'a>(keys: impl Iterator<Item = &'a String>) -> String {
+    let mut v: Vec<&str> = keys.map(|s| s.as_str()).collect();
+    v.sort_unstable();
+    v.join(",")
+}
+
 fn main() {
     let db = rs_materials::MaterialDb::builtin();
     let mut keys: Vec<&str> = db.keys().collect();
@@ -26,12 +34,12 @@ fn main() {
             "{key}|name={}|formula={:?}|density={:?}|grade={:?}|temper={:?}|treatment={:?}\
              |vendor={:?}|n={:?}|ly={:?}|dt={:?}|rt={:?}|ep={:?}|refl={:?}|transp={:?}\
              |abs={:?}|reabs={:?}|matrix={:?}|reemit={:?}|dopant={:?}|dopant_pct={:?}\
-             |hygro={:?}|radlen={:?}|intlen={:?}|activity={:?}|melt={:?}|tc={:?}|tags={}",
+             |hygro={:?}|radlen={:?}|intlen={:?}|activity={:?}|melt={:?}|tc={:?}|tags={}|srckeys={}|abskeys={}",
             m.name,
             m.formula,
             m.density,
             m.grade,
-            None::<String>, // temper is not yet typed on the Rust side
+            m.temper,
             m.treatment,
             m.vendor,
             o.and_then(|x| x.refractive_index),
@@ -54,6 +62,8 @@ fn main() {
             t.and_then(|x| x.melting_point),
             t.and_then(|x| x.thermal_conductivity),
             m.tags.join(","),
+            sorted_join(m.sources.keys()),
+            sorted_join(m.absent.keys()),
         );
     }
 }

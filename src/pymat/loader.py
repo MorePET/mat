@@ -104,6 +104,12 @@ _WAVELENGTH_SLOTS: Dict[str, str] = {
 
 def _validate_wavelength_slot(prop_name: str, key: str, value: Any) -> None:
     """Raise if a structured wavelength slot is malformed. See `_WAVELENGTH_SLOTS`."""
+    if not isinstance(value, dict):
+        raise ValueError(
+            f"{prop_name}.{key} must be a table of "
+            f"{{wavelengths_nm = [...], {_WAVELENGTH_SLOTS[key]} = [...]}}, "
+            f"got {type(value).__name__}: {value!r}"
+        )
     try:
         WavelengthCurve.from_toml(value, value_key=_WAVELENGTH_SLOTS[key])
     except ValueError as e:
@@ -169,7 +175,12 @@ def _build_properties_from_dict(
             if isinstance(raw_value, dict) and (set(raw_value) & _ufloat_keys):
                 parsed = _parse_value(raw_value)
             else:
-                if base_key in _WAVELENGTH_SLOTS and isinstance(raw_value, dict):
+                if base_key in _WAVELENGTH_SLOTS:
+                    # A non-dict here is a scalar written where a spectrum
+                    # belongs. Guarding on `isinstance(dict)` would skip
+                    # validation and stuff the scalar into a dict-typed field,
+                    # deferring the failure to the first `_at(lambda)` call —
+                    # far from the file that caused it.
                     _validate_wavelength_slot(prop_name, base_key, raw_value)
                 parsed = raw_value
             sibling = stddev_map.get(base_key)

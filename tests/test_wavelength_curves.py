@@ -402,3 +402,60 @@ class TestRecoveredSilentDrops:
             "TOML keys with no dataclass field to receive them — the loader "
             f"drops these silently on every load: {dropped}"
         )
+
+
+class TestMalformedSlotRaisesAtLoad:
+    """A scalar written where a spectrum belongs must fail at load.
+
+    Guarding validation on `isinstance(value, dict)` let a scalar skip the
+    check entirely and land in a dict-typed field, deferring the failure to the
+    first `_at(lambda)` call — far from the file that caused it. Found in
+    review of #243.
+    """
+
+    def test_scalar_in_a_spectrum_slot_raises(self, tmp_path):
+        p = tmp_path / "m.toml"
+        p.write_text(
+            dedent(
+                """
+                [x]
+                name = "X"
+                [x.optical]
+                emission_spectrum = 420.0
+                """
+            )
+        )
+        with pytest.raises(ValueError, match="must be a table"):
+            load_toml(p)
+
+    def test_list_in_a_spectrum_slot_raises(self, tmp_path):
+        p = tmp_path / "m.toml"
+        p.write_text(
+            dedent(
+                """
+                [x]
+                name = "X"
+                [x.optical]
+                refractive_index_dispersion = [400, 500]
+                """
+            )
+        )
+        with pytest.raises(ValueError, match="must be a table"):
+            load_toml(p)
+
+
+class TestEmissionAtIsSymmetricOnBadInput:
+    """`emission_at` validated its argument only when a spectrum existed, so
+    the same bad call returned None on one material and raised on the next."""
+
+    def test_raises_without_a_spectrum(self):
+        opt = OpticalProperties(emission_peak=420)
+        with pytest.raises(ValueError, match="must be a length"):
+            opt.emission_at(300 * ureg.kelvin)
+
+    def test_raises_with_a_spectrum(self):
+        opt = OpticalProperties(
+            emission_spectrum={"wavelengths_nm": [400, 500], "intensities": [0.5, 1.0]}
+        )
+        with pytest.raises(ValueError, match="must be a length"):
+            opt.emission_at(300 * ureg.kelvin)

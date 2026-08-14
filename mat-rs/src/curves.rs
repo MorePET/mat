@@ -12,6 +12,11 @@
 //! stops — a resampler that silently clamps a 128-node grid onto a curve
 //! measured over 60 nm has fabricated the other 68 nodes.
 
+/// Value-column spellings accepted for a wavelength curve, mirroring
+/// `pymat.curves._WL_VALUE_KEYS`. The non-canonical ones exist because the
+/// structured optical slots shipped before the curve primitive did.
+pub const WAVELENGTH_VALUE_KEYS: &[&str] = &["values", "n", "intensities"];
+
 /// A piecewise-linear curve over a strictly-ascending abscissa.
 ///
 /// `xs` is Kelvin for temperature curves and nanometres for wavelength curves.
@@ -118,13 +123,32 @@ impl Curve {
 
     /// Parse a wavelength curve, accepting every value-column spelling used
     /// on disk: `values`, `n` (dispersion), `intensities` (emission spectra).
+    ///
+    /// Returns `None` when the table names **more than one** of them. Picking
+    /// the first would make the file's meaning depend on this function's
+    /// internal ordering, and a spectrum silently interpolated on the wrong
+    /// column is worse than no spectrum. The Python side raises on the same
+    /// input (`WavelengthCurve.from_toml`); prefer
+    /// [`Curve::from_wavelength_toml_keyed`] where the caller knows the slot.
     pub fn from_wavelength_toml(table: &toml::Table) -> Option<Self> {
-        for y_key in ["values", "n", "intensities"] {
-            if table.contains_key(y_key) {
-                return Self::from_toml(table, "wavelengths_nm", y_key);
-            }
+        let mut present = WAVELENGTH_VALUE_KEYS
+            .iter()
+            .filter(|k| table.contains_key(**k));
+        let y_key = present.next()?;
+        if present.next().is_some() {
+            return None; // ambiguous — refuse rather than guess
         }
-        None
+        Self::from_toml(table, "wavelengths_nm", y_key)
+    }
+
+    /// Parse a wavelength curve with an explicitly named ordinate column.
+    ///
+    /// This is what the loader uses: each structured slot knows its own column
+    /// (`refractive_index_dispersion` -> `n`, `emission_spectrum` ->
+    /// `intensities`), so a file that writes the wrong one fails here instead
+    /// of being interpolated against the wrong data.
+    pub fn from_wavelength_toml_keyed(table: &toml::Table, y_key: &str) -> Option<Self> {
+        Self::from_toml(table, "wavelengths_nm", y_key)
     }
 
     /// Parse a temperature curve (`{ temps_K = [...], values = [...] }`).
@@ -201,6 +225,35 @@ mod tests {
         assert_eq!(g[0], 0.0);
         assert_eq!(g[10], 10.0);
         assert!((g[5] - 5.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn wavelength_toml_accepts_each_column_spelling() {
+        for (key, val) in [("values", 1.5), ("n", 1.5), ("intensities", 1.5)] {
+            let t: toml::Table =
+                toml::from_str(&format!("wavelengths_nm = [400, 500]\n{key} = [1.0, 2.0]"))
+                    .unwrap();
+            let c = Curve::from_wavelength_toml(&t).expect(key);
+            assert!((c.interpolate(450.0) - val).abs() < 1e-12, "{key}");
+        }
+    }
+
+    #[test]
+    fn wavelength_toml_refuses_ambiguous_columns() {
+        // Two value columns: picking one would make the file's meaning depend
+        // on this function's internal ordering. Python raises here.
+        let t: toml::Table =
+            toml::from_str("wavelengths_nm = [400, 500]\nvalues = [1, 2]\nn = [3, 4]").unwrap();
+        assert!(Curve::from_wavelength_toml(&t).is_none());
+        // ...but an explicit key resolves it.
+        let c = Curve::from_wavelength_toml_keyed(&t, "n").unwrap();
+        assert_eq!(c.interpolate(400.0), 3.0);
+    }
+
+    #[test]
+    fn wavelength_toml_needs_a_value_column() {
+        let t: toml::Table = toml::from_str("wavelengths_nm = [400, 500]").unwrap();
+        assert!(Curve::from_wavelength_toml(&t).is_none());
     }
 
     #[test]

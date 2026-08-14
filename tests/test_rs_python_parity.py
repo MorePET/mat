@@ -36,14 +36,12 @@ pytestmark = pytest.mark.skipif(
 )
 
 # Rust field name -> how to read the same value from a Python Material.
-# `temper` is dumped as None by the example because the Rust side does not type
-# it yet; it is excluded rather than compared against a known-constant None,
-# which would pass vacuously and hide the day someone adds it.
 FIELDS = {
     "name": lambda m: m.name,
     "formula": lambda m: m.formula,
     "density": lambda m: m.properties.mechanical.density,
     "grade": lambda m: m.grade,
+    "temper": lambda m: m.temper,
     "treatment": lambda m: m.treatment,
     "vendor": lambda m: m.vendor,
     "n": lambda m: m.properties.optical.refractive_index,
@@ -69,6 +67,11 @@ FIELDS = {
     # replacing it (#132). Compared as a joined string so ordering is part of
     # the contract — parent context first, then the child's own labels.
     "tags": lambda m: ",".join(m.tags),
+    # Provenance and absence keys, not just values. The Rust parsers use
+    # `filter_map` and would drop a malformed `_sources` row silently, where
+    # Python raises; comparing the key sets turns that silence into a diff.
+    "srckeys": lambda m: ",".join(sorted(m._sources)),
+    "abskeys": lambda m: ",".join(sorted(m._absent)),
 }
 
 
@@ -211,3 +214,14 @@ class TestLoaderParity:
         assert child.startswith(parent), "child tags must keep the parent's, in order, first"
         assert "316-family" in child
         assert child == ",".join(pymat.stainless.s316L.tags)
+
+    def test_provenance_rows_are_not_dropped_in_translation(self, rust_materials):
+        """Rust parses `_sources`/`_absent` with `filter_map`, so a malformed
+        row would vanish rather than raise. The key-set comparison in
+        `test_all_fields_agree` is what catches that; this pins the two
+        materials with the richest provenance so a regression is legible."""
+        lyso = rust_materials["lyso"]
+        assert "optical.absorption_length_reabs" in lyso["srckeys"]
+        assert "optical.reemit_qe" in lyso["abskeys"]
+        assert lyso["srckeys"] == ",".join(sorted(pymat.lyso._sources))
+        assert lyso["abskeys"] == ",".join(sorted(pymat.lyso._absent))

@@ -148,9 +148,9 @@ argument for your own §P2 point, from the opposite direction:
 
 **Neither of those last two was found by reading code.** They fell out of a
 mechanical cross-check, which is now a permanent gate:
-`tests/test_rs_python_parity.py` drives the Rust loader and diffs 26 fields
-across every material against the Python loader — 144 materials, ~3700 value
-pairs, zero tolerance. It runs in the `rust` CI job, the only one with both
+`tests/test_rs_python_parity.py` drives the Rust loader and diffs 28 fields
+across every material against the Python loader — 144 materials, ~4000 value
+pairs including the `_sources` and `_absent` key sets, zero tolerance. It runs in the `rust` CI job, the only one with both
 toolchains, and it was mutation-tested by reintroducing bug 5 and confirming it
 fails with a readable diff.
 
@@ -401,7 +401,7 @@ is now stated once at the top of `scintillators.toml` rather than per-material.
   you were relying on it, you were relying on a bug. Whether Python *should*
   inherit formula is a separate question worth raising as an issue.
 
-**Tests:** 1064 Python (139 new, incl. the loader-parity gate), 101 Rust (64 new). License gate passes on all
+**Tests:** 1069 Python (144 new, incl. the loader-parity gate), 104 Rust (67 new). License gate passes on all
 8 TOMLs — `surfaces.toml` is covered automatically because the gate globs
 `data/*.toml`. `CC-BY-3.0` was added to the allow-list for JINST.
 

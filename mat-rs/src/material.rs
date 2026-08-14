@@ -279,6 +279,8 @@ pub struct Material {
     pub treatment: Option<String>,
     /// Grade designation.
     pub grade: Option<String>,
+    /// Temper designation (e.g. `"T6"`).
+    pub temper: Option<String>,
     /// Vendor key.
     pub vendor: Option<String>,
     /// Multi-axial filterable labels (#132), orthogonal to the TOML hierarchy.
