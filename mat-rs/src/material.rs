@@ -19,6 +19,19 @@ use std::collections::HashMap;
 use crate::curves::Curve;
 use crate::provenance::{Absent, Source};
 
+/// Path-length multiplier `1/cos(theta)` for a slab at incidence `theta`.
+///
+/// Capped at 40 (~88.6 degrees): beyond that a plane-parallel slab model has
+/// stopped describing anything real, and a finite large number is less
+/// misleading than an infinity.
+pub fn obliquity_factor(incidence_deg: f64) -> f64 {
+    let theta = incidence_deg.abs().to_radians();
+    if theta >= std::f64::consts::FRAC_PI_2 {
+        return 40.0;
+    }
+    (1.0 / theta.cos()).min(40.0)
+}
+
 /// One exponential component of a multi-exponential scintillation decay.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DecayComponent {
@@ -210,6 +223,17 @@ impl OpticalProperties {
     ///
     /// `backing` is what sits behind the layer (0.0 = black).
     ///
+    /// **`incidence_deg` is usually the term that decides the answer.** Light
+    /// inside a high-aspect-ratio scintillator is total-internal-reflection
+    /// trapped and meets the side walls at grazing angles, where the path is
+    /// `d/cos(theta)`. For a 3x3x25 mm crystal the mean side-wall incidence is
+    /// ~77 degrees, which multiplies effective thickness by ~4.3 and takes a
+    /// 0.2 mm septum from 7.6% transmission to 1.4%. Passing 0 gives a correct
+    /// answer to a question a wrapped-crystal model is not asking.
+    ///
+    /// The angular distribution belongs to the geometry, not the material, so
+    /// it is supplied here rather than stored.
+    ///
     /// Note the limit: with `k = 0` the thick-layer reflectance is exactly 1,
     /// not 0.999. Absorption is the only thing that puts R_inf below unity.
     pub fn km_split_at(
@@ -217,12 +241,14 @@ impl OpticalProperties {
         wavelength_nm: f64,
         thickness_cm: f64,
         backing: f64,
+        incidence_deg: f64,
     ) -> Option<(f64, f64, f64)> {
         let k = self.km_k.as_ref()?.interpolate(wavelength_nm);
         let s = self.km_s.as_ref()?.interpolate(wavelength_nm);
         if s <= 0.0 || thickness_cm <= 0.0 {
             return None;
         }
+        let thickness_cm = thickness_cm * obliquity_factor(incidence_deg);
         if k == 0.0 {
             let sd = s * thickness_cm;
             return Some((100.0 * sd / (1.0 + sd), 100.0 / (1.0 + sd), 0.0));
@@ -239,8 +265,16 @@ impl OpticalProperties {
     /// Reflectance (%) of a FINITE layer — the number a real reflector gives.
     ///
     /// Prefer this over [`km_reflectance_infinite_at`] for any physical layer.
-    pub fn km_reflectance_at(&self, wavelength_nm: f64, thickness_cm: f64) -> Option<f64> {
-        Some(self.km_split_at(wavelength_nm, thickness_cm, 0.0)?.0)
+    pub fn km_reflectance_at(
+        &self,
+        wavelength_nm: f64,
+        thickness_cm: f64,
+        incidence_deg: f64,
+    ) -> Option<f64> {
+        Some(
+            self.km_split_at(wavelength_nm, thickness_cm, 0.0, incidence_deg)?
+                .0,
+        )
     }
 
     /// Kubelka-Munk diffuse transmittance through a FINITE layer, PERCENT.
@@ -250,16 +284,16 @@ impl OpticalProperties {
     /// does not. A layer can be "optically thick" for reflectance and still
     /// transmit several percent — in a segmented detector that is the
     /// inter-crystal crosstalk channel.
-    pub fn km_transmittance_at(&self, wavelength_nm: f64, thickness_cm: f64) -> Option<f64> {
-        let k = self.km_k.as_ref()?.interpolate(wavelength_nm);
-        let s = self.km_s.as_ref()?.interpolate(wavelength_nm);
-        if s <= 0.0 || thickness_cm <= 0.0 {
-            return None;
-        }
-        let a = 1.0 + k / s;
-        let b = (a * a - 1.0).sqrt();
-        let bsd = b * s * thickness_cm;
-        Some(100.0 * b / (a * bsd.sinh() + b * bsd.cosh()))
+    pub fn km_transmittance_at(
+        &self,
+        wavelength_nm: f64,
+        thickness_cm: f64,
+        incidence_deg: f64,
+    ) -> Option<f64> {
+        Some(
+            self.km_split_at(wavelength_nm, thickness_cm, 0.0, incidence_deg)?
+                .1,
+        )
     }
 
     /// Relative emission intensity at a wavelength (nm).

@@ -744,3 +744,81 @@ class TestKubelkaMunkFiniteLayer:
             r, t, _ = opt.km_split_at(420, mm / 10)
             assert r == pytest.approx(exp_r, abs=0.05), mm
             assert t == pytest.approx(exp_t, abs=0.05), mm
+
+
+class TestObliqueIncidence:
+    """`incidence_deg` on the K-M accessors (#243).
+
+    Added after normal-incidence transmittance — correct, cited and complete
+    for the question it answered — steered a consumer wrong, because the
+    question they had was transmittance at 77 degrees. Light inside a
+    high-aspect-ratio scintillator is TIR-trapped and meets side walls at
+    grazing incidence, where the path is d/cos(theta).
+    """
+
+    KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
+
+    def _opt(self):
+        return OpticalProperties(kubelka_munk=self.KM)
+
+    def test_obliquity_factor_is_one_over_cos(self):
+        f = OpticalProperties.obliquity_factor
+        assert f(0) == pytest.approx(1.0)
+        assert f(60) == pytest.approx(2.0)
+        assert f(76.7) == pytest.approx(4.34, abs=0.02)
+
+    def test_obliquity_factor_is_capped_at_grazing(self):
+        """1/cos diverges at 90 degrees; a plane-parallel slab model has stopped
+        describing anything real well before that, so it caps rather than
+        returning infinity."""
+        f = OpticalProperties.obliquity_factor
+        assert f(89.99) == 40.0
+        assert f(90) == 40.0
+        assert f(120) == 40.0  # |theta| folded
+        assert f(-60) == pytest.approx(2.0)
+
+    def test_default_is_normal_incidence(self):
+        opt = self._opt()
+        assert opt.km_split_at(420, 0.02) == opt.km_split_at(420, 0.02, 0.0, 0.0)
+
+    def test_grazing_incidence_recovers_the_semi_infinite_limit(self):
+        """The finding that resolved a struck claim: a 0.2 mm septum IS
+        effectively optically thick for light arriving at ~77 degrees, and is
+        not for light arriving near normal. Same layer, same material."""
+        opt = self._opt()
+        r_normal = opt.km_reflectance_at(420, 0.02, incidence_deg=0)
+        r_grazing = opt.km_reflectance_at(420, 0.02, incidence_deg=76.7)
+        r_inf = opt.km_reflectance_infinite_at(420)
+        assert r_normal == pytest.approx(91.9, abs=0.1)
+        assert r_grazing == pytest.approx(96.9, abs=0.1)
+        assert r_inf - r_grazing < 0.5, "grazing should nearly reach the thick-layer limit"
+        assert r_inf - r_normal > 5.0, "normal incidence is nowhere near it"
+
+    def test_transmission_collapses_with_angle(self):
+        """7.6% at normal, 1.35% at 76.7 degrees — a factor 5.6, which is the
+        difference between a crosstalk channel and a rounding error."""
+        opt = self._opt()
+        assert opt.km_transmittance_at(420, 0.02, 0) == pytest.approx(7.63, abs=0.05)
+        assert opt.km_transmittance_at(420, 0.02, 76.7) == pytest.approx(1.35, abs=0.05)
+
+    def test_split_still_closes_at_every_angle(self):
+        opt = self._opt()
+        for th in (0, 30, 60, 76.7, 85, 89):
+            r, t, a = opt.km_split_at(420, 0.02, incidence_deg=th)
+            assert r + t + a == pytest.approx(100.0, abs=1e-9), th
+
+    def test_reflectance_rises_monotonically_with_angle(self):
+        opt = self._opt()
+        rs = [
+            opt.km_reflectance_at(420, 0.02, incidence_deg=t) for t in (0, 15, 30, 45, 60, 75, 85)
+        ]
+        assert rs == sorted(rs)
+
+    def test_oblique_thin_matches_normal_thick(self):
+        """A consistency check on the mechanism: doubling the path by angle
+        must equal doubling it by thickness."""
+        opt = self._opt()
+        by_angle = opt.km_split_at(420, 0.02, incidence_deg=60)  # 1/cos(60) = 2
+        by_thickness = opt.km_split_at(420, 0.04, incidence_deg=0)
+        for a, b in zip(by_angle, by_thickness):
+            assert a == pytest.approx(b, abs=1e-9)

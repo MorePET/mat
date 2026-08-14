@@ -1278,6 +1278,22 @@ note = "Z_eff ≈ 11 reported as the working effective-Z value for ordinary/shie
 # — that is where transmission falls under ~3% and the coating starts behaving
 # like the reflectance standard it is made of.
 #
+# BUT THE TABLE ABOVE IS NORMAL INCIDENCE, AND THAT IS OFTEN THE WRONG COLUMN.
+# Light inside a high-aspect-ratio scintillator is total-internal-reflection
+# trapped and meets the side walls at GRAZING incidence, where the path through
+# the septum is d/cos(theta) rather than d. Pass the angle:
+#
+#       R, T, A = opt.km_split_at(420, 0.02, incidence_deg=76.7)
+#
+# For a 3x3x25 mm crystal (aspect 8.3) the mean side-wall incidence is ~77 deg,
+# which multiplies the effective thickness by ~4.3. The same 0.2 mm septum then
+# gives R = 96.9 / T = 1.4 / A = 1.8 — essentially the semi-infinite limit.
+#
+# So "is 0.2 mm optically thick?" has no answer without the angle. It is NOT at
+# normal incidence and it effectively IS at 77 degrees. The angular distribution
+# is a property of the geometry, not of this material, so it must come from the
+# consumer; this file cannot know it.
+#
 # Two further caveats on the semi-infinite values themselves: they are PRESSED
 # POWDER at high packing density in an integrating sphere, and Grum & Luckey's
 # own BaSO4/PVA *paint* measures 0.992 rather than 0.995-0.999. Packing quality

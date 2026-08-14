@@ -525,6 +525,62 @@ leaks through into the neighbouring crystal — **an inter-crystal crosstalk
 channel the model does not currently have**. That is a gap in the physics, not
 in the data, and it would surface as crosstalk that cannot be reproduced.
 
+> **This claim went through three states. All three are kept, because the
+> sequence is more instructive than any one of them.**
+>
+> 1. **Asserted** (above), unqualified: 0.2 mm is optically thick.
+> 2. **Retracted** in round 3, when a measured 15% inter-crystal light share
+>    arrived and the K-M finite-layer solution gave T = 7.6% at 0.2 mm. I
+>    concluded the claim was simply wrong and said so.
+> 3. **Resolved**: *the retraction was itself computed at an unstated
+>    condition.* T = 7.6% is the **normal-incidence** figure. Light in a
+>    3×3×25 mm crystal is TIR-trapped (LYSO critical angle 33.3°) and meets the
+>    side walls at grazing incidence — a fitted mean of ~76.7°, which is what
+>    axially-propagating trapped light does at aspect ratio 8.3. The path
+>    through the septum is `d/cos θ ≈ 4.34 d`, and at that path K-M gives
+>    **R = 96.9%, T = 1.35%** — essentially the semi-infinite limit of 97.18%.
+>
+> So the original claim was **right in the regime that actually applies**, and
+> both the claim and its refutation were missing the same term. It is not a
+> vindication: an unqualified claim that happens to hold in the applicable
+> regime is still unqualified, and I could not have known which regime applied
+> because the angular distribution lives inside the consumer's geometry, not in
+> this database.
+>
+> The honest form is neither the assertion nor the retraction but the
+> condition: **a 0.2 mm BaSO4 septum is optically thick for light arriving at
+> grazing incidence, and is not for light arriving near normal.** Which of
+> those a given detector is in depends on aspect ratio, and that is the
+> consumer's fact to supply.
+>
+> Recorded at three states rather than edited to the final one, because "struck
+> claim, later reinstated with a condition" is a shape that a two-state record
+> cannot represent, and it is the shape that actually occurred.
+
+### What this cost, and the failure mode it belongs to
+
+Working from the normal-incidence number, the consumer initially identified
+per-encounter transmittance with the observed light share — different
+quantities, since a photon meets a septum ~40 times in this geometry — and on
+that arithmetic fitted the scattering coefficient down to 47% of pellet
+density. That fit was offered to this repository as a property of BaSO4. It was
+declined, for the reason given in round 3: *a fit against one module is a
+measurement of that module, not of the material.* Had it been accepted, an
+arithmetic error would now be recorded here as a material constant, cited.
+
+Note what caught it, though — not the headline number, which could have been
+tuned to agree, but the **shape**: at T = 0.076 per encounter the simulated
+crosstalk had *further* crystals exceeding *direct* neighbours, where the
+measurement falls off. A second constraint on the same data is what made the
+first one falsifiable.
+
+And note the failure mode on this side, because it is the one named in round 3
+arriving from the other direction. `km_transmittance_at` was correct, cited,
+tested, and complete for the question it answers — normal incidence. It steered
+the consumer wrong because the question they had was transmittance at 77°.
+**Not a wrong value, and not a missing one: a right one answering an adjacent
+question.** That is why the accessors now take an incidence angle.
+
 ## Aluminium — derived, not stored
 
 The `--write` enricher run put Rakić CC0 n,k on disk, so reflectance became

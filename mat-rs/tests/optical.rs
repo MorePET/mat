@@ -579,9 +579,9 @@ fn a_thin_septum_transmits_even_though_reflectance_has_converged() {
     // reflectance does not mean opaque.
     let db = db();
     let opt = db.get("baso4").unwrap().optical().unwrap();
-    let t02 = opt.km_transmittance_at(420.0, 0.02).unwrap();
+    let t02 = opt.km_transmittance_at(420.0, 0.02, 0.0).unwrap();
     assert!(t02 > 5.0, "0.2 mm septum transmits {t02}%, expected >5%");
-    let t06 = opt.km_transmittance_at(420.0, 0.06).unwrap();
+    let t06 = opt.km_transmittance_at(420.0, 0.06, 0.0).unwrap();
     assert!(t06 < t02 && t06 > 1.0);
 }
 
@@ -609,12 +609,44 @@ fn km_split_closes_and_matches_the_finite_reflectance() {
     let db = db();
     let opt = db.get("baso4").unwrap().optical().unwrap();
     for mm in [0.1_f64, 0.2, 0.5, 1.0] {
-        let (r, t, a) = opt.km_split_at(420.0, mm / 10.0, 0.0).unwrap();
+        let (r, t, a) = opt.km_split_at(420.0, mm / 10.0, 0.0, 0.0).unwrap();
         assert!((r + t + a - 100.0).abs() < 1e-9, "{mm} mm: {r}+{t}+{a}");
         assert!(r >= 0.0 && t >= 0.0 && a >= 0.0);
     }
     // A 0.2 mm septum reflects ~92%, well below the ~97% thick-layer limit.
-    let r = opt.km_reflectance_at(420.0, 0.02).unwrap();
+    let r = opt.km_reflectance_at(420.0, 0.02, 0.0).unwrap();
     assert!((r - 91.9).abs() < 0.1, "R(0.2mm) = {r}");
     assert!(r < opt.km_reflectance_infinite_at(420.0).unwrap());
+}
+
+#[test]
+fn grazing_incidence_makes_a_thin_septum_behave_semi_infinite() {
+    // The angular term that resolved a struck claim: the SAME 0.2 mm layer is
+    // leaky at normal incidence and effectively optically thick at 77 degrees.
+    let db = db();
+    let opt = db.get("baso4").unwrap().optical().unwrap();
+    let r_normal = opt.km_reflectance_at(420.0, 0.02, 0.0).unwrap();
+    let r_grazing = opt.km_reflectance_at(420.0, 0.02, 76.7).unwrap();
+    let r_inf = opt.km_reflectance_infinite_at(420.0).unwrap();
+    assert!((r_normal - 91.9).abs() < 0.1, "normal: {r_normal}");
+    assert!((r_grazing - 96.9).abs() < 0.1, "grazing: {r_grazing}");
+    assert!(r_inf - r_grazing < 0.5);
+    assert!(r_inf - r_normal > 5.0);
+
+    let t_grazing = opt.km_transmittance_at(420.0, 0.02, 76.7).unwrap();
+    assert!(
+        (t_grazing - 1.35).abs() < 0.05,
+        "T at 76.7 deg: {t_grazing}"
+    );
+}
+
+#[test]
+fn obliquity_by_angle_equals_obliquity_by_thickness() {
+    let db = db();
+    let opt = db.get("baso4").unwrap().optical().unwrap();
+    // 1/cos(60 deg) = 2, so 0.02 cm at 60 deg == 0.04 cm at normal.
+    let by_angle = opt.km_split_at(420.0, 0.02, 0.0, 60.0).unwrap();
+    let by_thickness = opt.km_split_at(420.0, 0.04, 0.0, 0.0).unwrap();
+    assert!((by_angle.0 - by_thickness.0).abs() < 1e-9);
+    assert!((by_angle.1 - by_thickness.1).abs() < 1e-9);
 }
