@@ -1,5 +1,28 @@
 # Scintillator crystals and plastic scintillators database
 # Units: All values use explicit *_value and *_unit format for v2.0.0 compatibility
+#
+# ---------------------------------------------------------------------------
+# Who owns `refractive_index_dispersion` here (ADR-0004 §10)
+# ---------------------------------------------------------------------------
+# `scripts/enrich_from_refractiveindex.py` (#164) is an ADD-ONLY enricher that
+# pulls CC0 dispersion from refractiveindex.info and writes it with a `_sources`
+# row. It SKIPS any material that already has dispersion, so hand-authored data
+# inside its scope would permanently mask the automated pull and the two would
+# diverge invisibly.
+#
+#   In scope, DO NOT hand-author:  nai, nai.Tl, csi, csi.Tl, csi.Na, bgo
+#   Out of scope, hand-author with a citation:  lyso, lso, gagg, labr3, pwo,
+#                                               plastic_scint, cebr3, sri2
+#
+# All six in-scope materials are currently EMPTY on disk — the enricher has not
+# been run to `--write`. That is the action, not typing the numbers in:
+#
+#     python scripts/enrich_from_refractiveindex.py --key bgo --dry-run
+#     python scripts/enrich_from_refractiveindex.py --write
+#
+# Note that refractiveindex.info carries neither LSO nor LYSO, so `lyso` is out
+# of scope for a reason that no amount of running the enricher will fix — see
+# its `_absent` block below.
 
 [lyso]
 name = "LYSO"
@@ -155,11 +178,8 @@ decay_time = 300
 emission_peak = 480
 emission_range = [375, 650]
 hygroscopic = false
-# DO NOT hand-author `refractive_index_dispersion` here. `bgo` is inside the
-# scope of the add-only refractiveindex.info enricher
-# (scripts/enrich_from_refractiveindex.py, #164) alongside nai, nai.Tl, csi,
-# csi.Tl and csi.Na — see ADR-0004 §10. Hand-written data would permanently
-# mask the automated pull and the two would diverge invisibly.
+# DO NOT hand-author `refractive_index_dispersion` here — `bgo` is inside the
+# enricher's scope; see the header of this file and ADR-0004 §10.
 #
 # The data exists and is CC0: Williams et al., Appl. Opt. 35, 3562-3569 (1996),
 # doi:10.1364/AO.35.003562, Sellmeier n^2 - 1 = 3.1218393*L^2/(L^2 - 0.1807^2)

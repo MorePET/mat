@@ -284,6 +284,20 @@ temperature).
 One data correction: `lyso.Ce.saint_gobain.prelude420.light_yield` was **34000**,
 an uncited round-up. The Luxium PreLude 420 data sheet says **33200**. Fixed.
 
+### What is deliberately *not* done yet
+
+`gagg`, `nai_tl`, `csi_tl` and the plastics were on the P1 list and are
+**untouched**. This is a refusal, not an omission: the literature sweep behind
+this PR covered LYSO and BGO only, and adding values to the others would mean
+either copying them from the existing uncited numbers or asserting
+`_absent` reasons for searches nobody ran. Both are worse than leaving them
+alone, by the standard your own §P2 sets. They need the same treatment LYSO
+got — a real source sweep — and that is a follow-up, not a five-minute edit.
+
+What *is* free for four of them: `nai`, `nai.Tl`, `csi`, `csi.Tl`, `csi.Na` are
+inside the enricher's scope, so their dispersion is one command away. The rule
+is now stated once at the top of `scintillators.toml` rather than per-material.
+
 ---
 
 ## 5. What shipped
