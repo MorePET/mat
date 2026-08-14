@@ -532,30 +532,33 @@ in the data, and it would surface as crosstalk that cannot be reproduced.
 > 2. **Retracted** in round 3, when a measured 15% inter-crystal light share
 >    arrived and the K-M finite-layer solution gave T = 7.6% at 0.2 mm. I
 >    concluded the claim was simply wrong and said so.
-> 3. **Resolved**: *the retraction was itself computed at an unstated
->    condition.* T = 7.6% is the **normal-incidence** figure. Light in a
->    3×3×25 mm crystal is TIR-trapped (LYSO critical angle 33.3°) and meets the
->    side walls at grazing incidence — a fitted mean of ~76.7°, which is what
->    axially-propagating trapped light does at aspect ratio 8.3. The path
->    through the septum is `d/cos θ ≈ 4.34 d`, and at that path K-M gives
->    **R = 96.9%, T = 1.35%** — essentially the semi-infinite limit of 97.18%.
+> 3. **Attempted un-retraction, itself wrong.** The consumer proposed that the
+>    retraction was computed at an unstated condition: T = 7.6% is the
+>    *normal-incidence* figure, and TIR-trapped light in a 3×3×25 mm crystal
+>    was said to meet the side walls at ~76.7°, giving `d/cos θ ≈ 4.34 d` and
+>    **R = 96.9%, T = 1.35%** — the semi-infinite limit. On that basis they
+>    recommended un-striking the original claim. **This repository declined to
+>    un-strike it, on principle, before the evidence arrived.**
+> 4. **Falsified.** They instrumented the mechanism's own prediction rather
+>    than the number it was fitted to, and measured the mean side-wall
+>    incidence at **47.8°, not 76.7°** — a factor 2.9 in path length. The
+>    reason is clean and had been in front of both of us: **the septum is
+>    Lambertian, and a diffuse reflector randomises direction on first
+>    contact.** Mean `|cos θ| = 2/3` exactly → 48.2°, *independent of aspect
+>    ratio*. The grazing-incidence story reasoned about the angular
+>    distribution of trapped light and forgot that the wall being reasoned
+>    about destroys that distribution.
 >
-> So the original claim was **right in the regime that actually applies**, and
-> both the claim and its refutation were missing the same term. It is not a
-> vindication: an unqualified claim that happens to hold in the applicable
-> regime is still unqualified, and I could not have known which regime applied
-> because the angular distribution lives inside the consumer's geometry, not in
-> this database.
+> **So the retraction at state 2 stands as originally written.** At 48° the
+> path multiplier is 1.49, nowhere near optically thick: a 0.2 mm septum
+> transmits ~5%. The original unqualified claim was simply wrong, and the
+> attempt to rescue it with a condition was wrong too.
 >
-> The honest form is neither the assertion nor the retraction but the
-> condition: **a 0.2 mm BaSO4 septum is optically thick for light arriving at
-> grazing incidence, and is not for light arriving near normal.** Which of
-> those a given detector is in depends on aspect ratio, and that is the
-> consumer's fact to supply.
->
-> Recorded at three states rather than edited to the final one, because "struck
-> claim, later reinstated with a condition" is a shape that a two-state record
-> cannot represent, and it is the shape that actually occurred.
+> Recorded at four states rather than edited to the final one. A two-state
+> record cannot represent "struck → argued back → struck again", and the
+> sequence is the instructive part: **two plausible mechanisms, both
+> constructed after the fit to explain a value already chosen, both surviving
+> review by two parties, both killed by measurement rather than by scrutiny.**
 
 ### What this cost, and the failure mode it belongs to
 
@@ -576,10 +579,36 @@ first one falsifiable.
 
 And note the failure mode on this side, because it is the one named in round 3
 arriving from the other direction. `km_transmittance_at` was correct, cited,
-tested, and complete for the question it answers — normal incidence. It steered
-the consumer wrong because the question they had was transmittance at 77°.
-**Not a wrong value, and not a missing one: a right one answering an adjacent
-question.** That is why the accessors now take an incidence angle.
+tested, and complete for the question it answers — normal incidence. **Not a
+wrong value, and not a missing one: a right one answering an adjacent
+question.** The accessors now take an incidence angle for that reason.
+
+But the fix carried its own trap, and it is worth stating because this
+repository built it: **an `incidence_deg` parameter invites exactly the error
+that followed.** Kubelka-Munk `k` and `s` are *already* defined for diffuse
+flux — the obliquity is averaged into them, which is the origin of the factor 2
+in the usual `K = 2k` convention — so for diffusely-illuminated layers plain
+`d` is correct and multiplying by `1/cos θ` double-counts. Offering a knob
+without saying loudly when *not* to turn it is another way of answering an
+adjacent question. The docstrings now lead with when to leave it at zero.
+
+### The sharpened lesson
+
+Round 3 recorded: *a fit with one constraint is a reparameterisation, a fit
+with two is a test.* This round sharpens it, and the consumer's phrasing is
+better than mine:
+
+> **The second constraint has to be a prediction of the *mechanism*, not
+> another property of the outcome.**
+
+Their further-vs-direct crosstalk shape was a genuine second constraint and did
+real work — it killed the packing-density fit. But it could not distinguish
+grazing incidence from anything else producing the same transmittance, because
+it says nothing about *angle*. Only instrumenting the angle could, and when
+they did, the mechanism died in an hour.
+
+For any fitted parameter: ask what **else** the proposed mechanism asserts, and
+go measure *that*.
 
 ## Aluminium — derived, not stored
 

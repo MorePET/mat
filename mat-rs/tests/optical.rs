@@ -620,9 +620,13 @@ fn km_split_closes_and_matches_the_finite_reflectance() {
 }
 
 #[test]
-fn grazing_incidence_makes_a_thin_septum_behave_semi_infinite() {
-    // The angular term that resolved a struck claim: the SAME 0.2 mm layer is
-    // leaky at normal incidence and effectively optically thick at 77 degrees.
+fn a_long_enough_path_reaches_the_semi_infinite_limit() {
+    // Pure mathematics of the accessor. 76.7 degrees is an ARBITRARY long-path
+    // example, NOT a claim about any real geometry — an earlier version of this
+    // test asserted it was the physical angle inside a wrapped crystal, and
+    // that was retracted twice. A Lambertian septum randomises direction to a
+    // mean of 48.2 degrees regardless of crystal shape; see
+    // `a_thin_septum_is_not_optically_thick_at_realistic_angles`.
     let db = db();
     let opt = db.get("baso4").unwrap().optical().unwrap();
     let r_normal = opt.km_reflectance_at(420.0, 0.02, 0.0).unwrap();
@@ -649,4 +653,36 @@ fn obliquity_by_angle_equals_obliquity_by_thickness() {
     let by_thickness = opt.km_split_at(420.0, 0.04, 0.0, 0.0).unwrap();
     assert!((by_angle.0 - by_thickness.0).abs() < 1e-9);
     assert!((by_angle.1 - by_thickness.1).abs() < 1e-9);
+}
+
+#[test]
+fn a_thin_septum_is_not_optically_thick_at_realistic_angles() {
+    // A diffuse reflector erases the angular distribution it is given: after
+    // one Lambertian contact the mean is <|cos|> = 2/3, i.e. 48.2 degrees, with
+    // no dependence on crystal aspect ratio. At that angle a 0.2 mm septum
+    // still transmits ~5%.
+    let db = db();
+    let opt = db.get("baso4").unwrap().optical().unwrap();
+    let t_real = opt.km_transmittance_at(420.0, 0.02, 48.19).unwrap();
+    let t_normal = opt.km_transmittance_at(420.0, 0.02, 0.0).unwrap();
+    assert!((t_real - 5.1).abs() < 0.1, "T at Lambertian mean: {t_real}");
+    assert!((t_normal - 7.6).abs() < 0.1, "T at normal: {t_normal}");
+
+    let r_inf = opt.km_reflectance_infinite_at(420.0).unwrap();
+    let r_real = opt.km_reflectance_at(420.0, 0.02, 48.19).unwrap();
+    assert!(
+        r_inf - r_real > 2.5,
+        "still far from the semi-infinite limit"
+    );
+}
+
+#[test]
+fn obliquity_factor_matches_one_over_cos() {
+    use rs_materials::material::obliquity_factor;
+    assert!((obliquity_factor(0.0) - 1.0).abs() < 1e-12);
+    assert!((obliquity_factor(60.0) - 2.0).abs() < 1e-12);
+    // Lambertian mean angle -> 1.5, which is 1/<cos>. Note this is NOT the
+    // mean path multiplier: <1/cos> = 2 for the same distribution.
+    assert!((obliquity_factor(48.19) - 1.5).abs() < 1e-3);
+    assert_eq!(obliquity_factor(90.0), 40.0);
 }

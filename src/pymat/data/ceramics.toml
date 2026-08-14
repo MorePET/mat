@@ -1278,21 +1278,33 @@ note = "Z_eff ≈ 11 reported as the working effective-Z value for ordinary/shie
 # — that is where transmission falls under ~3% and the coating starts behaving
 # like the reflectance standard it is made of.
 #
-# BUT THE TABLE ABOVE IS NORMAL INCIDENCE, AND THAT IS OFTEN THE WRONG COLUMN.
-# Light inside a high-aspect-ratio scintillator is total-internal-reflection
-# trapped and meets the side walls at GRAZING incidence, where the path through
-# the septum is d/cos(theta) rather than d. Pass the angle:
+# ON ANGLE OF INCIDENCE — and on a trap this material creates for itself.
 #
-#       R, T, A = opt.km_split_at(420, 0.02, incidence_deg=76.7)
+# km_split_at() takes an optional `incidence_deg` for COLLIMATED light, since a
+# ray at theta crosses d/cos(theta) of material. For a BaSO4 septum, though,
+# the honest default is usually 0, for two reasons that pull the same way:
 #
-# For a 3x3x25 mm crystal (aspect 8.3) the mean side-wall incidence is ~77 deg,
-# which multiplies the effective thickness by ~4.3. The same 0.2 mm septum then
-# gives R = 96.9 / T = 1.4 / A = 1.8 — essentially the semi-infinite limit.
+#   1. THIS REFLECTOR ERASES THE ANGLE IT IS GIVEN. BaSO4 is Lambertian. After
+#      one contact, direction is cosine-distributed about the septum normal
+#      with mean |cos| = 2/3 exactly, i.e. 48.2 deg, NO MATTER how the light
+#      arrived. So "the crystal is long and thin, therefore light hits the walls
+#      at grazing incidence" is false the moment the wall is this material. The
+#      reflector sets the angle, not the geometry. (That reasoning IS valid for
+#      a specular wall — see the aluminium entry.)
 #
-# So "is 0.2 mm optically thick?" has no answer without the angle. It is NOT at
-# normal incidence and it effectively IS at 77 degrees. The angular distribution
-# is a property of the geometry, not of this material, so it must come from the
-# consumer; this file cannot know it.
+#   2. KUBELKA-MUNK IS ALREADY A DIFFUSE MODEL. k and s as published are
+#      defined for diffuse flux, with the obliquity averaged in — that is where
+#      the factor 2 in the usual K = 2k convention comes from. Multiplying by
+#      1/cos on top of diffuse coefficients double-counts.
+#
+# Net: for diffusely-illuminated layers use the table above as written. Use
+# `incidence_deg` when you genuinely have a collimated beam at a known angle.
+#
+# A worked consequence, recorded because two independent attempts got it wrong:
+# a 0.2 mm septum in a wrapped scintillator array is NOT optically thick. At
+# the Lambertian mean angle it transmits ~5%, and at normal incidence ~7.6%.
+# Reaching the semi-infinite limit would need ~77 deg, which this reflector's
+# own randomisation prevents.
 #
 # Two further caveats on the semi-infinite values themselves: they are PRESSED
 # POWDER at high packing density in an integrating sphere, and Grum & Luckey's

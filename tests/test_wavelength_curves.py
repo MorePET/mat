@@ -14,6 +14,7 @@ Per ADR-0004 §4:
 
 from __future__ import annotations
 
+import math
 from textwrap import dedent
 
 import pytest
@@ -749,11 +750,11 @@ class TestKubelkaMunkFiniteLayer:
 class TestObliqueIncidence:
     """`incidence_deg` on the K-M accessors (#243).
 
-    Added after normal-incidence transmittance — correct, cited and complete
-    for the question it answered — steered a consumer wrong, because the
-    question they had was transmittance at 77 degrees. Light inside a
-    high-aspect-ratio scintillator is TIR-trapped and meets side walls at
-    grazing incidence, where the path is d/cos(theta).
+    The accessor is for COLLIMATED light at a known angle. These tests pin the
+    mathematics of `1/cos(theta)`; they deliberately do NOT assert any physical
+    angle for a real detector, because two successive attempts to do that were
+    both wrong — see `TestDiffuseReflectorErasesAngle` below for why the
+    reflector, not the geometry, sets the angle.
     """
 
     KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
@@ -781,10 +782,12 @@ class TestObliqueIncidence:
         opt = self._opt()
         assert opt.km_split_at(420, 0.02) == opt.km_split_at(420, 0.02, 0.0, 0.0)
 
-    def test_grazing_incidence_recovers_the_semi_infinite_limit(self):
-        """The finding that resolved a struck claim: a 0.2 mm septum IS
-        effectively optically thick for light arriving at ~77 degrees, and is
-        not for light arriving near normal. Same layer, same material."""
+    def test_a_long_enough_path_recovers_the_semi_infinite_limit(self):
+        """Pure mathematics of the accessor: enough path in any guise reaches
+        the thick-layer limit. 76.7 degrees is used as an ARBITRARY long-path
+        example — it is not a claim about any real geometry. An earlier version
+        of this test asserted it was the physical angle in a wrapped crystal;
+        that was retracted twice over."""
         opt = self._opt()
         r_normal = opt.km_reflectance_at(420, 0.02, incidence_deg=0)
         r_grazing = opt.km_reflectance_at(420, 0.02, incidence_deg=76.7)
@@ -795,8 +798,8 @@ class TestObliqueIncidence:
         assert r_inf - r_normal > 5.0, "normal incidence is nowhere near it"
 
     def test_transmission_collapses_with_angle(self):
-        """7.6% at normal, 1.35% at 76.7 degrees — a factor 5.6, which is the
-        difference between a crosstalk channel and a rounding error."""
+        """Transmission collapses with path length. Both figures are outputs of
+        the model at the stated angle, not assertions about a detector."""
         opt = self._opt()
         assert opt.km_transmittance_at(420, 0.02, 0) == pytest.approx(7.63, abs=0.05)
         assert opt.km_transmittance_at(420, 0.02, 76.7) == pytest.approx(1.35, abs=0.05)
@@ -822,3 +825,69 @@ class TestObliqueIncidence:
         by_thickness = opt.km_split_at(420, 0.04, incidence_deg=0)
         for a, b in zip(by_angle, by_thickness):
             assert a == pytest.approx(b, abs=1e-9)
+
+
+class TestDiffuseReflectorErasesAngle:
+    """A Lambertian reflector destroys the angular distribution it is given.
+
+    Recorded as executable physics because two independent, plausible,
+    peer-reviewed-by-both-sides attempts to reason about septum incidence angle
+    were wrong in the same way: both treated the angle as a property of the
+    crystal geometry when the reflector sets it.
+    """
+
+    KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
+
+    def test_lambertian_mean_cosine_is_two_thirds(self):
+        """<|cos|> over a cosine-weighted hemisphere is exactly 2/3, i.e. 48.19
+        degrees. No aspect ratio appears anywhere in that statement."""
+        n = 400_000
+        mean_cos = sum(math.sqrt((i + 0.5) / n) for i in range(n)) / n
+        assert mean_cos == pytest.approx(2 / 3, abs=1e-3)
+        assert math.degrees(math.acos(2 / 3)) == pytest.approx(48.19, abs=0.01)
+
+    def test_mean_path_multiplier_is_not_one_over_mean_cosine(self):
+        """Jensen: <1/cos> = 2 for a Lambertian distribution, while 1/<cos> is
+        1.5. Reaching for the second is a natural mistake and gives the wrong
+        path length."""
+        n = 400_000
+        mean_inv_cos = sum(1.0 / math.sqrt((i + 0.5) / n) for i in range(n)) / n
+        assert mean_inv_cos == pytest.approx(2.0, rel=2e-3)
+        assert 1.0 / (2 / 3) == pytest.approx(1.5)
+
+    def test_evaluating_at_the_mean_angle_is_close_but_not_equal(self):
+        """T is nonlinear in path, so <T(theta)> != T(<theta>). Here the gap is
+        ~0.1 points — small, but it is a real approximation and not an
+        identity."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        n = 20_000
+        t_avg = (
+            sum(
+                opt.km_transmittance_at(
+                    420, 0.02, incidence_deg=math.degrees(math.acos(math.sqrt((i + 0.5) / n)))
+                )
+                for i in range(n)
+            )
+            / n
+        )
+        t_at_mean = opt.km_transmittance_at(420, 0.02, 48.19)
+        assert t_avg == pytest.approx(t_at_mean, abs=0.25)
+        assert t_avg != t_at_mean
+
+    def test_a_thin_septum_is_not_optically_thick_at_realistic_angles(self):
+        """The claim that died twice. At the Lambertian mean angle a 0.2 mm
+        septum still transmits ~5%, and at normal incidence ~7.6%. Only an
+        unphysical ~77 degrees would make it behave semi-infinite, and a
+        diffuse reflector cannot deliver that."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        assert opt.km_transmittance_at(420, 0.02, 48.19) == pytest.approx(5.1, abs=0.1)
+        assert opt.km_transmittance_at(420, 0.02, 0) == pytest.approx(7.6, abs=0.1)
+        r_inf = opt.km_reflectance_infinite_at(420)
+        r_real = opt.km_reflectance_at(420, 0.02, incidence_deg=48.19)
+        r_unphysical = opt.km_reflectance_at(420, 0.02, incidence_deg=76.7)
+        # ~3 points short of the limit at the realistic angle...
+        assert r_inf - r_real > 2.5
+        # ...and roughly an order of magnitude closer at the angle that was
+        # claimed and then retracted. The difference between the two is the
+        # whole of the dead argument.
+        assert (r_inf - r_unphysical) < (r_inf - r_real) / 5

@@ -223,16 +223,19 @@ impl OpticalProperties {
     ///
     /// `backing` is what sits behind the layer (0.0 = black).
     ///
-    /// **`incidence_deg` is usually the term that decides the answer.** Light
-    /// inside a high-aspect-ratio scintillator is total-internal-reflection
-    /// trapped and meets the side walls at grazing angles, where the path is
-    /// `d/cos(theta)`. For a 3x3x25 mm crystal the mean side-wall incidence is
-    /// ~77 degrees, which multiplies effective thickness by ~4.3 and takes a
-    /// 0.2 mm septum from 7.6% transmission to 1.4%. Passing 0 gives a correct
-    /// answer to a question a wrapped-crystal model is not asking.
+    /// **`incidence_deg` is for COLLIMATED light at a known angle.** For
+    /// diffuse illumination pass 0.
     ///
-    /// The angular distribution belongs to the geometry, not the material, so
-    /// it is supplied here rather than stored.
+    /// Two traps, both of which have caught real consumers:
+    ///
+    /// 1. A diffuse reflector ERASES the incident angular distribution. After
+    ///    one contact with a Lambertian surface, direction is cosine-distributed
+    ///    about that normal with mean `|cos theta| = 2/3` (48.2 degrees),
+    ///    regardless of how the light arrived. "High-aspect crystal, therefore
+    ///    grazing incidence" is wrong as soon as the wall is diffuse.
+    /// 2. Kubelka-Munk `k` and `s` are already defined for DIFFUSE flux — the
+    ///    obliquity is baked in (hence the factor 2 in the usual `K = 2k`).
+    ///    Multiplying by `1/cos` on top of that double-counts.
     ///
     /// Note the limit: with `k = 0` the thick-layer reflectance is exactly 1,
     /// not 0.999. Absorption is the only thing that puts R_inf below unity.

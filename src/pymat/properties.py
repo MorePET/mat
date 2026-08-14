@@ -944,23 +944,35 @@ class OpticalProperties:
         purpose of reflectance and still transmit several percent — which is a
         crosstalk channel, not a rounding error.
 
-        **`incidence_deg` is usually the term that decides the answer.** These
-        default to NORMAL incidence, and light inside a high-aspect-ratio
-        scintillator is nothing like normal — it is total-internal-reflection
-        trapped and meets the side walls at grazing angles, where the path is
-        `d/cos(theta)`. For a 3x3x25 mm crystal the mean side-wall incidence is
-        around 77 degrees, which multiplies the effective thickness by ~4.3 and
-        takes a 0.2 mm septum from 7.6% transmission to 1.4%. If you are
-        modelling a wrapped crystal and you leave this at 0, you will get a
-        correct number for a question you are not asking.
+        **`incidence_deg` is for COLLIMATED light at a known angle.** For
+        DIFFUSE illumination pass 0 — see the double-counting warning below.
 
-        The angular distribution is a property of the geometry, not of the
-        material, so it has to be supplied here rather than stored.
+        A ray crossing at `theta` travels `d/cos(theta)`, so a beam at 60
+        degrees sees twice the material. That much is straightforward.
 
-        Caveat: Kubelka-Munk is a two-flux model that assumes diffuse internal
-        illumination, so folding a collimated `1/cos(theta)` path factor into it
-        is an approximation. It is the standard one, and it reproduces measured
-        inter-crystal crosstalk in this geometry, but it is not exact.
+        TWO TRAPS, both of which have bitten real consumers of this accessor:
+
+        1. **A diffuse reflector erases the incident angular distribution.**
+           After one contact with a Lambertian surface, direction is
+           cosine-distributed about that surface's normal, with mean
+           `|cos theta| = 2/3` exactly, i.e. 48.2 degrees — *regardless* of how
+           the light arrived. So reasoning like "the crystal is high-aspect, so
+           light strikes the walls at grazing incidence" is wrong the moment the
+           wall is a diffuse reflector: the reflector, not the geometry, sets
+           the angle. It is only right for a specular wall.
+
+        2. **Kubelka-Munk coefficients are already defined for diffuse flux.**
+           The K-M two-flux formalism bakes the obliquity of diffuse
+           illumination into `k` and `s` (this is the origin of the factor 2 in
+           the usual `K = 2k` convention). So if your light IS diffuse, plain
+           `d` is already correct and multiplying by `1/cos` double-counts.
+           Use this parameter for a collimated beam; leave it at 0 for
+           diffusely-illuminated layers.
+
+        Note also that transmittance is nonlinear in path, so evaluating at a
+        mean angle is not the same as averaging over the distribution — though
+        for a Lambertian distribution on a 0.2 mm septum the two agree to about
+        0.1 percentage points, so it is a small effect here.
         """
         split = self.km_split_at(wavelength, thickness_cm, 0.0, incidence_deg)
         return None if split is None else split[1]
