@@ -355,6 +355,45 @@ a table, and no CC-BY paper we could find measures that exact part. So even a
 consumer who wanted this in py-mat would be putting a digitised proprietary
 figure here — which §P2's own standard forbids.
 
+### 12. Ship brackets and caveats, not point estimates — sensitivity is not a property of one parameter
+
+Added after a downstream result that inverted its own conclusion.
+
+The consuming engine measured the sensitivity of light collection to bulk
+absorption length, found +17%, and concluded absorption was second-order and
+reflectance was what mattered. That re-ordered work in this repository — and it
+was **right for the wrong reason**. The sweep had been run at an *assumed*
+reflectance of 0.97. At the cited value the model inverts: far-end wrap loss
+falls from 64% to 5% while bulk loss rises from 29% to 69%. And the two
+parameters interact, so the absorption sensitivity is +17% at R = 0.97 but
+**+53%** at R = 0.999.
+
+The generalisable point: **a sensitivity analysis computed at an unmeasured
+parameter measures the assumption, not the physics.** "X is second-order" is
+never a property of X alone; it is a property of X at whatever value of Y was
+assumed, and if Y is the number without provenance then the conclusion inherits
+that gap silently.
+
+This has two consequences for what this repository ships:
+
+1. **A bracket beats a point estimate when the quantity is consumed
+   non-linearly.** BaSO4 reflectance enters as `R^~40`, so the difference
+   between 0.97 and 0.999 is the difference between 0.30 and 0.96. Shipping
+   0.999 with "pressed powder, integrating sphere, the same authors' paint
+   measures 0.992" let the consumer pick 0.99 mid-bracket for reasons they could
+   write down. A bare 0.999 would have been *more* precise and *less* usable.
+2. **The uncertainty can be load-bearing in both directions at once.** The same
+   sweep showed a better reflector *destroys* depth-of-interaction resolution —
+   the depth gradient collapses from 8.4:1 to 1.6:1 — because uniform light
+   collection is what energy resolution wants and exactly what depth encoding
+   must not have. So the range matters to the design, not just the mean.
+
+Which is why `_sources` notes on this branch carry the measurement conditions
+and the known-worse variants rather than just the citation, and why a caveat
+that reads as verbose is pinned by a test (`test_absorption_length_carries_its_
+sensitivity_warning`). The caveat is the part a later editor tidies away, and it
+is the part that was load-bearing.
+
 ## Non-goals (unchanged from the brief, and honoured)
 
 No geometry. No per-volume or per-face assignment. No SiPM or electronics

@@ -223,6 +223,16 @@ class TestLysoDeclaredAbsences:
         src = pymat.lyso.source_of("optical.absorption_length")
         assert "CONVENTION" in src.note
 
+    def test_absorption_length_carries_its_sensitivity_warning(self):
+        """A downstream 2D sweep showed this value is NOT second-order: it
+        moves collection efficiency +17% at reflector R=0.97 but +53% at
+        R=0.999, because the two parameters interact. The caveat is the kind of
+        thing that gets tidied away, so it is pinned."""
+        note = pymat.lyso.source_of("optical.absorption_length").note
+        assert "SENSITIVITY" in note
+        assert "interact" in note
+        assert "Sweep this value" in note
+
     def test_bgo_dispersion_came_from_the_enricher(self):
         """ADR-0004 §10: bgo is in the refractiveindex.info enricher's scope,
         so its dispersion must arrive via the automated CC0 pull, never

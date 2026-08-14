@@ -450,14 +450,50 @@ Their measurement, 20k photons, identical seeds, absorption length swept:
 | 588 mm (measured Ce channel) | 0.2590 | 0.6470 | 0.1039 | 6.2 : 1 |
 
 A 2.9× change in absorption length moves mean collection efficiency by only
-+17% relative. **The reflector dominates**: reflector loss runs 25% at the
-readout end to 63% at the far end, against 13→29% for bulk. On an 8.3 aspect
-ratio with a *diffuse* reflector the photon random-walks instead of
-light-piping, so it is `R^~40` doing the damage.
++17% relative, and reflector loss ran 25% at the readout end to 63% at the far
+end against 13→29% for bulk. The conclusion drawn at the time — *the reflector
+dominates, so reflectance provenance outranks scintillator bulk data* — is what
+re-ordered the work.
 
-So reflector reflectance provenance outranked more scintillator bulk data, and
-the work was re-ordered accordingly. This is the single best argument in the
-whole exchange for stating sensitivity before requesting data.
+> ⚠️ **RETRACTED in round 3, and the retraction is the more useful result.**
+> That sweep was computed at an assumed reflectance of 0.97. At the cited value
+> the model inverts: far-end wrap loss goes from 64% to **5%**, and bulk loss
+> from 29% to **69%**. The reflector does not dominate; at a realistic
+> reflectance the *crystal* does.
+>
+> The re-prioritisation was still correct, but **for the opposite reason to the
+> one given**: reflectance provenance mattered enormously because the assumed
+> value was wrong, not because reflector loss is the dominant channel.
+>
+> Kept visible rather than edited away, because a sensitivity analysis computed
+> at an unmeasured parameter is exactly the failure mode this document is about
+> — and it is one that produced a *right answer from wrong reasoning*, which is
+> the hardest kind to catch.
+
+**The deeper finding: the two parameters interact, so no standalone sensitivity
+is meaningful.** Absorption length moves collection efficiency by +17% at
+R = 0.97 and by **+53%** at R = 0.999. At low reflectivity photons die at the
+wrap before path length can matter; at high reflectivity they survive long
+enough to accumulate path, and absorption takes over. Any statement of the form
+"parameter X is second-order" is only true at whatever value of Y it was
+computed at.
+
+The practical consequence for this repository: **the measured 588 mm
+self-absorption channel is worth substantially more than the round-2 analysis
+credited**, and the 200 mm lumped convention is correspondingly more dangerous
+— see the strengthened source note on `[lyso.optical] absorption_length`.
+
+### A design tension the data now prices
+
+Falling out of the same 2D sweep, and worth recording because it is not
+obvious: **a better reflector destroys depth-of-interaction resolution.** Across
+R = 0.97 → 0.999 the depth gradient collapses from 8.4:1 to 1.6:1. Uniform light
+collection is what you want for energy resolution and precisely what you must
+not have for depth encoding.
+
+That makes the *uncertainty* on the BaSO4 number load-bearing in both
+directions, not just the value — which is a good argument for shipping the
+0.98–0.999 bracket rather than a point estimate.
 
 ## BaSO4 — the number that mattered
 
