@@ -1249,13 +1249,40 @@ note = "Z_eff ≈ 11 reported as the working effective-Z value for ordinary/shie
 # replaced it for NIST calibrations. In detector construction it is the usual
 # inter-crystal septum material in a PET block.
 #
-# IMPORTANT — the reflectance below is a property of PRESSED POWDER at high
-# packing density, measured in an integrating sphere as a total hemispherical
-# diffuse reflectance standard. A real septum is packed looser, may be
-# binder-loaded, and is bounded by crystal faces rather than open to a sphere.
-# Grum & Luckey's own BaSO4/PVA *paint* measures 0.992, not the 0.995-0.999 of
-# pressed powder. Treat the values here as the best-case laboratory artifact
-# and the upper bound on what a septum achieves.
+# ---------------------------------------------------------------------------
+# READ THIS BEFORE USING THE REFLECTANCE. It is not the number you will see.
+# ---------------------------------------------------------------------------
+# `reflectivity` / `reflectivity_spectrum` below are SEMI-INFINITE reflectance:
+# what a thick pile of this powder returns. That is a genuine material property
+# and it is why the field exists — but NO REAL LAYER IS SEMI-INFINITE, and the
+# reflectance a finite layer delivers is substantially lower because the
+# balance goes straight through.
+#
+#   DO NOT adopt reflectivity_at(nm) unless your layer is optically thick.
+#   DO use the Kubelka-Munk coefficients with YOUR thickness:
+#
+#       R, T, A = opt.km_split_at(420, thickness_cm)   # percent, sums to 100
+#       R       = opt.km_reflectance_at(420, 0.02)     # 0.2 mm -> 91.9%
+#
+# At 420 nm this material gives, per thickness (R / T / A, %):
+#
+#       0.1 mm   85.4 / 14.4 / 0.2
+#       0.2 mm   91.9 /  7.6 / 0.5     <- a typical PET inter-crystal septum
+#       0.3 mm   94.2 /  5.1 / 0.7
+#       0.5 mm   96.0 /  2.9 / 1.1     <- vendor-recommended coating thickness
+#       0.6 mm   96.4 /  2.3 / 1.3
+#       infinite 97.2 /  0   / 2.8     (the R_inf below)
+#
+# That T column is not a rounding error. In a segmented detector it IS the
+# inter-crystal crosstalk channel, and it is also why vendors specify 0.5-0.6 mm
+# — that is where transmission falls under ~3% and the coating starts behaving
+# like the reflectance standard it is made of.
+#
+# Two further caveats on the semi-infinite values themselves: they are PRESSED
+# POWDER at high packing density in an integrating sphere, and Grum & Luckey's
+# own BaSO4/PVA *paint* measures 0.992 rather than 0.995-0.999. Packing quality
+# and finite thickness are separate effects and both push the same way; the
+# thickness term usually dominates for a detector septum.
 #
 # There is no CC-licensed tabulated (lambda, R) source for BaSO4. The values
 # are cited from the Optica-paywalled primary; facts are not copyrightable, so

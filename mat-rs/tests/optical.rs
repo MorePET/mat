@@ -603,3 +603,18 @@ fn the_two_baso4_reflectance_routes_disagree_and_that_is_recorded() {
         .unwrap();
     assert!(note.contains("TWO-SOURCE DISAGREEMENT"));
 }
+
+#[test]
+fn km_split_closes_and_matches_the_finite_reflectance() {
+    let db = db();
+    let opt = db.get("baso4").unwrap().optical().unwrap();
+    for mm in [0.1_f64, 0.2, 0.5, 1.0] {
+        let (r, t, a) = opt.km_split_at(420.0, mm / 10.0, 0.0).unwrap();
+        assert!((r + t + a - 100.0).abs() < 1e-9, "{mm} mm: {r}+{t}+{a}");
+        assert!(r >= 0.0 && t >= 0.0 && a >= 0.0);
+    }
+    // A 0.2 mm septum reflects ~92%, well below the ~97% thick-layer limit.
+    let r = opt.km_reflectance_at(420.0, 0.02).unwrap();
+    assert!((r - 91.9).abs() < 0.1, "R(0.2mm) = {r}");
+    assert!(r < opt.km_reflectance_infinite_at(420.0).unwrap());
+}

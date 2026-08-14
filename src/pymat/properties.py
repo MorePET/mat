@@ -852,6 +852,58 @@ class OpticalProperties:
         x = k / s
         return 100.0 * (1.0 + x - math.sqrt(x * x + 2.0 * x))
 
+    def km_split_at(
+        self, wavelength: Any, thickness_cm: float, backing_reflectance: float = 0.0
+    ) -> Optional[tuple]:
+        """`(R, T, A)` in PERCENT for a finite layer — every photon's fate.
+
+        Returns reflected, transmitted and absorbed fractions, which sum to
+        100% by construction. This is the accessor a segmented-detector model
+        wants: `T` is the inter-crystal crosstalk channel, `A` is the only true
+        loss, and `R` is the reflectance that layer *actually* delivers — which
+        is not `km_reflectance_infinite_at` unless the layer is thick.
+
+        `backing_reflectance` is what sits behind the layer (0 = black, i.e.
+        a transmitted photon is gone from this interface's point of view).
+
+        Note the limiting behaviour, because it is easy to get backwards:
+        with `k = 0` the thick-layer reflectance is exactly 1, not 0.999.
+        **Absorption is the only thing that makes R_inf differ from unity** —
+        it is not a small correction to a non-absorbing model, it is the entire
+        reason the asymptote is below 1. Finite thickness is what drives R
+        below R_inf; `k` is what sets R_inf itself.
+        """
+        k = self.km_k_at(wavelength)
+        s = self.km_s_at(wavelength)
+        if k is None or s is None or s <= 0 or thickness_cm <= 0:
+            return None
+        if k == 0:
+            sd = s * thickness_cm
+            r = sd / (1.0 + sd)
+            t = 1.0 / (1.0 + sd)
+            return (100.0 * r, 100.0 * t, 0.0)
+        a = 1.0 + k / s
+        b = math.sqrt(a * a - 1.0)
+        bsd = b * s * thickness_cm
+        coth = math.cosh(bsd) / math.sinh(bsd)
+        rg = backing_reflectance
+        r = (1.0 - rg * (a - b * coth)) / (a - rg + b * coth)
+        t = b / (a * math.sinh(bsd) + b * math.cosh(bsd))
+        return (100.0 * r, 100.0 * t, 100.0 * (1.0 - r - t))
+
+    def km_reflectance_at(
+        self, wavelength: Any, thickness_cm: float, backing_reflectance: float = 0.0
+    ) -> Optional[float]:
+        """Reflectance (%) of a FINITE layer — the number a real reflector delivers.
+
+        Prefer this over `km_reflectance_infinite_at` for any physical layer.
+        A 0.2 mm BaSO4 septum reflects ~92%, not the ~97% thick-layer limit and
+        certainly not the ~99.9% quoted for a pressed-powder standard, because
+        the balance goes straight through.
+        """
+        split = self.km_split_at(wavelength, thickness_cm, backing_reflectance)
+        return None if split is None else split[0]
+
     def km_transmittance_at(self, wavelength: Any, thickness_cm: float) -> Optional[float]:
         """Diffuse transmittance (%) through a finite layer, K-M hyperbolic form.
 

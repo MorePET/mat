@@ -662,3 +662,85 @@ class TestBaSO4TwoSourceDisagreement:
 
         patterson = pymat.baso4.properties.optical.km_reflectance_infinite_at(420) / 100.0
         assert 0.96 < patterson < 0.98
+
+
+class TestKubelkaMunkFiniteLayer:
+    """R(d), T(d), A(d) — the fates of a photon meeting a real reflector.
+
+    Added when a downstream reframing showed that a high semi-infinite
+    reflectance and a leaking septum are the same finite-thickness solution,
+    not two competing facts.
+    """
+
+    KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
+
+    def _opt(self):
+        return OpticalProperties(kubelka_munk=self.KM)
+
+    def test_split_closes_to_one_hundred_percent(self):
+        """R + T + A = 100 by construction, at every thickness. If this drifts,
+        photons are being created or destroyed."""
+        opt = self._opt()
+        for mm in (0.05, 0.1, 0.2, 0.5, 1.0, 5.0):
+            r, t, a = opt.km_split_at(420, mm / 10)
+            assert r + t + a == pytest.approx(100.0, abs=1e-9)
+            assert r >= 0 and t >= 0 and a >= 0
+
+    def test_finite_reflectance_is_below_the_thick_layer_limit(self):
+        opt = self._opt()
+        r_finite = opt.km_reflectance_at(420, 0.02)
+        r_inf = opt.km_reflectance_infinite_at(420)
+        assert r_finite < r_inf
+        assert r_finite == pytest.approx(91.9, abs=0.1)
+        assert r_inf == pytest.approx(97.18, abs=0.05)
+
+    def test_reflectance_rises_and_transmission_falls_with_thickness(self):
+        opt = self._opt()
+        rs = [opt.km_reflectance_at(420, d) for d in (0.01, 0.02, 0.03, 0.05, 0.1)]
+        ts = [opt.km_transmittance_at(420, d) for d in (0.01, 0.02, 0.03, 0.05, 0.1)]
+        assert rs == sorted(rs)
+        assert ts == sorted(ts, reverse=True)
+
+    def test_reflectance_converges_to_the_thick_layer_limit(self):
+        opt = self._opt()
+        assert opt.km_reflectance_at(420, 5.0) == pytest.approx(
+            opt.km_reflectance_infinite_at(420), abs=0.01
+        )
+
+    def test_split_agrees_with_the_standalone_transmittance_accessor(self):
+        opt = self._opt()
+        _, t, _ = opt.km_split_at(420, 0.02)
+        assert t == pytest.approx(opt.km_transmittance_at(420, 0.02))
+
+    def test_zero_absorption_gives_a_perfect_thick_reflector(self):
+        """The limit that is easy to get backwards: with k = 0 the thick-layer
+        reflectance is exactly 1, not 0.999. Absorption is the ONLY thing that
+        puts R_inf below unity — it is not a small correction to a
+        non-absorbing model, it is the whole reason the asymptote exists."""
+        opt = OpticalProperties(
+            kubelka_munk={"wavelengths_nm": [400, 500], "k": [0.0, 0.0], "s": [572.0, 572.0]}
+        )
+        assert opt.km_reflectance_infinite_at(450) == pytest.approx(100.0)
+        r, t, a = opt.km_split_at(450, 0.02)
+        assert a == pytest.approx(0.0)
+        # ...and the non-absorbing layer still leaks: R = sd/(1+sd).
+        sd = 572.0 * 0.02
+        assert r == pytest.approx(100.0 * sd / (1 + sd), abs=1e-9)
+        assert t == pytest.approx(100.0 / (1 + sd), abs=1e-9)
+
+    def test_backing_reflectance_raises_the_reflected_fraction(self):
+        opt = self._opt()
+        black = opt.km_reflectance_at(420, 0.02, backing_reflectance=0.0)
+        bright = opt.km_reflectance_at(420, 0.02, backing_reflectance=0.9)
+        assert bright > black
+
+    def test_baso4_header_numbers_are_what_the_code_computes(self):
+        """The R/T/A table written into the TOML header is a claim about this
+        code's output. Pin it, so prose and behaviour cannot diverge."""
+        import pymat
+
+        opt = pymat.baso4.properties.optical
+        for mm, exp_r, exp_t in ((0.1, 85.4, 14.4), (0.2, 91.9, 7.6), (0.6, 96.4, 2.3)):
+            r, t, _ = opt.km_split_at(420, mm / 10)
+            assert r == pytest.approx(exp_r, abs=0.05), mm
+            assert t == pytest.approx(exp_t, abs=0.05), mm

@@ -201,6 +201,48 @@ impl OpticalProperties {
         Some(100.0 * (1.0 + x - (x * x + 2.0 * x).sqrt()))
     }
 
+    /// `(R, T, A)` in PERCENT for a finite layer — every photon's fate.
+    ///
+    /// Sums to 100 by construction. `T` is the inter-crystal crosstalk channel
+    /// in a segmented detector, `A` is the only true loss, and `R` is the
+    /// reflectance the layer actually delivers — which is NOT
+    /// [`km_reflectance_infinite_at`] unless the layer is optically thick.
+    ///
+    /// `backing` is what sits behind the layer (0.0 = black).
+    ///
+    /// Note the limit: with `k = 0` the thick-layer reflectance is exactly 1,
+    /// not 0.999. Absorption is the only thing that puts R_inf below unity.
+    pub fn km_split_at(
+        &self,
+        wavelength_nm: f64,
+        thickness_cm: f64,
+        backing: f64,
+    ) -> Option<(f64, f64, f64)> {
+        let k = self.km_k.as_ref()?.interpolate(wavelength_nm);
+        let s = self.km_s.as_ref()?.interpolate(wavelength_nm);
+        if s <= 0.0 || thickness_cm <= 0.0 {
+            return None;
+        }
+        if k == 0.0 {
+            let sd = s * thickness_cm;
+            return Some((100.0 * sd / (1.0 + sd), 100.0 / (1.0 + sd), 0.0));
+        }
+        let a = 1.0 + k / s;
+        let b = (a * a - 1.0).sqrt();
+        let bsd = b * s * thickness_cm;
+        let coth = bsd.cosh() / bsd.sinh();
+        let r = (1.0 - backing * (a - b * coth)) / (a - backing + b * coth);
+        let t = b / (a * bsd.sinh() + b * bsd.cosh());
+        Some((100.0 * r, 100.0 * t, 100.0 * (1.0 - r - t)))
+    }
+
+    /// Reflectance (%) of a FINITE layer — the number a real reflector gives.
+    ///
+    /// Prefer this over [`km_reflectance_infinite_at`] for any physical layer.
+    pub fn km_reflectance_at(&self, wavelength_nm: f64, thickness_cm: f64) -> Option<f64> {
+        Some(self.km_split_at(wavelength_nm, thickness_cm, 0.0)?.0)
+    }
+
     /// Kubelka-Munk diffuse transmittance through a FINITE layer, PERCENT.
     ///
     /// Answers a different question from [`km_reflectance_infinite_at`]:
