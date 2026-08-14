@@ -20,8 +20,65 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 if TYPE_CHECKING:
     from pint import Quantity
 
-from .curves import TempCurve
+from .curves import TempCurve, WavelengthCurve
 from .units import ureg
+
+
+def _to_nm(wavelength: Any) -> float:
+    """Coerce a wavelength to bare nanometres.
+
+    Accepts a Pint `Quantity` (converted, so `500 * ureg.nm` and
+    `0.5 * ureg.micrometer` both work) or a bare number, which is
+    interpreted as nm — the schema spells every wavelength column
+    `wavelengths_nm`, so nm is the one unambiguous default (ADR-0004 §4).
+    """
+    if hasattr(wavelength, "to"):
+        try:
+            return float(wavelength.to(ureg.nanometer).magnitude)
+        except Exception as e:
+            raise ValueError(f"Wavelength must be a length. Got {wavelength}: {e}")
+    return float(wavelength)
+
+
+def _as_wl_curve(
+    raw: Optional[Dict[str, List[float]]], value_key: str
+) -> Optional[WavelengthCurve]:
+    """Lift a structured `{wavelengths_nm, <value_key>}` dict to a curve.
+
+    The structured optical slots (#153, #164) are stored as plain dicts so
+    the on-disk shape and the JSON round-trip stay unchanged; the curve is
+    built on demand by the `_at(lambda)` accessors.
+    """
+    if raw is None:
+        return None
+    return WavelengthCurve.from_toml(raw, value_key=value_key)
+
+
+def _eval_wl_or_scalar(
+    raw: Optional[Dict[str, List[float]]],
+    value_key: str,
+    scalar: Optional[float],
+    unit_str: Optional[str],
+    wavelength: Any,
+) -> Optional["Quantity"]:
+    """Shared wavelength evaluator: prefer spectrum, fall back to scalar.
+
+    The wavelength twin of `_eval_curve_or_scalar`. Same precedence rule
+    (structured data beats the scalar), same clamp-never-extrapolate
+    contract inherited from `WavelengthCurve`.
+    """
+    curve = _as_wl_curve(raw, value_key)
+    if curve is None and scalar is None:
+        return None
+    # Validate the argument even on the scalar path. Otherwise a caller who
+    # passes a temperature to a wavelength accessor gets a plausible number
+    # back from whichever materials happen to have only a scalar, and a
+    # hard error from the ones that have a spectrum — the worst possible mix.
+    nm = _to_nm(wavelength)
+    value = curve.interpolate(nm) if curve is not None else scalar
+    if unit_str:
+        return value * ureg(unit_str)
+    return value
 
 
 def _eval_curve_or_scalar(
@@ -458,8 +515,15 @@ class OpticalProperties:
     # Basic optical properties
     refractive_index: Optional[float] = None  # n at 550nm (default)
     transparency: Optional[float] = None  # % transmission (0-100) - MEASURED VALUE
+    # Bulk specular/total reflectivity, % (0-100) — same percent convention as
+    # `transparency` above. Reflector films (ESR, Teflon, Tyvek) carry this.
+    # NOTE (#243): `[esr.optical] reflectivity = 98.5` has been on disk since
+    # #147 but there was no field to receive it, so the loader silently
+    # dropped it on every load. Adding the field is the fix.
+    reflectivity: Optional[float] = None  # %
     absorption_coefficient: Optional[float] = None  # 1/cm
     absorption_length: Optional[float] = None  # mm (inverse of coefficient)
+    absorption_length_unit: str = "mm"
 
     # Scintillator properties (detector physics)
     light_yield: Optional[float] = None  # photons/MeV
@@ -489,6 +553,36 @@ class OpticalProperties:
     # Shape: {wavelengths_nm: [...], n: [...]}
     refractive_index_dispersion: Optional[Dict[str, List[float]]] = None
 
+    # ------------------------------------------------------------------
+    # Wavelength-resolved attenuation and the self-absorption split (#243)
+    # ------------------------------------------------------------------
+    # Shape for every `_spectrum` slot below: {wavelengths_nm: [...], values: [...]}.
+    # Each is the wavelength-resolved sibling of the scalar above it, and the
+    # `_at(lambda)` accessors prefer the spectrum when both are present.
+    absorption_length_spectrum: Optional[Dict[str, List[float]]] = None
+
+    # A photon absorbed in a doped scintillator has TWO physically distinct
+    # fates, and one lumped attenuation length cannot express the difference
+    # (ADR-0004 §5):
+    #   matrix — absorbed by the host lattice/impurities. Photon is gone.
+    #   reabs  — absorbed by the activator (e.g. Ce3+) on the overlap between
+    #            its excitation tail and its own emission band. The photon may
+    #            be re-emitted after a fresh decay draw, which puts a slow tail
+    #            on the timing distribution rather than simply losing light.
+    # Populate BOTH or NEITHER: a lone `absorption_length_matrix` reads as "the
+    # rest is self-absorption", which is a claim the data usually cannot make.
+    # When the split is not measurable for a material, declare it absent via
+    # the `[<material>._absent]` table rather than folding it into one number.
+    absorption_length_matrix: Optional[float] = None  # mm
+    absorption_length_matrix_unit: str = "mm"
+    absorption_length_matrix_spectrum: Optional[Dict[str, List[float]]] = None
+    absorption_length_reabs: Optional[float] = None  # mm
+    absorption_length_reabs_unit: str = "mm"
+    absorption_length_reabs_spectrum: Optional[Dict[str, List[float]]] = None
+    # Probability in [0, 1] that an activator-reabsorbed photon is re-emitted
+    # rather than lost non-radiatively. Only meaningful alongside `_reabs`.
+    reemit_qe: Optional[float] = None
+
     # Detector-physics scalars (#153)
     afterglow_pct_at_3ms: Optional[float] = None  # count-rate ceiling
     afterglow_pct_at_100ms: Optional[float] = None
@@ -496,6 +590,14 @@ class OpticalProperties:
     intrinsic_resolution_pct_at_662keV: Optional[float] = None  # 137Cs photopeak FWHM
     temperature_coefficient_light_yield: Optional[float] = None  # %/K
     hygroscopic: Optional[bool] = None  # NaI:Tl yes, BGO/LYSO no
+
+    # Activator identity and concentration (#243). Both have been written in
+    # the scintillator TOMLs since before there were fields to receive them
+    # (`[lyso.Ce.optical] dopant_pct = 0.1`, `[nai.Tl.optical] dopant = "Tl"`),
+    # so the loader silently dropped them on every load. The activator is what
+    # makes a scintillator scintillate; it is not an incidental label.
+    dopant: Optional[str] = None  # e.g. "Ce", "Tl", "Na"
+    dopant_pct: Optional[float] = None  # mol %
 
     # T-dependent curves (#148). Refractive index, light yield, decay time
     # are the dimensionless / unit-implicit ones — no `_unit` field exists.
@@ -515,6 +617,12 @@ class OpticalProperties:
             return None
         return self.rayleigh_length * ureg(self.rayleigh_length_unit)
 
+    @property
+    def absorption_length_qty(self) -> Optional["Quantity"]:
+        if self.absorption_length is None:
+            return None
+        return self.absorption_length * ureg(self.absorption_length_unit)
+
     def refractive_index_at(self, temp: "Quantity") -> Optional[float]:
         """Refractive index at T. Curve > scalar fallback (#148)."""
         return _eval_curve_or_scalar(self.refractive_index_curve, self.refractive_index, None, temp)
@@ -526,6 +634,98 @@ class OpticalProperties:
     def decay_time_at(self, temp: "Quantity") -> Optional[float]:
         """Scintillator decay time at T. Curve > scalar fallback (#148)."""
         return _eval_curve_or_scalar(self.decay_time_curve, self.decay_time, None, temp)
+
+    # =====================================================================
+    # Wavelength accessors (#243, ADR-0004 §4)
+    #
+    # The lambda twins of the `_at(T)` methods above. Deliberately named
+    # differently — `refractive_index_at(T)` is temperature and has shipped
+    # since #148, so overloading it on argument type would be a silent
+    # behaviour change for existing callers. `n_at(lambda)` is unambiguous.
+    #
+    # Every one accepts a Pint Quantity or a bare number in nm, prefers the
+    # structured spectrum over the scalar, and CLAMPS outside the measured
+    # range rather than extrapolating.
+    # =====================================================================
+
+    @property
+    def refractive_index_dispersion_curve(self) -> Optional[WavelengthCurve]:
+        """`refractive_index_dispersion` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.refractive_index_dispersion, "n")
+
+    @property
+    def emission_spectrum_curve(self) -> Optional[WavelengthCurve]:
+        """`emission_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.emission_spectrum, "intensities")
+
+    @property
+    def absorption_length_curve(self) -> Optional[WavelengthCurve]:
+        """`absorption_length_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.absorption_length_spectrum, "values")
+
+    def n_at(self, wavelength: Any) -> Optional[float]:
+        """Refractive index at a wavelength. Dispersion > scalar fallback.
+
+        Args:
+            wavelength: Pint Quantity (e.g. `420 * ureg.nm`) or bare nm.
+
+        Returns:
+            Dimensionless n, or None when neither dispersion nor scalar is set.
+        """
+        return _eval_wl_or_scalar(
+            self.refractive_index_dispersion, "n", self.refractive_index, None, wavelength
+        )
+
+    def absorption_length_at(self, wavelength: Any) -> Optional["Quantity"]:
+        """Bulk attenuation length at a wavelength. Spectrum > scalar fallback.
+
+        This is the LUMPED length — everything that removes a photon from the
+        beam. When a material declares the `_matrix` / `_reabs` split, prefer
+        those: they separate true loss from re-emittable self-absorption.
+        """
+        return _eval_wl_or_scalar(
+            self.absorption_length_spectrum,
+            "values",
+            self.absorption_length,
+            self.absorption_length_unit,
+            wavelength,
+        )
+
+    def absorption_length_matrix_at(self, wavelength: Any) -> Optional["Quantity"]:
+        """Host-matrix (true-loss) attenuation length at a wavelength."""
+        return _eval_wl_or_scalar(
+            self.absorption_length_matrix_spectrum,
+            "values",
+            self.absorption_length_matrix,
+            self.absorption_length_matrix_unit,
+            wavelength,
+        )
+
+    def absorption_length_reabs_at(self, wavelength: Any) -> Optional["Quantity"]:
+        """Activator self-absorption length at a wavelength.
+
+        A photon absorbed on this channel may be re-emitted with probability
+        `reemit_qe` after a fresh decay draw.
+        """
+        return _eval_wl_or_scalar(
+            self.absorption_length_reabs_spectrum,
+            "values",
+            self.absorption_length_reabs,
+            self.absorption_length_reabs_unit,
+            wavelength,
+        )
+
+    def emission_at(self, wavelength: Any) -> Optional[float]:
+        """Relative emission intensity at a wavelength, or None if no spectrum.
+
+        No scalar fallback exists by construction — `emission_peak` is one
+        point on a band, not a stand-in for its shape. A caller with only a
+        peak should sample monochromatically and know that it is doing so.
+        """
+        curve = self.emission_spectrum_curve
+        if curve is None:
+            return None
+        return curve.interpolate(_to_nm(wavelength))
 
 
 @dataclass
@@ -724,6 +924,12 @@ class ComplianceProperties:
     uv_resistant: Optional[bool] = None
     radiation_resistant: Optional[bool] = None  # gamma, neutron, etc.
     flame_retardant: Optional[bool] = None
+    # Distinct from `flame_retardant`, which is a property of a treated
+    # material; `flammable` is a hazard classification. Both written in the
+    # TOMLs (hydrogen, methane) with no field to land in until #243.
+    flammable: Optional[bool] = None
+    # Handling hazard — beryllia dust is the canonical case.
+    toxic: Optional[bool] = None
 
     # Recyclability
     recyclable: Optional[bool] = None

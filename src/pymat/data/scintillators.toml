@@ -10,14 +10,58 @@ density_value = 7.1
 density_unit = "g/cm^3"
 
 [lyso.optical]
+# LYSO is optically BIAXIAL positive — n_x = 1.8077, n_y = 1.8110, n_z = 1.8307
+# at 524 nm (Chen/Mao/Zhu 2011). The scalar below is the isotropic value the
+# vendor datasheets quote near the emission peak, which is what a transport
+# code using a single index wants; the anisotropy is recorded in the source
+# note rather than faked with a tensor the schema cannot hold.
 refractive_index = 1.82
 light_yield = 32000
 decay_time = 41
 emission_peak = 420
+# Emission band shape. Peak 420 nm (vendor), but the band is centred nearer
+# 430 nm with ~60 nm FWHM (Bosca & Lopez 2023) because it is the sum of two
+# inequivalent Ce sites (Ce1 ~393/427 nm, Ce2 ~460 nm).
+emission_range = [380, 600]
+# Lumped bulk attenuation. See the _sources note — this is a Monte-Carlo
+# CONVENTION with a traceable provenance chain, not a measured bulk constant.
+absorption_length = 200.0
+# Self-absorption channel. Bosca & Lopez 2023 measure a loss coefficient of
+# alpha_L = 1.7e-2 /cm in the emission band over 105 mm of propagation;
+# 1/alpha_L = 58.8 cm = 588 mm. This is the Ce re-absorption channel
+# specifically, not total attenuation.
+absorption_length_reabs = 588.0
+temperature_coefficient_light_yield = -0.15
+hygroscopic = false
 
 [lyso.nuclear]
 radiation_length = 1.14
 interaction_length = 25
+# 176-Lu is 2.6% of natural Lu and beta-decays with T_1/2 = 3.76e10 yr, giving
+# LYSO a permanent internal count rate. Load-bearing for low-activity PET.
+intrinsic_activity_Bq_per_g = 40
+
+[lyso._sources]
+"optical.refractive_index" = { citation = "chen_mao_zhu_2011", kind = "doi", ref = "10.1016/j.optmat.2011.10.006", license = "proprietary-reference-only", note = "Chen, Mao, Zhu, 'Refractive index measurement of cerium-doped Lu_xY_(2-x)SiO5 single crystal', Opt. Mater. 34, 351-353 (2011). Minimum-deviation method, 7 wavelengths over 400-700 nm. Principal indices at 524 nm: n_x=1.8077, n_y=1.8110, n_z=1.8307. The 1.82 scalar here is the vendor near-peak figure (Luxium quotes 1.81 at 420 nm, Berkeley Nucleonics 1.82); it sits within the measured principal-index spread." }
+"optical.emission_range" = { citation = "bosca_lopez_2023", kind = "doi", ref = "10.1038/s41598-023-32689-z", license = "CC-BY-4.0", note = "Bosca & Lopez, Sci. Rep. 13, 7199 (2023). Band centred 430 nm with 60 nm FWHM from a two-Ce-site Gaussian decomposition (Ce1 at 3.17 eV / 2.93 eV = 393 / 427 nm; Ce2 near 460 nm). The [380, 600] range here is the practical support, not a measured cutoff." }
+"optical.absorption_length" = { citation = "usubov_2013", kind = "doi", ref = "10.48550/arXiv.1305.3010", license = "proprietary-reference-only", note = "CAUTION: this is a Monte-Carlo CONVENTION, not a measured bulk constant. Usubov 2013 adopts 20 cm flat across the emission band, inferred from Vilardi et al. 2006 (NIM A 564, 506-514, doi:10.1016/j.nima.2006.04.079), who measured ~10 cm EFFECTIVE attenuation in 3.2x3.2x100 mm polished bars — a figure that includes surface and wrapping losses, so it is a lower bound on the bulk value. Other simulation papers use 15 cm and 40 cm. A consumer that needs the physical bulk number should prefer the self-absorption channel below, which is directly measured." }
+"optical.absorption_length_reabs" = { citation = "bosca_lopez_2023", kind = "doi", ref = "10.1038/s41598-023-32689-z", license = "CC-BY-4.0", note = "Self-absorption loss coefficient alpha_L = 1.7e-2 /cm measured over 105 mm of propagation in the emission band; inverted to 588 mm. This is the Ce re-absorption channel only. Corroborated qualitatively by Mao/Zhang/Zhu 2008 (IEEE TNS 55, 1229, doi:10.1109/TNS.2008.922804), who observe the emission spectrum red-shifting with path length in a 200 mm crystal — the signature of the Ce excitation tail eating the emission blue edge." }
+"optical.temperature_coefficient_light_yield" = { citation = "tully_2022", kind = "doi", ref = "10.48550/arXiv.2205.14890", license = "proprietary-reference-only", note = "-0.15 %/degC mean across producers; producer range -0.28 to -0.08 %/degC." }
+"optical.hygroscopic" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "Non-hygroscopic — one of LYSO's main practical advantages over NaI:Tl." }
+"nuclear.intrinsic_activity_Bq_per_g" = { citation = "enriquez_mier_y_teran_2020", kind = "doi", ref = "10.1186/s40658-020-00291-1", license = "CC-BY-4.0", note = "~40 Bq/g (~300 Bq/cm^3 at 7.1 g/cm^3). The 39 Bq/g figure widely quoted elsewhere is the same number derived from 2.59% 176-Lu abundance and T_1/2 = 3.76e10 yr; the ~5% spread tracks the half-life uncertainty (Kossert et al. 2023 remeasure 3.72e10 yr). Decay: beta- endpoint 593 keV, prompt gammas at 88 / 202 / 307 keV (Alva-Sanchez et al. 2018, doi:10.1038/s41598-018-35684-x, CC-BY-4.0)." }
+
+# ---------------------------------------------------------------------------
+# Declared absences (#243, ADR-0004 §6). These are NOT gaps nobody looked at.
+# Each one was searched for and is recorded here so a downstream engine can
+# tell "unmeasured" from "unvisited" — including the field the strata brief
+# calls its single highest-value ask.
+# ---------------------------------------------------------------------------
+[lyso._absent]
+"optical.emission_spectrum" = { reason = "proprietary", note = "No tabulated (wavelength, intensity) LYSO:Ce emission spectrum exists in a redistributable source. The two papers that plot one — Mao/Zhang/Zhu 2008 (IEEE TNS 55, 1229, doi:10.1109/TNS.2008.922804) and Melcher & Schweitzer's original LSO characterisation — are paywalled figures, and digitising them would produce a derivative of a proprietary figure. What IS available and cited above: peak 420 nm, band centre 430 nm, FWHM 60 nm, and the two-Ce-site Gaussian decomposition from Bosca & Lopez 2023 (CC-BY). A consumer needing a curve should synthesise it from those parameters ON ITS OWN SIDE and label it as synthesised — this database will not ship a fabricated Gaussian as if it were measured." }
+"optical.refractive_index_dispersion" = { reason = "proprietary", note = "Sellmeier coefficients for LYSO exist — Chen/Mao/Zhu 2011 (doi:10.1016/j.optmat.2011.10.006) fit all three principal indices, and Petrosyan et al. 2015 (doi:10.1016/j.optmat.2015.06.023) publish another — but both sit behind Elsevier paywalls and the coefficients could not be extracted. refractiveindex.info, which is CC0 and is the automated enricher's source (#164), carries neither LSO nor LYSO; verified twice. This is a genuine absence, not a licensing artifact of our tooling. Populating it requires paid access to Chen 2011." }
+"optical.decay_components" = { reason = "not-measured", note = "No clean multi-exponential (tau_i, A_i) table for standard uncodoped LYSO:Ce at room temperature exists in an openly readable primary. The review literature repeats 'fast 20-30 ns at 10-40%, slow ~43 ns at 60-90%' but it could not be tied to a single measurement paper. Related primaries that are NOT the same material or condition: ter Weele/Schaart/Dorenbos 2014 (doi:10.1186/2197-7364-1-S1-A10) for Ca-codoped LSO:Ce, and Jary et al. 2015 (doi:10.1002/pssb.201451234) for a microsecond-scale thermally-stimulated component. The single-exponential decay_time above is the honest representation of what is published." }
+"optical.absorption_length_matrix" = { reason = "not-measured", note = "The host-matrix loss channel with cerium subtracted has no clean measurement. Undoped LSO/LYSO transmits down to a ~200 nm cutoff, so the matrix contribution at 420-500 nm is expected to be small relative to the Ce self-absorption recorded above — but 'expected to be small' is not a number. Declared absent rather than back-computed from absorption_length minus absorption_length_reabs, which would silently promote a Monte-Carlo convention into a measurement (ADR-0004 §5)." }
+"optical.reemit_qe" = { reason = "not-measured", note = "No published scalar for the probability that a REABSORBED scintillation photon is re-emitted. The number frequently pressed into this role is Bosca & Lopez 2023's absolute photoluminescence quantum yield, PLQY = 0.51 at 365 nm excitation (CC-BY, doi:10.1038/s41598-023-32689-z) — but PLQY under external UV pumping is not the same physical quantity as re-emission efficiency following self-absorption within the emission band, and the substitution is an assumption, not a measurement. A consumer that needs a value should adopt 0.51 explicitly as an assumption anchored to that paper, on its own side, where the assumption is visible in the run config." }
 [lyso.vis]
 base_color = [0.0, 1.0, 1.0, 0.85]
 metallic = 0.0
@@ -37,7 +81,29 @@ formula = "Lu1.8Y0.2SiO5:Ce"
 [lyso.Ce.optical]
 light_yield = 33000
 decay_time = 41
+dopant = "Ce"
 dopant_pct = 0.1
+# 72 ps rise, measured under 511 keV excitation with a solid-state photon
+# counter. Short relative to the 41 ns decay, but it is the term that sets the
+# leading edge of the timing distribution, so a CTR calculation needs it.
+rise_time = 0.072
+
+[lyso.Ce._sources]
+"optical.rise_time" = { citation = "seifert_2012", kind = "doi", ref = "10.1088/1748-0221/7/09/P09004", license = "CC-BY-3.0", note = "Seifert et al., JINST 7 P09004 (2012). Same measurement reports a 43 ns single-exponential decay under 511 keV excitation, consistent with the 41 ns photoluminescence lifetime above." }
+"optical.dopant_pct" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "Nominal Ce doping; producers vary and rarely publish exact concentrations. Tully 2022 (arXiv:2205.14890) finds ~8% relative spread in light output across 8 producers, of which doping variation is one contributor." }
+
+# LYSO:Ce with a polished crystal face. A treatment is a substance fact — the
+# face was prepared this way — and everything else inherits (#243).
+#
+# Deliberately NOT carrying a `default_surface` key. Which finish a polished
+# crystal is then WRAPPED in (ESR with grease? Teflon with an air gap?) is a
+# fact about a detector somebody built, not about the crystal, and it would
+# inherit down to every vendor variant below as a wrapping choice nobody made.
+# The surface catalogue in surfaces.toml names the finishes; pairing a material
+# with a finish is the consuming engine's job. See ADR-0004 §9.
+[lyso.Ce.polished]
+name = "LYSO:Ce, polished"
+treatment = "polished"
 
 # Saint-Gobain
 [lyso.Ce.saint_gobain]
@@ -49,8 +115,15 @@ name = "Saint-Gobain PreLude 420 LYSO:Ce"
 vendor = "saint_gobain"
 
 [lyso.Ce.saint_gobain.prelude420.optical]
-light_yield = 34000
+# Corrected 34000 -> 33200 in #243: the Luxium (formerly Saint-Gobain Crystals)
+# PreLude 420 data sheet states 33200 ph/MeV. 34000 was an uncited round-up.
+light_yield = 33200
 decay_time = 41
+refractive_index = 1.81
+
+[lyso.Ce.saint_gobain.prelude420._sources]
+"optical.light_yield" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "33200 ph/MeV. Saint-Gobain Crystals was rebranded Luxium Solutions in 2022; PreLude 420 is the same product line." }
+"optical.refractive_index" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "1.81 at the 420 nm emission peak — the vendor's own figure, slightly below the 1.82 generic scalar on the parent." }
 
 # Epic Crystal
 [lyso.Ce.epic]
@@ -80,6 +153,24 @@ refractive_index = 2.15
 light_yield = 8500
 decay_time = 300
 emission_peak = 480
+emission_range = [375, 650]
+hygroscopic = false
+# DO NOT hand-author `refractive_index_dispersion` here. `bgo` is inside the
+# scope of the add-only refractiveindex.info enricher
+# (scripts/enrich_from_refractiveindex.py, #164) alongside nai, nai.Tl, csi,
+# csi.Tl and csi.Na — see ADR-0004 §10. Hand-written data would permanently
+# mask the automated pull and the two would diverge invisibly.
+#
+# The data exists and is CC0: Williams et al., Appl. Opt. 35, 3562-3569 (1996),
+# doi:10.1364/AO.35.003562, Sellmeier n^2 - 1 = 3.1218393*L^2/(L^2 - 0.1807^2)
+# for L in um over 0.305-1.0 um, republished by refractiveindex.info under CC0.
+# It gives n = 2.177 at 420 nm and 2.080 at the 480 nm emission peak — note
+# that the 2.15 scalar above sits between them, so a monochromatic-at-peak
+# simulation using it is off by ~3% in n at the peak.
+#
+# THE ACTION IS TO RUN THE ENRICHER, not to type the numbers:
+#     python scripts/enrich_from_refractiveindex.py --key bgo --dry-run
+#     python scripts/enrich_from_refractiveindex.py --key bgo --write
 
 [bgo.nuclear]
 radiation_length = 1.12
@@ -563,6 +654,14 @@ ref = "py-mat curation history; values from handbook/vendor/Wikidata aggregate (
 license = "proprietary-reference-only"
 
 # --- BGO ---------------------------------------------------------------------
+
+[bgo._sources]
+"optical.emission_range" = { citation = "luxium_bgo", kind = "vendor", ref = "https://luxiumsolutions.com/radiation-detection-scintillators/crystal-scintillators/bgo-bismuth-germanate", license = "proprietary-reference-only", note = "Practical band support around the 480 nm peak. Neither the Luxium nor the Berkeley Nucleonics BGO datasheet states an emission FWHM — see _absent." }
+"optical.hygroscopic" = { citation = "luxium_bgo", kind = "vendor", ref = "https://luxiumsolutions.com/radiation-detection-scintillators/crystal-scintillators/bgo-bismuth-germanate", license = "proprietary-reference-only", note = "Non-hygroscopic." }
+
+[bgo._absent]
+"optical.emission_spectrum" = { reason = "not-measured", note = "Same situation as LYSO: peak (480 nm) is universally published, a tabulated (wavelength, intensity) curve is not, and neither vendor datasheet states an FWHM. Unlike LYSO, BGO's refractive-index dispersion IS available under CC0 (Williams et al. 1996, doi:10.1364/AO.35.003562) — but it is the automated enricher's to write, not this file's. See the comment on [bgo.optical]." }
+"optical.decay_components" = { reason = "not-measured", note = "BGO is dominated by a ~300 ns component with a small fast contribution; one secondary source quotes 45.8 ns (8%) / 365 ns (92%) but it could not be traced to a readable primary. Left absent rather than recorded on a broken citation chain." }
 
 [bgo._sources."optical.light_yield"]
 citation = "weber_monchamp_1973"

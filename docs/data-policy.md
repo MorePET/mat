@@ -44,6 +44,7 @@ The `license` field on every `_sources` entry MUST be one of:
 |---|---|---|
 | `CC0` | Public domain dedication, no attribution required | Wikidata, refractiveindex.info, HEPData |
 | `PD-USGov` | US Government work — not copyrightable in US | NIST WebBook, NIST Cryogenic, NASA Outgassing, NIST PhysRefData |
+| `CC-BY-3.0` | Creative Commons Attribution 3.0 — attribution required | JINST, several IOP/SISSA detector journals |
 | `CC-BY-4.0` | Creative Commons Attribution 4.0 — attribution required | Materials Project, OQMD, NOMAD, SCOAP3 |
 | `CC-BY-SA-4.0` | CC-BY-SA — attribution + share-alike | Some Wikipedia-derived data (rare; prefer Wikidata) |
 | `Geant4-SL` | Geant4 Software License — BSD-like, attribution required | Geant4 `G4NistMaterialBuilder` constants |

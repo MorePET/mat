@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     pass
 
 from .properties import AllProperties
-from .sources import Source, resolve_path
+from .sources import Absent, Source, resolve_path
 
 # Type variable for generic object application
 T = TypeVar("T")
@@ -137,6 +137,10 @@ class _MaterialInternal:
 
     # Provenance (#150) — keyed by dotted property path; `_default` fallback.
     _sources: Dict[str, Source] = field(default_factory=dict, repr=False)
+
+    # Declared absences (#243) — keyed by dotted property path. Same
+    # parent-overlay inheritance as `_sources`. See `Material.absent()`.
+    _absent: Dict[str, Absent] = field(default_factory=dict, repr=False)
 
     # Multi-axial filterable tags (#132). Orthogonal to the TOML
     # hierarchy — chemistry / function / industry / treatment /
@@ -741,6 +745,27 @@ class _MaterialInternal:
             seen.setdefault(src.citation, src)
         return "\n\n".join(s.to_bibtex() for s in seen.values())
 
+    def absent(self, path: str) -> Optional[Absent]:
+        """Return the declared absence for a property path, or None (#243).
+
+        A `None` property value with no `Absent` entry means "we have not
+        said anything about this". A `None` with an `Absent` entry means
+        "we looked; here is why there is no number". Downstream engines
+        should treat the two differently — the first is a gap in the
+        database, the second is a fact about the literature.
+
+        Accepts short aliases (`"decay_time"`) or fully-qualified paths.
+        Unlike `source_of`, there is no `_default` fallback: an absence is
+        always specific to one property.
+        """
+        if not self._absent:
+            return None
+        return self._absent.get(resolve_path(path))
+
+    def is_absent(self, path: str) -> bool:
+        """True when `path` carries an explicit absence declaration (#243)."""
+        return self.absent(path) is not None
+
     def __repr__(self) -> str:
         """String representation showing path and density."""
         density_str = f"ρ={self.density} g/cm³" if self.density else "ρ=?"
@@ -828,6 +853,7 @@ class Material(_MaterialInternal):
         parent: Optional["Material"] = None,
         _key: Optional[str] = None,
         _sources: Optional[Dict[str, Source]] = None,
+        _absent: Optional[Dict[str, Absent]] = None,
         tags: Optional[List[str]] = None,
     ):
         # Call parent init without density
@@ -851,6 +877,7 @@ class Material(_MaterialInternal):
             parent=parent,
             _key=_key,
             _sources=_sources or {},
+            _absent=_absent or {},
             tags=list(tags) if tags is not None else [],
         )
 

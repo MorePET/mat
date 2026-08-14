@@ -61,7 +61,8 @@ from .properties import (
     ThermalProperties,
 )
 from .search import search
-from .sources import Source
+from .sources import Absent, Source
+from .surfaces import Surface, surfaces
 from .units import ureg
 from .vis import FinishEntry, Vis, VisDeltas
 
@@ -82,6 +83,9 @@ __all__ = [
     "ComplianceProperties",
     "SourcingProperties",
     "Source",
+    "Absent",
+    "Surface",
+    "surfaces",
     "ureg",
     "load_toml",
     "load_category",

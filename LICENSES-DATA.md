@@ -18,5 +18,8 @@ py-materials data corpus. Per the licenses, attribution is required.
 | `Wikipedia: Lutetium (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Lutetium |
 | `Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics)` | CC-BY-SA-4.0 | wikipedia:Tantalum |
 | `Wikipedia: Tantalum (CRC Handbook of Chemistry & Physics) + PDG` | CC-BY-SA-4.0 | wikipedia:Tantalum |
+| `bosca_lopez_2023` | CC-BY-4.0 | 10.1038/s41598-023-32689-z |
+| `enriquez_mier_y_teran_2020` | CC-BY-4.0 | 10.1186/s40658-020-00291-1 |
 | `pdg_2024_atomic_nuclear_properties` | CC-BY-4.0 | pdg.lbl.gov:atomic-nuclear/shielding-concrete |
+| `seifert_2012` | CC-BY-3.0 | 10.1088/1748-0221/7/09/P09004 |
 | `wikipedia_aln` | CC-BY-SA-4.0 | https://en.wikipedia.org/wiki/Aluminium_nitride |

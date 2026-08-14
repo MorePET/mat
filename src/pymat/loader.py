@@ -26,11 +26,11 @@ if TYPE_CHECKING:
 
 from . import registry
 from .core import Material
-from .curves import TempCurve
+from .curves import TempCurve, WavelengthCurve
 from .properties import (
     AllProperties,
 )
-from .sources import Source, merge_sources, parse_sources_table
+from .sources import Absent, Source, merge_sources, parse_absent_table, parse_sources_table
 from .units import STANDARD_UNITS
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,29 @@ def _parse_composition(comp: Any) -> dict[str, Any] | None:
     if not isinstance(comp, dict):
         return comp
     return {el: _parse_value(val) for el, val in comp.items()}
+
+
+# Structured wavelength-indexed optical slots and the name of their value
+# column (#243). Stored on the dataclasses as plain dicts — the on-disk shape
+# predates `WavelengthCurve` and downstream JSON round-trips depend on it —
+# but validated at load by building a throwaway curve, so a mismatched-length
+# or unsorted spectrum raises here rather than at first query.
+_WAVELENGTH_SLOTS: Dict[str, str] = {
+    "refractive_index_dispersion": "n",
+    "emission_spectrum": "intensities",
+    "absorption_length_spectrum": "values",
+    "absorption_length_matrix_spectrum": "values",
+    "absorption_length_reabs_spectrum": "values",
+    "reflectivity_spectrum": "values",
+}
+
+
+def _validate_wavelength_slot(prop_name: str, key: str, value: Any) -> None:
+    """Raise if a structured wavelength slot is malformed. See `_WAVELENGTH_SLOTS`."""
+    try:
+        WavelengthCurve.from_toml(value, value_key=_WAVELENGTH_SLOTS[key])
+    except ValueError as e:
+        raise ValueError(f"{prop_name}.{key}: {e}") from e
 
 
 def _build_properties_from_dict(
@@ -146,6 +169,8 @@ def _build_properties_from_dict(
             if isinstance(raw_value, dict) and (set(raw_value) & _ufloat_keys):
                 parsed = _parse_value(raw_value)
             else:
+                if base_key in _WAVELENGTH_SLOTS and isinstance(raw_value, dict):
+                    _validate_wavelength_slot(prop_name, base_key, raw_value)
                 parsed = raw_value
             sibling = stddev_map.get(base_key)
             if sibling is not None:
@@ -329,6 +354,21 @@ def _resolve_material_node(
     else:
         sources = dict(parent_sources)
 
+    # Declared absences (#243). Same parent-overlay shape as `_sources` —
+    # a child that measures what its parent could not simply omits the
+    # entry and sets the value; a child re-declaring the path wins.
+    parent_absent: Dict[str, Absent] = (
+        parent_material._absent if parent_material is not None else {}
+    )
+    raw_absent = data.get("_absent")
+    if raw_absent is not None:
+        if not isinstance(raw_absent, dict):
+            kind = type(raw_absent).__name__
+            raise ValueError(f"{key}._absent must be a TOML table, got {kind}")
+        absent = {**parent_absent, **parse_absent_table(raw_absent)}
+    else:
+        absent = dict(parent_absent)
+
     # Tags (#132). Multi-axial filterable labels orthogonal to the
     # TOML hierarchy. Children INHERIT parent tags and EXTEND at
     # child level — declare only what's new. Order-preserving union
@@ -362,6 +402,7 @@ def _resolve_material_node(
         parent=parent_material,
         _key=key,
         _sources=sources,
+        _absent=absent,
         tags=tags,
     )
 

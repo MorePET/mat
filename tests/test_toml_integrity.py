@@ -35,6 +35,13 @@ from pymat.loader import load_category
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "src" / "pymat" / "data"
 
+# Material-catalogue TOMLs. `surfaces.toml` (#243) lives in the same directory
+# but is not a material catalogue — its nodes are `Surface` entries with their
+# own field vocabulary and their own loader, so the material-shape walkers below
+# do not apply to it. Its integrity is covered by tests/test_surfaces.py.
+NON_MATERIAL_TOMLS = {"surfaces.toml"}
+MATERIAL_TOMLS = sorted(p for p in DATA_DIR.glob("*.toml") if p.name not in NON_MATERIAL_TOMLS)
+
 # The loader accepts these top-level groups inside a material node.
 # Anything else (other than child material keys + known leaf keys)
 # is a typo or a drift signal.
@@ -116,7 +123,7 @@ class TestTOMLsAllParse:
 class TestTOMLShape:
     """Lint the raw TOML tree, not just the loaded material objects."""
 
-    @pytest.mark.parametrize("toml_path", sorted(DATA_DIR.glob("*.toml")))
+    @pytest.mark.parametrize("toml_path", MATERIAL_TOMLS)
     def test_no_pbr_section(self, toml_path):
         """3.0 removed [pbr] — the loader rejects it, but catching it in the
         data files themselves gives a clearer error on contributor PRs."""
@@ -126,7 +133,7 @@ class TestTOMLShape:
             f"{toml_path.name}: legacy [pbr] section(s) present (3.0 uses [vis]): {offenders}"
         )
 
-    @pytest.mark.parametrize("toml_path", sorted(DATA_DIR.glob("*.toml")))
+    @pytest.mark.parametrize("toml_path", MATERIAL_TOMLS)
     def test_only_known_property_groups(self, toml_path):
         """Catch typos like [metals.aluminum.mechnical] — the loader would
         silently ignore the misspelled group, but the data would then be

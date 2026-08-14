@@ -1,0 +1,339 @@
+# ============================================================================
+# surfaces.toml — measured optical surface finishes (#243, ADR-0004)
+# ============================================================================
+#
+# A surface here is an INTERFACE, not a bulk. Each entry describes a measured
+# crystal-face / reflector / coupling triple: what treatment the face had, what
+# reflector sat against it, and what filled the gap between them.
+#
+# Scope is deliberately narrow — MEASURED interfaces only. Every entry below
+# comes from the Geant4 `G4RealSurface` 2.2 data set: 21 LBNL look-up tables
+# (Janecek & Moses 2010) and 9 DAVIS look-up tables (Roncali & Cherry 2013).
+#
+# NOT here, on purpose:
+#
+#   * Geant4's six analytic UNIFIED/GLISUR finishes — `polished`, `ground`,
+#     `polishedfrontpainted`, `polishedbackpainted`, `groundfrontpainted`,
+#     `groundbackpainted`. These ship no data file. They are model selections
+#     parameterised by a fitted `sigma_alpha`, so they are run-time policy for
+#     the consuming engine, not measurements (ADR-0004 §3).
+#   * The three bare-surface LBNL enum members `polishedair`, `etchedair` and
+#     `groundair`. They ARE `dielectric_LUT` enum values, but `ReadLUTFile()`
+#     finds no `.dat` for them — there is no measurement behind the name. They
+#     are named here in this comment so the omission is greppable rather than
+#     silent. (24 LBNL LUT enum members - 3 unmeasured = the 21 below.)
+#   * Assignments. Which face of which crystal carries which finish is a fact
+#     about a built detector, not about matter.
+#
+# `lut_surface` is the exact `G4OpticalSurfaceFinish` enum spelling, transcribed
+# verbatim from `source/materials/include/G4OpticalSurface.hh`. The casing is
+# inconsistent between families (`polishedvm2000glue` vs `PolishedESRGrease_LUT`)
+# because Geant4's is. Do not normalise it — downstream consumers match on it.
+#
+# `coupling` vocabulary:
+#   air_gap          — a reflector is present, with air between it and the face.
+#                      The photon meets a crystal->air Fresnel step first: large
+#                      index contrast, small critical angle, strong TIR
+#                      light-piping. This is the mechanism DOI designs exploit.
+#   optical_contact  — the gap is index-filled (grease, glue, meltmount). The
+#                      photon meets the polymer directly. `coupling_index` is
+#                      then required: the index of the filler is the entire
+#                      physical difference between the two cases.
+#   none             — no reflector at all; a bare face against the ambient.
+#
+# Note (Kang et al., NIM A 2017, doi:10.1016/j.nima.2017.02.032): 3M ESR is a
+# multilayer interference stack designed for an air interface, so wet-coupling
+# it measurably lowers its effective reflectivity. That is a second, independent
+# reason the `*_air` and `*_glue`/`*Grease` variants are separate measurements
+# and must not be treated as one surface with a different gap material.
+
+# ============================================================================
+# LBNL / Janecek look-up tables — 21 measured surfaces
+# ============================================================================
+# 3 face treatments x 7 wrappings. Measured at LBNL on a 2-pi silicon
+# photodiode array; the family citation and data-set identity live on this
+# abstract parent and flow down to all 21 children.
+
+[surface.lbnl]
+abstract = true
+model = "lut"
+lut_family = "lbnl"
+g4_surface_type = "dielectric_LUT"
+lut_dataset = "G4RealSurface-2.2"
+
+[surface.lbnl._sources]
+_default = { citation = "geant4_realsurface_2_2", kind = "handbook", ref = "Geant4 G4RealSurface 2.2 data set; https://cern.ch/geant4-data/datasets/G4RealSurface.2.2.tar.gz", license = "Geant4-SL", note = "Enum spellings transcribed from source/materials/include/G4OpticalSurface.hh. Data set located at runtime via $G4REALSURFACEDATA." }
+lut_surface = { citation = "geant4_optical_surface_hh", kind = "handbook", ref = "Geant4 source/materials/include/G4OpticalSurface.hh, G4OpticalSurfaceFinish enum", license = "Geant4-SL", note = "Verbatim enum spelling; stable across Geant4 10.3-11.1.3." }
+coupling_index = { citation = "cargille_meltmount_1582", kind = "vendor", ref = "https://www.cargille.com/ — Cargille Meltmount, n_D = 1.582 (code 5870)", license = "proprietary-reference-only", note = "Meltmount is the removable thermoplastic mountant used for the LBNL glue-coupled reflectance measurements (see Janecek's reflectance-apparatus report, OSTI 952861); it lets the same crystal be re-wrapped with different reflectors. CAVEAT: 1.582 is the standard grade, but the LBNL papers do not tabulate the grade per measured surface, and Cargille also sells 1.539 and 1.605. Treat as the family value, not a per-surface measurement." }
+lut_family = { citation = "janecek_moses_2010", kind = "doi", ref = "10.1109/TNS.2010.2042731", license = "proprietary-reference-only", note = "M. Janecek, W.W. Moses, 'Simulating Scintillator Light Collection Using Measured Optical Reflectance', IEEE TNS 57(3) 964-970 (2010). Cited, not redistributed." }
+
+[surface.lbnl._absent]
+reflectivity = { reason = "not-applicable", note = "A LUT entry IS the angular reflectance distribution. Collapsing it to a scalar reflectivity would discard the angular dependence that is the entire reason the table was measured." }
+
+# --- polished face ----------------------------------------------------------
+
+[surface.lbnl.polished]
+abstract = true
+treatment = "polished"
+
+[surface.lbnl.polished.lumirror_air]
+name = "Polished / Lumirror, air gap (LBNL)"
+lut_surface = "polishedlumirrorair"
+reflector = "Lumirror (Toray biaxially-oriented white PET)"
+coupling = "air_gap"
+note = "Lumirror is a Toray voided/pigmented polyester film and reflects diffusely. It is NOT 3M ESR — see the vm2000 entries for the specular multilayer."
+
+[surface.lbnl.polished.lumirror_glue]
+name = "Polished / Lumirror, meltmount-coupled (LBNL)"
+lut_surface = "polishedlumirrorglue"
+reflector = "Lumirror (Toray biaxially-oriented white PET)"
+coupling = "optical_contact"
+coupling_index = 1.582
+
+[surface.lbnl.polished.teflon_air]
+name = "Polished / Teflon, air gap (LBNL)"
+lut_surface = "polishedteflonair"
+reflector = "PTFE (Teflon) tape"
+reflector_material = "ptfe"
+coupling = "air_gap"
+
+[surface.lbnl.polished.tio_air]
+name = "Polished / TiO2 paint, air gap (LBNL)"
+lut_surface = "polishedtioair"
+reflector = "TiO2 reflective paint"
+coupling = "air_gap"
+
+[surface.lbnl.polished.tyvek_air]
+name = "Polished / Tyvek, air gap (LBNL)"
+lut_surface = "polishedtyvekair"
+reflector = "Tyvek (DuPont flash-spun HDPE)"
+coupling = "air_gap"
+
+[surface.lbnl.polished.vm2000_air]
+name = "Polished / 3M ESR (VM2000), air gap (LBNL)"
+lut_surface = "polishedvm2000air"
+reflector = "3M ESR / Vikuiti (formerly VM2000)"
+reflector_material = "esr"
+coupling = "air_gap"
+
+[surface.lbnl.polished.vm2000_glue]
+name = "Polished / 3M ESR (VM2000), meltmount-coupled (LBNL)"
+lut_surface = "polishedvm2000glue"
+reflector = "3M ESR / Vikuiti (formerly VM2000)"
+reflector_material = "esr"
+coupling = "optical_contact"
+coupling_index = 1.582
+
+# --- etched face ------------------------------------------------------------
+
+[surface.lbnl.etched]
+abstract = true
+treatment = "etched"
+
+[surface.lbnl.etched.lumirror_air]
+name = "Etched / Lumirror, air gap (LBNL)"
+lut_surface = "etchedlumirrorair"
+reflector = "Lumirror (Toray biaxially-oriented white PET)"
+coupling = "air_gap"
+
+[surface.lbnl.etched.lumirror_glue]
+name = "Etched / Lumirror, meltmount-coupled (LBNL)"
+lut_surface = "etchedlumirrorglue"
+reflector = "Lumirror (Toray biaxially-oriented white PET)"
+coupling = "optical_contact"
+coupling_index = 1.582
+
+[surface.lbnl.etched.teflon_air]
+name = "Etched / Teflon, air gap (LBNL)"
+lut_surface = "etchedteflonair"
+reflector = "PTFE (Teflon) tape"
+reflector_material = "ptfe"
+coupling = "air_gap"
+
+[surface.lbnl.etched.tio_air]
+name = "Etched / TiO2 paint, air gap (LBNL)"
+lut_surface = "etchedtioair"
+reflector = "TiO2 reflective paint"
+coupling = "air_gap"
+
+[surface.lbnl.etched.tyvek_air]
+name = "Etched / Tyvek, air gap (LBNL)"
+lut_surface = "etchedtyvekair"
+reflector = "Tyvek (DuPont flash-spun HDPE)"
+coupling = "air_gap"
+
+[surface.lbnl.etched.vm2000_air]
+name = "Etched / 3M ESR (VM2000), air gap (LBNL)"
+lut_surface = "etchedvm2000air"
+reflector = "3M ESR / Vikuiti (formerly VM2000)"
+reflector_material = "esr"
+coupling = "air_gap"
+
+[surface.lbnl.etched.vm2000_glue]
+name = "Etched / 3M ESR (VM2000), meltmount-coupled (LBNL)"
+lut_surface = "etchedvm2000glue"
+reflector = "3M ESR / Vikuiti (formerly VM2000)"
+reflector_material = "esr"
+coupling = "optical_contact"
+coupling_index = 1.582
+
+# --- ground (rough-cut) face ------------------------------------------------
+
+[surface.lbnl.ground]
+abstract = true
+treatment = "ground"
+
+[surface.lbnl.ground.lumirror_air]
+name = "Ground / Lumirror, air gap (LBNL)"
+lut_surface = "groundlumirrorair"
+reflector = "Lumirror (Toray biaxially-oriented white PET)"
+coupling = "air_gap"
+
+[surface.lbnl.ground.lumirror_glue]
+name = "Ground / Lumirror, meltmount-coupled (LBNL)"
+lut_surface = "groundlumirrorglue"
+reflector = "Lumirror (Toray biaxially-oriented white PET)"
+coupling = "optical_contact"
+coupling_index = 1.582
+
+[surface.lbnl.ground.teflon_air]
+name = "Ground / Teflon, air gap (LBNL)"
+lut_surface = "groundteflonair"
+reflector = "PTFE (Teflon) tape"
+reflector_material = "ptfe"
+coupling = "air_gap"
+
+[surface.lbnl.ground.tio_air]
+name = "Ground / TiO2 paint, air gap (LBNL)"
+lut_surface = "groundtioair"
+reflector = "TiO2 reflective paint"
+coupling = "air_gap"
+
+[surface.lbnl.ground.tyvek_air]
+name = "Ground / Tyvek, air gap (LBNL)"
+lut_surface = "groundtyvekair"
+reflector = "Tyvek (DuPont flash-spun HDPE)"
+coupling = "air_gap"
+
+[surface.lbnl.ground.vm2000_air]
+name = "Ground / 3M ESR (VM2000), air gap (LBNL)"
+lut_surface = "groundvm2000air"
+reflector = "3M ESR / Vikuiti (formerly VM2000)"
+reflector_material = "esr"
+coupling = "air_gap"
+
+[surface.lbnl.ground.vm2000_glue]
+name = "Ground / 3M ESR (VM2000), meltmount-coupled (LBNL)"
+lut_surface = "groundvm2000glue"
+reflector = "3M ESR / Vikuiti (formerly VM2000)"
+reflector_material = "esr"
+coupling = "optical_contact"
+coupling_index = 1.582
+
+
+# ============================================================================
+# DAVIS look-up tables — 9 measured surfaces
+# ============================================================================
+# Built from AFM-scanned crystal topography convolved with Fresnel physics on
+# each micro-facet, rather than from a goniometer sweep. Different method,
+# different family, same catalogue shape.
+
+[surface.davis]
+abstract = true
+model = "lut"
+lut_family = "davis"
+g4_surface_type = "dielectric_LUTDAVIS"
+lut_dataset = "G4RealSurface-2.2"
+
+[surface.davis._sources]
+_default = { citation = "geant4_realsurface_2_2", kind = "handbook", ref = "Geant4 G4RealSurface 2.2 data set; https://cern.ch/geant4-data/datasets/G4RealSurface.2.2.tar.gz", license = "Geant4-SL", note = "Enum spellings transcribed from source/materials/include/G4OpticalSurface.hh; files read by ReadLUTDAVISFile()." }
+lut_surface = { citation = "geant4_optical_surface_hh", kind = "handbook", ref = "Geant4 source/materials/include/G4OpticalSurface.hh, G4OpticalSurfaceFinish enum", license = "Geant4-SL", note = "Verbatim enum spelling; each maps to <name>.dat in the data set." }
+coupling_index = { citation = "saint_gobain_bc630", kind = "vendor", ref = "Saint-Gobain / Luxium BC-630 silicone optical grease datasheet, n = 1.465", license = "proprietary-reference-only", note = "BC-630 is the grease used for the DAVIS ESR-grease measurements. Transmittance >= 95% down to 280 nm. Also present in this database as the material `bc630`." }
+lut_family = { citation = "roncali_cherry_2013", kind = "doi", ref = "10.1088/0031-9155/58/7/2185", license = "proprietary-reference-only", note = "E. Roncali, S.R. Cherry, 'Simulation of light transport in scintillators based on 3D characterization of crystal surfaces', Phys. Med. Biol. 58(7) 2185-2198 (2013). The DAVIS reflectance model itself." }
+treatment = { citation = "roncali_stockhoff_cherry_2017", kind = "doi", ref = "10.1088/1361-6560/aa6ca5", license = "proprietary-reference-only", note = "'An integrated model of scintillator-reflector properties for advanced simulations of optical transport' — the work that produced the 9 DAVIS LUTs." }
+g4_surface_type = { citation = "stockhoff_2017", kind = "doi", ref = "10.1088/1361-6560/aa7007", license = "proprietary-reference-only", note = "Stockhoff, Jan, Dubois, Cherry, Roncali, 'Advanced optical simulation of scintillation detectors in GATE V8.0', Phys. Med. Biol. 62(12) L1-L8 (2017). The Geant4/GATE integration that added dielectric_LUTDAVIS." }
+
+[surface.davis._absent]
+reflectivity = { reason = "not-applicable", note = "The LUT is the reflectance distribution; a scalar would discard its angular dependence." }
+
+# --- rough face -------------------------------------------------------------
+
+[surface.davis.rough]
+name = "Rough, bare (DAVIS)"
+treatment = "rough"
+lut_surface = "Rough_LUT"
+coupling = "none"
+note = "Bare rough face against the ambient — no reflector present."
+
+[surface.davis.rough_teflon]
+name = "Rough / Teflon, air gap (DAVIS)"
+treatment = "rough"
+lut_surface = "RoughTeflon_LUT"
+reflector = "PTFE (Teflon) tape"
+reflector_material = "ptfe"
+coupling = "air_gap"
+
+[surface.davis.rough_esr]
+name = "Rough / 3M ESR, air gap (DAVIS)"
+treatment = "rough"
+lut_surface = "RoughESR_LUT"
+reflector = "3M ESR / Vikuiti"
+reflector_material = "esr"
+coupling = "air_gap"
+
+[surface.davis.rough_esr_grease]
+name = "Rough / 3M ESR, grease-coupled (DAVIS)"
+treatment = "rough"
+lut_surface = "RoughESRGrease_LUT"
+reflector = "3M ESR / Vikuiti"
+reflector_material = "esr"
+coupling = "optical_contact"
+coupling_material = "bc630"
+coupling_index = 1.465
+
+# --- polished face ----------------------------------------------------------
+
+[surface.davis.polished]
+name = "Polished, bare (DAVIS)"
+treatment = "polished"
+lut_surface = "Polished_LUT"
+coupling = "none"
+note = "Bare polished face against the ambient — no reflector present."
+
+[surface.davis.polished_teflon]
+name = "Polished / Teflon, air gap (DAVIS)"
+treatment = "polished"
+lut_surface = "PolishedTeflon_LUT"
+reflector = "PTFE (Teflon) tape"
+reflector_material = "ptfe"
+coupling = "air_gap"
+
+[surface.davis.polished_esr]
+name = "Polished / 3M ESR, air gap (DAVIS)"
+treatment = "polished"
+lut_surface = "PolishedESR_LUT"
+reflector = "3M ESR / Vikuiti"
+reflector_material = "esr"
+coupling = "air_gap"
+
+[surface.davis.polished_esr_grease]
+name = "Polished / 3M ESR, grease-coupled (DAVIS)"
+treatment = "polished"
+lut_surface = "PolishedESRGrease_LUT"
+reflector = "3M ESR / Vikuiti"
+reflector_material = "esr"
+coupling = "optical_contact"
+coupling_material = "bc630"
+coupling_index = 1.465
+
+# --- photodetector coupling -------------------------------------------------
+
+[surface.davis.detector]
+name = "Polished crystal / photodetector (DAVIS)"
+treatment = "polished"
+lut_surface = "Detector_LUT"
+note = "The crystal-to-photodetector boundary rather than a crystal-to-reflector one. Which photodetector, and what window/coupling index it was measured with, is not stated in a form we can cite — see _absent below. The photodetector's own PDE and geometry are the consuming engine's business, not this catalogue's."
+
+[surface.davis.detector._absent]
+coupling = { reason = "not-measured", note = "The DAVIS papers do not state the coupling medium for Detector_LUT in a citable form. Left unset rather than guessed: assuming optical contact would silently import a Fresnel step that may not be in the measurement." }
+coupling_index = { reason = "not-measured", note = "See `coupling`." }
