@@ -610,6 +610,43 @@ they did, the mechanism died in an hour.
 For any fitted parameter: ask what **else** the proposed mechanism asserts, and
 go measure *that*.
 
+### And a third instance, from proposing the fix
+
+Offered a falsification test for the double-counting concern: *check a thick
+layer, where K-M must reproduce Patterson's published `R_inf`, and see whether
+inserting a multiplier breaks the agreement.* The consumer ran it instead of
+accepting it. **It cannot fail.** `R_inf` depends only on `k/s`; the thickness
+cancels, so a thick-layer check passes identically for a multiplier of 1, 4.34
+or 10.
+
+So the count is three: a fit constraint that could not touch the mechanism, a
+mechanism that could not be separated from its rival by any output, and then a
+falsification test that could not detect the error it was proposed for. All
+three were *real* checks. None was capable of failing in the relevant way.
+
+**A test that the wrong model passes is not a weak test, it is a non-test**, and
+the way to tell is not to inspect the reasoning but to ask what result would
+have come back had the thing been wrong. That question is cheap and neither of
+us asked it three times running.
+
+Both the degeneracy and the blind check are now executable
+(`TestOpticalThicknessDegeneracy`), so the limitation is stated in code rather
+than remembered.
+
+### The degeneracy underneath all of it
+
+`thickness_cm` and `incidence_deg` enter the K-M solution only through their
+product — the optical thickness. `(0.02 cm, 76.7°)` and `(0.087 cm, 0°)` return
+identical results, byte for byte.
+
+That is why the falsified mechanism kept producing correct numbers, and why the
+consumer's final reframing is the right shape: **the fitted quantity is optical
+thickness**, one parameter constrained by one measurement, feeding two outputs
+that therefore cannot disagree with each other. What it buys is a claim about
+the physical build — the septum behaves as though ~4.4× its nominal 0.2 mm —
+which a microscope can refute. That is the first version of this story that
+predicts something outside the model it was fitted to.
+
 ## Aluminium — derived, not stored
 
 The `--write` enricher run put Rakić CC0 n,k on disk, so reflectance became

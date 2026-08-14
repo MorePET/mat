@@ -891,3 +891,67 @@ class TestDiffuseReflectorErasesAngle:
         # claimed and then retracted. The difference between the two is the
         # whole of the dead argument.
         assert (r_inf - r_unphysical) < (r_inf - r_real) / 5
+
+
+class TestOpticalThicknessDegeneracy:
+    """`thickness_cm` and `incidence_deg` enter only as a product (#243).
+
+    This degeneracy is why a falsified mechanism kept producing correct
+    numbers: "77 degrees at 0.2 mm" and "0.87 mm at normal incidence" are the
+    same optical thickness, so no check on the OUTPUT can separate them.
+    Recorded as a test because it is a property of the model that a fitter
+    needs to know before fitting.
+    """
+
+    KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
+
+    def test_angle_and_thickness_are_indistinguishable(self):
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        by_angle = opt.km_split_at(420, 0.02, incidence_deg=76.7)
+        by_thickness = opt.km_split_at(420, 0.02 * OpticalProperties.obliquity_factor(76.7))
+        for a, b in zip(by_angle, by_thickness):
+            assert a == pytest.approx(b, abs=1e-9)
+
+    def test_thick_layer_reflectance_cannot_validate_a_thickness(self):
+        """A proposed falsification test that turned out to be blind, kept as
+        an executable statement of WHY.
+
+        `R_inf` depends only on `k/s`; `d` cancels. So checking a thick layer
+        against the published `R_inf` passes identically for any thickness
+        multiplier, and cannot detect one that is wrong. A test that a wrong
+        model passes is not a weak test, it is a non-test."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        r_inf = opt.km_reflectance_infinite_at(420)
+        for multiplier in (1.0, 1.49, 2.0, 4.34, 10.0):
+            assert opt.km_reflectance_at(420, 5.0 * multiplier) == pytest.approx(r_inf, abs=1e-6)
+
+
+class TestThickLayerNumerics:
+    """The hyperbolic form overflows for large optical thickness; the thick
+    limit is branched before it can. Found by running the degeneracy check
+    above at a 50 cm layer."""
+
+    KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
+
+    @pytest.mark.parametrize("thickness_cm", [1.0, 5.0, 50.0, 1e4, 1e6])
+    def test_no_overflow_and_split_still_closes(self, thickness_cm):
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        r, t, a = opt.km_split_at(420, thickness_cm)
+        assert r + t + a == pytest.approx(100.0, abs=1e-9)
+        assert t >= 0.0
+
+    def test_thick_branch_is_exact_not_approximate(self):
+        """`coth -> 1` gives `R = 1/(a+b)`, and `(1+x+sqrt(x^2+2x))` times
+        `(1+x-sqrt(x^2+2x))` is identically 1 — so the branch returns exactly
+        `R_inf`, not a value near it."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        assert opt.km_reflectance_at(420, 1e6) == pytest.approx(
+            opt.km_reflectance_infinite_at(420), abs=1e-12
+        )
+
+    def test_the_branch_boundary_is_continuous(self):
+        """No step at the bsd > 20 cutover."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        below = opt.km_reflectance_at(420, 0.9)
+        above = opt.km_reflectance_at(420, 1.1)
+        assert abs(above - below) < 0.01

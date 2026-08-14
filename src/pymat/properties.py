@@ -906,6 +906,15 @@ class OpticalProperties:
         a = 1.0 + k / s
         b = math.sqrt(a * a - 1.0)
         bsd = b * s * thickness_cm
+        # Optically thick limit. `cosh` overflows a float64 above ~710, and
+        # `coth` is already 1.0 to machine precision by ~20, so branch before
+        # the arithmetic can raise. This branch is EXACT, not an approximation:
+        # coth -> 1 gives R = 1/(a+b), and (1+x+sqrt(x^2+2x))(1+x-sqrt(x^2+2x))
+        # = 1, so 1/(a+b) is identically R_inf. T falls as e^-bsd, i.e. below
+        # 1e-9 here.
+        if bsd > 20.0:
+            r = 1.0 / (a + b)
+            return (100.0 * r, 0.0, 100.0 * (1.0 - r))
         coth = math.cosh(bsd) / math.sinh(bsd)
         rg = backing_reflectance
         r = (1.0 - rg * (a - b * coth)) / (a - rg + b * coth)
@@ -973,6 +982,19 @@ class OpticalProperties:
         mean angle is not the same as averaging over the distribution — though
         for a Lambertian distribution on a 0.2 mm septum the two agree to about
         0.1 percentage points, so it is a small effect here.
+
+        **`thickness_cm` and `incidence_deg` are degenerate.** They enter only
+        through the product `d/cos(theta)` — the optical thickness — so
+        `(0.02 cm, 76.7 deg)` and `(0.087 cm, 0 deg)` return byte-identical
+        results. Nothing downstream of this call can tell them apart.
+
+        That matters when fitting. A layer fitted against measured R or T
+        constrains the PRODUCT, never either factor, so "the light arrives at
+        77 degrees" and "the layer is 4.3x thicker than nominal" are the same
+        claim wearing different clothes. Both have been proposed for the same
+        detector; the arithmetic could not distinguish them, and only measuring
+        the angle directly did. If you fit here, fit optical thickness and say
+        so — then go measure a factor independently.
         """
         split = self.km_split_at(wavelength, thickness_cm, 0.0, incidence_deg)
         return None if split is None else split[1]

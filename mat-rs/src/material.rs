@@ -259,6 +259,14 @@ impl OpticalProperties {
         let a = 1.0 + k / s;
         let b = (a * a - 1.0).sqrt();
         let bsd = b * s * thickness_cm;
+        // Optically thick limit. `cosh` overflows an f64 above ~710 and `coth`
+        // is 1.0 to machine precision by ~20, so branch before the arithmetic
+        // can blow up. EXACT, not an approximation: coth -> 1 gives
+        // R = 1/(a+b), which is identically R_inf.
+        if bsd > 20.0 {
+            let r = 1.0 / (a + b);
+            return Some((100.0 * r, 0.0, 100.0 * (1.0 - r)));
+        }
         let coth = bsd.cosh() / bsd.sinh();
         let r = (1.0 - backing * (a - b * coth)) / (a - backing + b * coth);
         let t = b / (a * bsd.sinh() + b * bsd.cosh());
