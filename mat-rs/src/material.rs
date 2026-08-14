@@ -92,6 +92,10 @@ pub struct OpticalProperties {
     pub refractive_index_dispersion: Option<Curve>,
     /// k(lambda) — the extinction column of the same dispersion table.
     pub extinction: Option<Curve>,
+    /// Kubelka-Munk absorption coefficient k(lambda), 1/cm.
+    pub km_k: Option<Curve>,
+    /// Kubelka-Munk scattering coefficient s(lambda), 1/cm.
+    pub km_s: Option<Curve>,
     /// Relative emission intensity vs lambda.
     pub emission_spectrum: Option<Curve>,
     /// Lumped attenuation length vs lambda (mm).
@@ -182,6 +186,38 @@ impl OpticalProperties {
         let n = self.n_at(wavelength_nm)?;
         let k = self.k_at(wavelength_nm).unwrap_or(0.0);
         Some(100.0 * ((n - 1.0).powi(2) + k * k) / ((n + 1.0).powi(2) + k * k))
+    }
+
+    /// Kubelka-Munk thick-layer reflectance, PERCENT.
+    ///
+    /// `R_inf = 1 + k/s - sqrt((k/s)^2 + 2k/s)`.
+    pub fn km_reflectance_infinite_at(&self, wavelength_nm: f64) -> Option<f64> {
+        let k = self.km_k.as_ref()?.interpolate(wavelength_nm);
+        let s = self.km_s.as_ref()?.interpolate(wavelength_nm);
+        if s <= 0.0 {
+            return None;
+        }
+        let x = k / s;
+        Some(100.0 * (1.0 + x - (x * x + 2.0 * x).sqrt()))
+    }
+
+    /// Kubelka-Munk diffuse transmittance through a FINITE layer, PERCENT.
+    ///
+    /// Answers a different question from [`km_reflectance_infinite_at`]:
+    /// reflectance converges to its thick-layer limit quickly, transmittance
+    /// does not. A layer can be "optically thick" for reflectance and still
+    /// transmit several percent — in a segmented detector that is the
+    /// inter-crystal crosstalk channel.
+    pub fn km_transmittance_at(&self, wavelength_nm: f64, thickness_cm: f64) -> Option<f64> {
+        let k = self.km_k.as_ref()?.interpolate(wavelength_nm);
+        let s = self.km_s.as_ref()?.interpolate(wavelength_nm);
+        if s <= 0.0 || thickness_cm <= 0.0 {
+            return None;
+        }
+        let a = 1.0 + k / s;
+        let b = (a * a - 1.0).sqrt();
+        let bsd = b * s * thickness_cm;
+        Some(100.0 * b / (a * bsd.sinh() + b * bsd.cosh()))
     }
 
     /// Relative emission intensity at a wavelength (nm).

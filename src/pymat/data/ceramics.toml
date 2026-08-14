@@ -1280,10 +1280,20 @@ melting_point_unit = "degC"
 # Peaks 0.999 at 420-470 nm — squarely on the LYSO emission band.
 reflectivity = 99.9
 reflectivity_spectrum = { wavelengths_nm = [350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500, 550, 600, 650, 700], values = [98.50, 98.79, 99.07, 99.27, 99.39, 99.50, 99.72, 99.90, 99.92, 99.90, 99.90, 99.90, 99.90, 99.89, 99.85, 99.80, 99.80, 99.80, 99.80, 99.80] }
-# Kubelka-Munk scattering coefficient s = 572 /cm at 500 nm gives a scattering
-# mean free path of ~17 um, so a 0.2 mm layer is ~12 scattering lengths. That
-# is effectively optically thick, but only marginally — coating vendors
-# recommend 0.5-0.6 mm because real coatings pack looser than a pressed pellet.
+# Kubelka-Munk two-flux coefficients, k and s in 1/cm. Bundled because they
+# are one model's parameters and are meaningless apart. Use the km_* accessors:
+#   km_reflectance_infinite_at(nm)      -> thick-layer R
+#   km_transmittance_at(nm, cm)         -> FINITE-layer T
+#
+# READ THIS BEFORE ASSUMING A THIN SEPTUM IS OPAQUE. Reflectance converges to
+# its thick-layer limit quickly; transmittance does NOT go to zero anywhere
+# near as fast, and the two are different questions. At 420 nm a 0.2 mm layer
+# at this (pressed-pellet) density still transmits ~7.6%. A "12 scattering
+# lengths, therefore optically thick" argument is about reflectance and does
+# not license ignoring transmission — in a segmented detector that transmission
+# IS the inter-crystal crosstalk channel. Vendors specify 0.5-0.6 mm for
+# coatings, and even 0.6 mm transmits ~2%.
+kubelka_munk = { wavelengths_nm = [300, 500, 700], k = [0.455, 0.100, 0.062], s = [619.0, 572.0, 517.0] }
 scattering_length = 0.00175
 scattering_length_unit = "cm"
 absorption_coefficient = 0.100
@@ -1300,6 +1310,8 @@ transmission = 0.0
 "optical.reflectivity_spectrum" = { citation = "grum_luckey_1968", kind = "doi", ref = "10.1364/AO.7.002289", license = "proprietary-reference-only", note = "Table I, pressed BaSO4 (Eastman white reflectance standard #6091). Transcribed via the Purdue LARS FRData reflectance calibration tables, which reproduce the paper's grid; the 10 nm rows are on Grum & Luckey's own measurement grid. PRESSED POWDER, integrating sphere, total hemispherical — see the header comment before using this for a septum." }
 "optical.scattering_length" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "E. M. Patterson, C. E. Shelden, B. H. Stockton, 'Kubelka-Munk optical properties of a barium sulfate white reflectance standard', Appl. Opt. 16(3) 729-732 (1977). Table I gives s = 619 /cm at 300 nm, 572 /cm at 500 nm, 517 /cm at 700 nm. 1/s at 500 nm = 17.5 um, recorded here as 0.00175 cm. NOTE this is the Kubelka-Munk two-flux scattering coefficient for a compressed pellet, not a single-scatter transport mean free path, and not a photon-transport length in a looser coating." }
 "optical.absorption_coefficient" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "Kubelka-Munk k = 0.100 /cm at 500 nm (0.455 at 300 nm, 0.062 at 700 nm). Same two-flux caveat as the scattering coefficient." }
+
+"optical.kubelka_munk" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "Table I, k and s in 1/cm at 300/500/700 nm. Verified self-consistent: the K-M thick-layer relation R_inf = 1 + k/s - sqrt((k/s)^2 + 2k/s) reproduces Patterson's own published R_inf (0.9624 / 0.9815 / 0.9846) to five decimal places from these coefficients. TWO-SOURCE DISAGREEMENT, READ THIS: these coefficients imply R_inf = 97.18% at 420 nm, while the Grum & Luckey reflectivity_spectrum on this same material gives 99.90% at 420 nm - a 2.7 point gap, and 1.3-2.3 points across 300-700 nm. Both are cited primaries measuring pressed BaSO4; they are different samples at different packing densities from different eras, and neither is wrong. The gap IS the packing-density sensitivity of this material, and it is the physical reason a reflectance value for BaSO4 has to be a bracket rather than a point. Grum & Luckey is the higher-packing, best-case artifact; Patterson sits near the bottom of the 0.98-0.999 bracket. Pick per what you physically have, and say which." }
 
 [baso4._absent]
 "optical.refractive_index" = { reason = "not-applicable", note = "A pressed powder has no single bulk refractive index that is useful for transport — its reflectance comes from multiple scattering between grains and voids, not from a Fresnel step at a smooth surface. The barite crystal is biaxial (n ~ 1.63-1.65), but that is the grain index, not the layer's optical behaviour. Use reflectivity_spectrum, not a Fresnel calculation." }

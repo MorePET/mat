@@ -100,7 +100,15 @@ _WAVELENGTH_SLOTS: Dict[str, str] = {
     "absorption_length_reabs_spectrum": "values",
     "reflectivity_spectrum": "values",
     "transparency_spectrum": "values",
+    # Multi-column; see _MULTI_COLUMN_SLOTS for the rest.
+    "kubelka_munk": "k",
 }
+
+
+# Slots whose table carries MORE than one value column, and every column that
+# must validate. `kubelka_munk` bundles k and s because they are parameters of
+# one model and are meaningless apart.
+_MULTI_COLUMN_SLOTS: Dict[str, tuple] = {"kubelka_munk": ("k", "s")}
 
 
 def _validate_wavelength_slot(prop_name: str, key: str, value: Any) -> None:
@@ -111,10 +119,11 @@ def _validate_wavelength_slot(prop_name: str, key: str, value: Any) -> None:
             f"{{wavelengths_nm = [...], {_WAVELENGTH_SLOTS[key]} = [...]}}, "
             f"got {type(value).__name__}: {value!r}"
         )
-    try:
-        WavelengthCurve.from_toml(value, value_key=_WAVELENGTH_SLOTS[key])
-    except ValueError as e:
-        raise ValueError(f"{prop_name}.{key}: {e}") from e
+    for column in _MULTI_COLUMN_SLOTS.get(key, (_WAVELENGTH_SLOTS[key],)):
+        try:
+            WavelengthCurve.from_toml(value, value_key=column)
+        except ValueError as e:
+            raise ValueError(f"{prop_name}.{key}: {e}") from e
 
 
 def _build_properties_from_dict(

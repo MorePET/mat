@@ -564,3 +564,101 @@ class TestWavelengthSlotsAllHaveFields:
     def test_reflectivity_at_falls_back_to_the_scalar(self):
         assert OpticalProperties(reflectivity=98.5).reflectivity_at(420) == 98.5
         assert OpticalProperties().reflectivity_at(420) is None
+
+
+class TestKubelkaMunk:
+    """K-M two-flux coefficients for diffusing media (#243).
+
+    Added when a downstream crosstalk measurement showed a 0.2 mm BaSO4 septum
+    transmits, refuting an "optically thick" conclusion that had been drawn
+    from a reflectance argument.
+    """
+
+    KM = {"wavelengths_nm": [300, 500, 700], "k": [0.455, 0.100, 0.062], "s": [619.0, 572.0, 517.0]}
+
+    def test_reproduces_pattersons_published_reflectance(self):
+        """The strongest available check: these coefficients and this formula
+        must reproduce the R_inf the same paper publishes. 0.9624 / 0.9815 /
+        0.9846 at 300 / 500 / 700 nm."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        for wl, published in ((300, 96.24), (500, 98.15), (700, 98.46)):
+            assert opt.km_reflectance_infinite_at(wl) == pytest.approx(published, abs=0.01)
+
+    def test_both_columns_are_readable(self):
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        assert opt.km_k_at(500) == pytest.approx(0.100)
+        assert opt.km_s_at(500) == pytest.approx(572.0)
+
+    def test_absent_table_yields_none_everywhere(self):
+        opt = OpticalProperties()
+        assert opt.km_k_at(420) is None
+        assert opt.km_reflectance_infinite_at(420) is None
+        assert opt.km_transmittance_at(420, 0.02) is None
+
+    def test_transmittance_falls_with_thickness(self):
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        ts = [opt.km_transmittance_at(420, d) for d in (0.01, 0.02, 0.03, 0.05, 0.06)]
+        assert ts == sorted(ts, reverse=True)
+        assert all(0.0 < t < 100.0 for t in ts)
+
+    def test_a_thin_layer_transmits_even_when_reflectance_has_converged(self):
+        """The finding that mattered. Reflectance converging to its thick-layer
+        limit does NOT mean transmission is negligible — they are different
+        questions, and in a segmented detector the difference is the
+        inter-crystal crosstalk channel."""
+        opt = OpticalProperties(kubelka_munk=self.KM)
+        t = opt.km_transmittance_at(420, 0.02)  # 0.2 mm
+        assert t > 5.0, "a 0.2 mm septum is not opaque"
+        # Even the vendor-recommended coating thickness still transmits.
+        assert opt.km_transmittance_at(420, 0.06) > 1.0
+
+    def test_both_columns_validate_at_load(self, tmp_path):
+        """k and s are one model's parameters — a malformed `s` must raise even
+        though `k` is fine, which a single-column validator would miss."""
+        p = tmp_path / "m.toml"
+        p.write_text(
+            dedent(
+                """
+                [x]
+                name = "X"
+                [x.optical]
+                kubelka_munk = { wavelengths_nm = [300, 500], k = [0.4, 0.1], s = [619.0] }
+                """
+            )
+        )
+        with pytest.raises(ValueError, match="length"):
+            load_toml(p)
+
+
+class TestBaSO4TwoSourceDisagreement:
+    """py-mat carries two cited primaries for BaSO4 reflectance that disagree
+    by 1.3-2.3 points. Both are right for their own sample; the gap is the
+    packing-density sensitivity, and it is why this number ships as a bracket.
+    """
+
+    def test_the_two_routes_really_do_disagree(self):
+        import pymat
+
+        opt = pymat.baso4.properties.optical
+        grum = opt.reflectivity_at(420)
+        patterson = opt.km_reflectance_infinite_at(420)
+        assert grum == pytest.approx(99.90, abs=0.01)
+        assert patterson == pytest.approx(97.18, abs=0.05)
+        assert grum > patterson
+
+    def test_the_disagreement_is_documented_not_silent(self):
+        """Carrying two inconsistent numbers is defensible. Carrying them
+        without saying so is not."""
+        import pymat
+
+        note = pymat.baso4.source_of("optical.kubelka_munk").note
+        assert "TWO-SOURCE DISAGREEMENT" in note
+        assert "bracket" in note
+
+    def test_patterson_sits_near_the_bottom_of_the_shipped_bracket(self):
+        """The bracket published to consumers is 0.98-0.999. An independent
+        primary landing at 0.9718 is evidence the bracket was not overdrawn."""
+        import pymat
+
+        patterson = pymat.baso4.properties.optical.km_reflectance_infinite_at(420) / 100.0
+        assert 0.96 < patterson < 0.98

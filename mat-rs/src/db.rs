@@ -436,6 +436,14 @@ fn parse_optical(t: &toml::Table) -> OpticalProperties {
         ),
         hygroscopic: t.get("hygroscopic").and_then(|v| v.as_bool()),
         refractive_index_dispersion: wl_curve(t, "refractive_index_dispersion"),
+        km_k: t
+            .get("kubelka_munk")
+            .and_then(|v| v.as_table())
+            .and_then(|tt| Curve::from_wavelength_toml_keyed(tt, "k")),
+        km_s: t
+            .get("kubelka_munk")
+            .and_then(|v| v.as_table())
+            .and_then(|tt| Curve::from_wavelength_toml_keyed(tt, "s")),
         extinction: t
             .get("refractive_index_dispersion")
             .and_then(|v| v.as_table())

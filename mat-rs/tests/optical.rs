@@ -555,3 +555,51 @@ fn surface_db_is_send_sync() {
     assert_send_sync::<SurfaceDb>();
     assert_send_sync::<rs_materials::Surface>();
 }
+
+// ---------------------------------------------------------------------------
+// Kubelka-Munk — the crosstalk channel
+// ---------------------------------------------------------------------------
+
+#[test]
+fn kubelka_munk_reproduces_pattersons_published_reflectance() {
+    let db = db();
+    let opt = db.get("baso4").unwrap().optical().unwrap();
+    for (wl, published) in [(300.0, 96.24), (500.0, 98.15), (700.0, 98.46)] {
+        let got = opt.km_reflectance_infinite_at(wl).unwrap();
+        assert!(
+            (got - published).abs() < 0.01,
+            "{wl} nm: {got} vs {published}"
+        );
+    }
+}
+
+#[test]
+fn a_thin_septum_transmits_even_though_reflectance_has_converged() {
+    // The finding that opened the crosstalk channel: "optically thick" for
+    // reflectance does not mean opaque.
+    let db = db();
+    let opt = db.get("baso4").unwrap().optical().unwrap();
+    let t02 = opt.km_transmittance_at(420.0, 0.02).unwrap();
+    assert!(t02 > 5.0, "0.2 mm septum transmits {t02}%, expected >5%");
+    let t06 = opt.km_transmittance_at(420.0, 0.06).unwrap();
+    assert!(t06 < t02 && t06 > 1.0);
+}
+
+#[test]
+fn the_two_baso4_reflectance_routes_disagree_and_that_is_recorded() {
+    let db = db();
+    let m = db.get("baso4").unwrap();
+    let opt = m.optical().unwrap();
+    let grum = opt.reflectivity_at(420.0).unwrap();
+    let patterson = opt.km_reflectance_infinite_at(420.0).unwrap();
+    assert!(grum > patterson);
+    assert!((grum - 99.90).abs() < 0.01);
+    assert!((patterson - 97.18).abs() < 0.05);
+    let note = m
+        .source_of("optical.kubelka_munk")
+        .unwrap()
+        .note
+        .as_ref()
+        .unwrap();
+    assert!(note.contains("TWO-SOURCE DISAGREEMENT"));
+}

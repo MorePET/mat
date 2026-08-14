@@ -14,6 +14,7 @@ Organized by physical/engineering domain:
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -591,6 +592,23 @@ class OpticalProperties:
     # rather than lost non-radiatively. Only meaningful alongside `_reabs`.
     reemit_qe: Optional[float] = None
 
+    # ------------------------------------------------------------------
+    # Kubelka-Munk two-flux coefficients for diffusing media (#243)
+    # ------------------------------------------------------------------
+    # Shape: {wavelengths_nm: [...], k: [...], s: [...]}, both in 1/cm.
+    #
+    # Bundled rather than split across `absorption_coefficient` and
+    # `scattering_length` on purpose. K-M `k` and `s` are the parameters of a
+    # SPECIFIC two-flux model of a diffusing layer; they are not general
+    # optical constants, `s` is not a transport mean free path, and `k` is not
+    # a Beer-Lambert coefficient. Only their RATIO is physically meaningful for
+    # the thick-layer limit, and they are useless individually — so they travel
+    # together, under the model's own name.
+    #
+    # This is what lets a powder reflector be modelled as a medium rather than
+    # a surface, which matters as soon as a layer is thin enough to transmit.
+    kubelka_munk: Optional[Dict[str, List[float]]] = None
+
     # Detector-physics scalars (#153)
     afterglow_pct_at_3ms: Optional[float] = None  # count-rate ceiling
     afterglow_pct_at_100ms: Optional[float] = None
@@ -804,6 +822,57 @@ class OpticalProperties:
             self.absorption_length_reabs_unit,
             wavelength,
         )
+
+    # --- Kubelka-Munk (#243) ------------------------------------------
+
+    def km_k_at(self, wavelength: Any) -> Optional[float]:
+        """Kubelka-Munk absorption coefficient (1/cm) at a wavelength."""
+        curve = _as_wl_curve(self.kubelka_munk, "k")
+        return None if curve is None else curve.interpolate(_to_nm(wavelength))
+
+    def km_s_at(self, wavelength: Any) -> Optional[float]:
+        """Kubelka-Munk scattering coefficient (1/cm) at a wavelength."""
+        curve = _as_wl_curve(self.kubelka_munk, "s")
+        return None if curve is None else curve.interpolate(_to_nm(wavelength))
+
+    def km_reflectance_infinite_at(self, wavelength: Any) -> Optional[float]:
+        """Reflectance (%) of an infinitely thick layer, from the K-M ratio.
+
+        ``R_inf = 1 + k/s - sqrt((k/s)^2 + 2k/s)``
+
+        Derived rather than stored. Its value is that it is *independently*
+        derived: if a material also carries a measured `reflectivity_spectrum`
+        and the two disagree, that is a real discrepancy between two sources
+        and the material should say so rather than quietly carry both.
+        """
+        k = self.km_k_at(wavelength)
+        s = self.km_s_at(wavelength)
+        if k is None or s is None or s <= 0:
+            return None
+        x = k / s
+        return 100.0 * (1.0 + x - math.sqrt(x * x + 2.0 * x))
+
+    def km_transmittance_at(self, wavelength: Any, thickness_cm: float) -> Optional[float]:
+        """Diffuse transmittance (%) through a finite layer, K-M hyperbolic form.
+
+        ``T = b / (a*sinh(b*s*d) + b*cosh(b*s*d))``, with ``a = 1 + k/s`` and
+        ``b = sqrt(a^2 - 1)``.
+
+        This is the accessor that matters for a thin reflector, and it answers
+        a *different question* from `km_reflectance_infinite_at`. Reflectance
+        converges to its thick-layer limit quickly; transmittance does not go
+        to zero anywhere near as fast. A layer can be "optically thick" for the
+        purpose of reflectance and still transmit several percent — which is a
+        crosstalk channel, not a rounding error.
+        """
+        k = self.km_k_at(wavelength)
+        s = self.km_s_at(wavelength)
+        if k is None or s is None or s <= 0 or thickness_cm <= 0:
+            return None
+        a = 1.0 + k / s
+        b = math.sqrt(a * a - 1.0)
+        bsd = b * s * thickness_cm
+        return 100.0 * b / (a * math.sinh(bsd) + b * math.cosh(bsd))
 
     def emission_at(self, wavelength: Any) -> Optional[float]:
         """Relative emission intensity at a wavelength, or None if no spectrum.
