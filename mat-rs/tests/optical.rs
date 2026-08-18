@@ -609,7 +609,7 @@ fn km_split_closes_and_matches_the_finite_reflectance() {
     let db = db();
     let opt = db.get("baso4").unwrap().optical().unwrap();
     for mm in [0.1_f64, 0.2, 0.5, 1.0] {
-        let (r, t, a) = opt.km_split_at(420.0, mm / 10.0, 0.0, 0.0).unwrap();
+        let (r, t, a) = opt.km_split_at(420.0, mm / 10.0, 0.0).unwrap();
         assert!((r + t + a - 100.0).abs() < 1e-9, "{mm} mm: {r}+{t}+{a}");
         assert!(r >= 0.0 && t >= 0.0 && a >= 0.0);
     }
@@ -649,8 +649,8 @@ fn obliquity_by_angle_equals_obliquity_by_thickness() {
     let db = db();
     let opt = db.get("baso4").unwrap().optical().unwrap();
     // 1/cos(60 deg) = 2, so 0.02 cm at 60 deg == 0.04 cm at normal.
-    let by_angle = opt.km_split_at(420.0, 0.02, 0.0, 60.0).unwrap();
-    let by_thickness = opt.km_split_at(420.0, 0.04, 0.0, 0.0).unwrap();
+    let by_angle = opt.km_split_at(420.0, 0.02, 60.0).unwrap();
+    let by_thickness = opt.km_split_at(420.0, 0.04, 0.0).unwrap();
     assert!((by_angle.0 - by_thickness.0).abs() < 1e-9);
     assert!((by_angle.1 - by_thickness.1).abs() < 1e-9);
 }
@@ -695,9 +695,9 @@ fn thickness_and_angle_are_degenerate() {
     // them apart.
     let db = db();
     let opt = db.get("baso4").unwrap().optical().unwrap();
-    let by_angle = opt.km_split_at(420.0, 0.02, 0.0, 76.7).unwrap();
+    let by_angle = opt.km_split_at(420.0, 0.02, 76.7).unwrap();
     let d_eff = 0.02 * rs_materials::material::obliquity_factor(76.7);
-    let by_thickness = opt.km_split_at(420.0, d_eff, 0.0, 0.0).unwrap();
+    let by_thickness = opt.km_split_at(420.0, d_eff, 0.0).unwrap();
     assert!((by_angle.0 - by_thickness.0).abs() < 1e-9);
     assert!((by_angle.1 - by_thickness.1).abs() < 1e-9);
 }
@@ -710,7 +710,7 @@ fn thick_layer_survives_extreme_thickness() {
     let opt = db.get("baso4").unwrap().optical().unwrap();
     let r_inf = opt.km_reflectance_infinite_at(420.0).unwrap();
     for d in [1.0_f64, 5.0, 50.0, 1e4, 1e6] {
-        let (r, t, a) = opt.km_split_at(420.0, d, 0.0, 0.0).unwrap();
+        let (r, t, a) = opt.km_split_at(420.0, d, 0.0).unwrap();
         assert!((r + t + a - 100.0).abs() < 1e-9, "d={d}");
         assert!(t >= 0.0);
         assert!(r <= r_inf + 1e-9);

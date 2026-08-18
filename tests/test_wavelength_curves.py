@@ -568,11 +568,36 @@ class TestKubelkaMunkFiniteLayer:
         assert r == pytest.approx(100.0 * sd / (1 + sd), abs=1e-9)
         assert t == pytest.approx(100.0 / (1 + sd), abs=1e-9)
 
-    def test_backing_reflectance_raises_the_reflected_fraction(self):
+    def test_absorbed_fraction_is_never_negative(self):
+        """The defect that blocked this branch at review.
+
+        `km_split_at` once took a `backing_reflectance`, and with it above zero
+        returned NEGATIVE absorption — because K-M's `R` with a backing is the
+        reflectance of the composite (layer plus backing, including light that
+        crossed and came back), while `T` stays the layer's own transmittance.
+        They are not two parts of one photon budget, so `A := 100 - R - T`
+        stopped meaning "absorbed".
+
+        The only test then exercising it asserted `bright > black`, which
+        passed throughout. A conservation property has to be checked as a
+        conservation property; an ordering assertion cannot see this.
+        """
         opt = self._opt()
-        black = opt.km_reflectance_at(420, 0.02, backing_reflectance=0.0)
-        bright = opt.km_reflectance_at(420, 0.02, backing_reflectance=0.9)
-        assert bright > black
+        for wl in (350, 420, 500, 700):
+            for d in (0.001, 0.01, 0.02, 0.1, 1.0, 10.0):
+                r, t, a = opt.km_split_at(wl, d)
+                assert a >= 0.0, f"negative absorption at {wl} nm, {d} cm: {a}"
+                assert r >= 0.0 and t >= 0.0
+                assert r + t + a == pytest.approx(100.0, abs=1e-9)
+
+    def test_no_backing_parameter_is_exposed(self):
+        """Pins the removal. Re-adding it needs a physical definition of the
+        decomposition, not a default argument."""
+        import inspect
+
+        params = inspect.signature(OpticalProperties.km_split_at).parameters
+        assert "backing_reflectance" not in params
+        assert list(params) == ["self", "wavelength", "thickness_cm", "incidence_deg"]
 
     def test_baso4_header_numbers_are_what_the_code_computes(self):
         """The R/T/A table written into the TOML header is a claim about this
@@ -619,7 +644,7 @@ class TestObliqueIncidence:
 
     def test_default_is_normal_incidence(self):
         opt = self._opt()
-        assert opt.km_split_at(420, 0.02) == opt.km_split_at(420, 0.02, 0.0, 0.0)
+        assert opt.km_split_at(420, 0.02) == opt.km_split_at(420, 0.02, 0.0)
 
     def test_a_long_enough_path_recovers_the_semi_infinite_limit(self):
         """Pure mathematics of the accessor: enough path in any guise reaches

@@ -221,7 +221,16 @@ impl OpticalProperties {
     /// reflectance the layer actually delivers — which is NOT
     /// [`km_reflectance_infinite_at`] unless the layer is optically thick.
     ///
-    /// `backing` is what sits behind the layer (0.0 = black).
+    /// **The layer is against a non-reflecting (black) backing** — a
+    /// transmitted photon is gone from this interface's point of view, which
+    /// is the correct model for an inter-crystal septum.
+    ///
+    /// There is deliberately no `backing` parameter. With a reflective
+    /// backing, K-M's `R` is the reflectance of the COMPOSITE (layer plus
+    /// backing), while `T` is the layer's own transmittance; they are not two
+    /// parts of one photon budget, so `A := 100 - R - T` stops meaning
+    /// "absorbed" and can go negative. An earlier revision exposed such a
+    /// parameter and documented a conservation property it did not have.
     ///
     /// **`incidence_deg` is for COLLIMATED light at a known angle.** For
     /// diffuse illumination pass 0.
@@ -243,7 +252,6 @@ impl OpticalProperties {
         &self,
         wavelength_nm: f64,
         thickness_cm: f64,
-        backing: f64,
         incidence_deg: f64,
     ) -> Option<(f64, f64, f64)> {
         let k = self.km_k.as_ref()?.interpolate(wavelength_nm);
@@ -268,7 +276,7 @@ impl OpticalProperties {
             return Some((100.0 * r, 0.0, 100.0 * (1.0 - r)));
         }
         let coth = bsd.cosh() / bsd.sinh();
-        let r = (1.0 - backing * (a - b * coth)) / (a - backing + b * coth);
+        let r = 1.0 / (a + b * coth);
         let t = b / (a * bsd.sinh() + b * bsd.cosh());
         Some((100.0 * r, 100.0 * t, 100.0 * (1.0 - r - t)))
     }
@@ -283,7 +291,7 @@ impl OpticalProperties {
         incidence_deg: f64,
     ) -> Option<f64> {
         Some(
-            self.km_split_at(wavelength_nm, thickness_cm, 0.0, incidence_deg)?
+            self.km_split_at(wavelength_nm, thickness_cm, incidence_deg)?
                 .0,
         )
     }
@@ -302,7 +310,7 @@ impl OpticalProperties {
         incidence_deg: f64,
     ) -> Option<f64> {
         Some(
-            self.km_split_at(wavelength_nm, thickness_cm, 0.0, incidence_deg)?
+            self.km_split_at(wavelength_nm, thickness_cm, incidence_deg)?
                 .1,
         )
     }

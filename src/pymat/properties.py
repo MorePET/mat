@@ -14,6 +14,7 @@ Organized by physical/engineering domain:
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
 
 from .curves import TempCurve, WavelengthCurve
 from .units import ureg
+
+logger = logging.getLogger(__name__)
 
 
 def _to_nm(wavelength: Any) -> float:
@@ -863,16 +866,20 @@ class OpticalProperties:
         is less misleading than returning infinity.
         """
         theta = math.radians(abs(float(incidence_deg)))
-        if theta >= math.pi / 2:
+        factor = float("inf") if theta >= math.pi / 2 else 1.0 / math.cos(theta)
+        if factor > 40.0:
+            logger.debug(
+                "obliquity_factor: theta=%s deg gives 1/cos = %s; capping at 40. "
+                "A plane-parallel slab model has stopped describing anything real "
+                "by this angle.",
+                incidence_deg,
+                factor,
+            )
             return 40.0
-        return min(40.0, 1.0 / math.cos(theta))
+        return factor
 
     def km_split_at(
-        self,
-        wavelength: Any,
-        thickness_cm: float,
-        backing_reflectance: float = 0.0,
-        incidence_deg: float = 0.0,
+        self, wavelength: Any, thickness_cm: float, incidence_deg: float = 0.0
     ) -> Optional[tuple]:
         """`(R, T, A)` in PERCENT for a finite layer — every photon's fate.
 
@@ -882,8 +889,21 @@ class OpticalProperties:
         loss, and `R` is the reflectance that layer *actually* delivers — which
         is not `km_reflectance_infinite_at` unless the layer is thick.
 
-        `backing_reflectance` is what sits behind the layer (0 = black, i.e.
-        a transmitted photon is gone from this interface's point of view).
+        **The layer is against a non-reflecting (black) backing**, i.e. a
+        transmitted photon is gone from this interface's point of view. That is
+        the correct model for an inter-crystal septum, where a photon crossing
+        the septum has entered the neighbour.
+
+        There is deliberately no `backing_reflectance` parameter. With a
+        reflective backing, Kubelka-Munk's `R` is the reflectance of the
+        *composite* (layer plus backing, including light that crossed the layer,
+        bounced, and came back), while `T` remains the layer's own
+        transmittance. Those are not two parts of one photon budget, so
+        `A := 100 - R - T` stops meaning "absorbed" and can go negative. An
+        earlier revision of this method exposed such a parameter and documented
+        a conservation property it did not have; rather than guess at the right
+        decomposition it was removed, and will return only with a physical
+        definition and a consumer that needs it.
 
         Note the limiting behaviour, because it is easy to get backwards:
         with `k = 0` the thick-layer reflectance is exactly 1, not 0.999.
@@ -916,17 +936,12 @@ class OpticalProperties:
             r = 1.0 / (a + b)
             return (100.0 * r, 0.0, 100.0 * (1.0 - r))
         coth = math.cosh(bsd) / math.sinh(bsd)
-        rg = backing_reflectance
-        r = (1.0 - rg * (a - b * coth)) / (a - rg + b * coth)
+        r = 1.0 / (a + b * coth)
         t = b / (a * math.sinh(bsd) + b * math.cosh(bsd))
         return (100.0 * r, 100.0 * t, 100.0 * (1.0 - r - t))
 
     def km_reflectance_at(
-        self,
-        wavelength: Any,
-        thickness_cm: float,
-        backing_reflectance: float = 0.0,
-        incidence_deg: float = 0.0,
+        self, wavelength: Any, thickness_cm: float, incidence_deg: float = 0.0
     ) -> Optional[float]:
         """Reflectance (%) of a FINITE layer — the number a real reflector delivers.
 
@@ -935,7 +950,7 @@ class OpticalProperties:
         certainly not the ~99.9% quoted for a pressed-powder standard, because
         the balance goes straight through.
         """
-        split = self.km_split_at(wavelength, thickness_cm, backing_reflectance, incidence_deg)
+        split = self.km_split_at(wavelength, thickness_cm, incidence_deg)
         return None if split is None else split[0]
 
     def km_transmittance_at(
@@ -996,7 +1011,7 @@ class OpticalProperties:
         the angle directly did. If you fit here, fit optical thickness and say
         so — then go measure a factor independently.
         """
-        split = self.km_split_at(wavelength, thickness_cm, 0.0, incidence_deg)
+        split = self.km_split_at(wavelength, thickness_cm, incidence_deg)
         return None if split is None else split[1]
 
     def emission_at(self, wavelength: Any) -> Optional[float]:
