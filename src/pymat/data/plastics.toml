@@ -2213,3 +2213,105 @@ kind = "vendor"
 ref = "emcoplastics.com:borated-hdpe"
 license = "proprietary-reference-only"
 note = "Heat-deflection temperature at 66 psi = 171 °F = 77.2 °C (Emco datasheet). Adopted as the conservative continuous max-service temperature; HDPE host's matrix softens above this. Shieldwerx SWX-201 lists `up to ~85 °C` for the same grade — the Emco/ASTM HDT value is the more defensible primary number."
+
+
+# ============================================================================
+# SiPM entrance windows (#243)
+# ============================================================================
+# A photodetector is NOT a material and is deliberately absent from this
+# database (ADR-0004 §11): its PDE, dark count rate, crosstalk and afterpulse
+# are the response of a manufactured device at an operating point, and they
+# move with overvoltage and temperature, which are run-time choices.
+#
+# The WINDOW is a different matter. It is a substance, and it is the medium an
+# optical photon actually crosses when it leaves the coupling grease — the
+# boundary is grease->window, not grease->"SiPM". Both variants are here so the
+# Fresnel step at the readout face is computed from cited indices on both
+# sides rather than one lumped number.
+#
+# WHICH ONE YOU HAVE MATTERS. Going from BC-630 grease (n = 1.465):
+#   -> silicone window (1.41): index steps DOWN. Real Fresnel step, and a
+#      critical angle near 74 deg at that boundary.
+#   -> epoxy window (1.55): index steps UP. No total internal reflection there.
+# Those are qualitatively different at the face that does the readout.
+
+[sipm_window_silicone]
+name = "SiPM entrance window, silicone resin"
+vendor = "hamamatsu"
+tags = ["optical-window", "photodetector-window", "silicone"]
+
+[sipm_window_silicone.optical]
+refractive_index = 1.41
+
+[sipm_window_silicone.vis]
+base_color = [0.95, 0.95, 0.92, 0.4]
+metallic = 0.0
+roughness = 0.05
+transmission = 0.95
+ior = 1.41
+
+[sipm_window_silicone._sources]
+"optical.refractive_index" = { citation = "hamamatsu_s13360_kapd1052e", kind = "vendor", ref = "https://www.hamamatsu.com/content/dam/hamamatsu-photonics/sites/documents/99_SALES_LIBRARY/ssd/s13360_series_kapd1052e.pdf", license = "proprietary-reference-only", note = "Hamamatsu MPPC S13360 series datasheet, Cat. No. KAPD1052E07. The CS (ceramic) packages — e.g. S13360-3050CS — use a SILICONE resin window with n = 1.41. The n = 1.55 figure widely quoted for 'the Hamamatsu window' is the PE (glass-epoxy) variant and does not apply to CS parts." }
+
+[sipm_window_silicone._absent]
+"optical.refractive_index_dispersion" = { reason = "not-measured", note = "The datasheet gives a single index, no dispersion. The material is optically similar to PDMS, whose n(lambda) is well characterised, so a consumer needing dispersion could substitute PDMS and SAY it substituted — but that is a modelling assumption and does not belong in this database as if measured." }
+
+[sipm_window_epoxy]
+name = "SiPM entrance window, epoxy resin"
+vendor = "hamamatsu"
+tags = ["optical-window", "photodetector-window", "epoxy"]
+
+[sipm_window_epoxy.optical]
+refractive_index = 1.55
+
+[sipm_window_epoxy.vis]
+base_color = [0.96, 0.94, 0.88, 0.4]
+metallic = 0.0
+roughness = 0.05
+transmission = 0.95
+ior = 1.55
+
+[sipm_window_epoxy._sources]
+"optical.refractive_index" = { citation = "hamamatsu_s13360_kapd1052e", kind = "vendor", ref = "https://www.hamamatsu.com/content/dam/hamamatsu-photonics/sites/documents/99_SALES_LIBRARY/ssd/s13360_series_kapd1052e.pdf", license = "proprietary-reference-only", note = "Hamamatsu MPPC S13360 series datasheet, Cat. No. KAPD1052E07. The PE (glass-epoxy) packages use an EPOXY resin window with n = 1.55." }
+
+
+# ============================================================================
+# DOWSIL Q2-3067 optical couplant (#243)
+# ============================================================================
+
+[q2_3067]
+name = "DOWSIL Q2-3067 Optical Couplant"
+vendor = "dow"
+tags = ["optical-coupling", "grease", "silicone"]
+
+[q2_3067.mechanical]
+density_value = 0.976
+density_unit = "g/cm^3"
+
+[q2_3067.optical]
+refractive_index = 1.4658
+# Transmission at 10 mm path, PERCENT. Note the blue end: 70% at 400 nm rising
+# to 87% at 500 nm. For a 420 nm emitter this is materially worse than BC-630,
+# and the 1200 nm collapse to 31% is a silicone C-H overtone absorption.
+transparency = 87
+transparency_spectrum = { wavelengths_nm = [400, 500, 600, 700, 800, 900, 1000, 1100, 1200], values = [70.0, 87.0, 92.0, 92.0, 94.0, 92.0, 87.0, 92.0, 31.0] }
+
+[q2_3067.thermal]
+max_service_temp_value = 150
+max_service_temp_unit = "degC"
+
+[q2_3067.vis]
+base_color = [0.98, 0.94, 0.82, 0.6]
+metallic = 0.0
+roughness = 0.10
+transmission = 0.9
+ior = 1.4658
+
+[q2_3067._sources]
+_default = { citation = "dowsil_q2_3067_tds", kind = "vendor", ref = "DOWSIL Q2-3067 Optical Couplant Technical Data Sheet, Dow Form No. 11-4218-01-0521 S2D (2021)", license = "proprietary-reference-only", note = "Values cited from the Dow technical data sheet; the document itself is proprietary and is not redistributed." }
+"optical.refractive_index" = { citation = "dowsil_q2_3067_tds", kind = "vendor", ref = "DOWSIL Q2-3067 TDS, Dow Form No. 11-4218-01-0521 S2D (2021)", license = "proprietary-reference-only", note = "n = 1.4658 at the sodium D line (589 nm). No n(lambda) dispersion is published — a consumer needing dispersion is inventing it and should say so." }
+"optical.transparency" = { citation = "dowsil_q2_3067_tds", kind = "vendor", ref = "DOWSIL Q2-3067 TDS, Dow Form No. 11-4218-01-0521 S2D (2021)", license = "proprietary-reference-only", note = "Light transmission at 10 mm thickness. The scalar records the 500 nm value; the full table is in the spectrum field. The datasheet tabulates nothing below 400 nm." }
+"optical.transparency_spectrum" = { citation = "dowsil_q2_3067_tds", kind = "vendor", ref = "DOWSIL Q2-3067 TDS, Dow Form No. 11-4218-01-0521 S2D (2021)", license = "proprietary-reference-only", note = "Transmission percentages at a 10 mm path length. The datasheet tabulates nothing below 400 nm, so the 70% at 400 nm is the bluest measured point and the clamp below it is a floor, not a measurement." }
+
+[q2_3067._absent]
+"optical.refractive_index_dispersion" = { reason = "not-measured", note = "Only n_D at 589 nm is published, as for BC-630. No optical-coupling compound in this database has a measured dispersion curve." }

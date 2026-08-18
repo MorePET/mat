@@ -19,6 +19,7 @@ section name, or adds a vis entry that would 404 on the CDN.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 import warnings
 from pathlib import Path
@@ -33,7 +34,15 @@ else:  # pragma: no cover — 3.10 path
 from pymat import _CATEGORY_BASES, load_all
 from pymat.loader import load_category
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "src" / "pymat" / "data"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DATA_DIR = REPO_ROOT / "src" / "pymat" / "data"
+
+# Material-catalogue TOMLs. `surfaces.toml` (#243) lives in the same directory
+# but is not a material catalogue — its nodes are `Surface` entries with their
+# own field vocabulary and their own loader, so the material-shape walkers below
+# do not apply to it. Its integrity is covered by tests/test_surfaces.py.
+NON_MATERIAL_TOMLS = {"surfaces.toml"}
+MATERIAL_TOMLS = sorted(p for p in DATA_DIR.glob("*.toml") if p.name not in NON_MATERIAL_TOMLS)
 
 # The loader accepts these top-level groups inside a material node.
 # Anything else (other than child material keys + known leaf keys)
@@ -116,7 +125,7 @@ class TestTOMLsAllParse:
 class TestTOMLShape:
     """Lint the raw TOML tree, not just the loaded material objects."""
 
-    @pytest.mark.parametrize("toml_path", sorted(DATA_DIR.glob("*.toml")))
+    @pytest.mark.parametrize("toml_path", MATERIAL_TOMLS)
     def test_no_pbr_section(self, toml_path):
         """3.0 removed [pbr] — the loader rejects it, but catching it in the
         data files themselves gives a clearer error on contributor PRs."""
@@ -126,7 +135,7 @@ class TestTOMLShape:
             f"{toml_path.name}: legacy [pbr] section(s) present (3.0 uses [vis]): {offenders}"
         )
 
-    @pytest.mark.parametrize("toml_path", sorted(DATA_DIR.glob("*.toml")))
+    @pytest.mark.parametrize("toml_path", MATERIAL_TOMLS)
     def test_only_known_property_groups(self, toml_path):
         """Catch typos like [metals.aluminum.mechnical] — the loader would
         silently ignore the misspelled group, but the data would then be
@@ -241,3 +250,95 @@ def _walk_unknown_groups(node, prefix: str):
 def _looks_like_material_node(d: dict) -> bool:
     """Heuristic: a child material has a `name` string at its own level."""
     return isinstance(d.get("name"), str)
+
+
+# ---------------------------------------------------------------------------
+# Structural invariants (#243)
+# ---------------------------------------------------------------------------
+# These check the SHAPE of the file rather than the meaning of its values.
+#
+# Motivation: three latent defects in this branch were positional — invisible
+# to any test of the thing itself, and visible only when something adjacent
+# moved. The enricher appends a key at the end of a material's span, which
+# lands it AFTER the following section banner; it parses correctly, so nothing
+# fails, but it is filed under the wrong heading and the next person to insert
+# a table beside it captures it into their own.
+#
+# Fixed by hand twice (metals.toml, then scintillators.toml) before being
+# written down as an invariant. A structural property is checkable without
+# knowing what any key means, which is what makes this class routinizable at
+# all: "every key is adjacent to its table header" needs no domain knowledge.
+
+
+def _load_check_data_shape():
+    """Import `scripts/check_data_shape.py` as a module.
+
+    The unit-level placement tests below exercise the same function the
+    pre-commit hook runs. Duplicating the logic here is what would let the
+    hook and the suite drift apart.
+    """
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / "check_data_shape.py"
+    spec = importlib.util.spec_from_file_location("check_data_shape", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_shape = _load_check_data_shape()
+misplaced_keys = _shape.misplaced_keys
+
+
+class TestStructuralPlacement:
+    """Exercises `scripts/check_data_shape.py` through its real entry point.
+
+    The logic lives in the script, not here, so the pre-commit hook and the
+    test suite cannot disagree about what the invariant is — which would be
+    the exact drift these gates exist to prevent.
+    """
+
+    def test_the_shipped_corpus_is_clean(self):
+        proc = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "scripts" / "check_data_shape.py")],
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    def test_the_check_detects_a_planted_misplacement(self):
+        """Auditing the auditor: a structural check that cannot fail is worth
+        nothing, so prove it fires on the historical defect shape."""
+        planted = (
+            "[a.optical]\nrefractive_index = 1.5\n\n"
+            "# ====================\n# SECTION B\n# ====================\n"
+            'absorption_length = 200.0\n\n[b]\nname = "B"\n'
+        )
+        found = list(misplaced_keys(planted))
+        assert len(found) == 1
+        assert found[0][1] == "absorption_length"
+        assert found[0][2] == "[a.optical]"
+
+    def test_prose_comments_do_not_trip_it(self):
+        """Most values in these files carry an explanatory comment. Flagging
+        those would make the check unusable, and an unusable check gets
+        deleted rather than obeyed."""
+        ok = (
+            "[a.optical]\n"
+            "# Refractive index at the sodium D line, per the vendor sheet.\n"
+            "refractive_index = 1.5\n"
+            "# A second explanatory note, several words long.\n"
+            "light_yield = 32000\n"
+        )
+        assert list(misplaced_keys(ok)) == []
+
+    def test_multiline_arrays_do_not_trip_it(self):
+        """`decay_components` spans lines; its continuations are not keys."""
+        arr = (
+            "[a.optical]\n"
+            "decay_components = [\n"
+            "    { tau_ns = 12.0, fraction = 0.3 },\n"
+            "    { tau_ns = 42.0, fraction = 0.7 },\n"
+            "]\n"
+        )
+        assert list(misplaced_keys(arr)) == []

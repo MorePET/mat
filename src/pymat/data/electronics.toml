@@ -291,8 +291,13 @@ density_value = 5.0
 density_unit = "g/cm^3"
 
 [ferrite.electrical]
-permeability = 100
 dielectric_constant = 10
+
+# Relative permeability is a magnetic property; it lived under [electrical] as
+# `permeability`, where no field existed to receive it and the loader dropped
+# it on every load. Moved to its real home (#243).
+[ferrite.magnetic]
+permeability_relative = 100
 
 [ferrite.vis]
 base_color = [0.1, 0.1, 0.1, 1.0]

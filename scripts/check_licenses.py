@@ -37,6 +37,7 @@ RATCHET = REPO_ROOT / ".github" / "license-ratchet.txt"
 ALLOWED = {
     "CC0",
     "PD-USGov",
+    "CC-BY-3.0",
     "CC-BY-4.0",
     "CC-BY-SA-4.0",
     # Geant4 Software License — BSD-like, attribution required. Added in
@@ -50,7 +51,7 @@ ALLOWED = {
 # `unknown` is parseable but rejected — transitional value, blocked at merge.
 
 # Licenses requiring attribution in LICENSES-DATA.md.
-ATTRIBUTION_REQUIRED = {"CC-BY-4.0", "CC-BY-SA-4.0"}
+ATTRIBUTION_REQUIRED = {"CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-4.0"}
 
 
 def load_ratchet() -> set[str]:

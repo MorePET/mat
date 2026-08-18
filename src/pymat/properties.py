@@ -14,14 +14,75 @@ Organized by physical/engineering domain:
 
 from __future__ import annotations
 
+import logging
+import math
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from pint import Quantity
 
-from .curves import TempCurve
+from .curves import TempCurve, WavelengthCurve
 from .units import ureg
+
+logger = logging.getLogger(__name__)
+
+
+def _to_nm(wavelength: Any) -> float:
+    """Coerce a wavelength to bare nanometres.
+
+    Accepts a Pint `Quantity` (converted, so `500 * ureg.nm` and
+    `0.5 * ureg.micrometer` both work) or a bare number, which is
+    interpreted as nm — the schema spells every wavelength column
+    `wavelengths_nm`, so nm is the one unambiguous default (ADR-0004 §4).
+    """
+    if hasattr(wavelength, "to"):
+        try:
+            return float(wavelength.to(ureg.nanometer).magnitude)
+        except Exception as e:
+            raise ValueError(f"Wavelength must be a length. Got {wavelength}: {e}")
+    return float(wavelength)
+
+
+def _as_wl_curve(
+    raw: Optional[Dict[str, List[float]]], value_key: str
+) -> Optional[WavelengthCurve]:
+    """Lift a structured `{wavelengths_nm, <value_key>}` dict to a curve.
+
+    The structured optical slots (#153, #164) are stored as plain dicts so
+    the on-disk shape and the JSON round-trip stay unchanged; the curve is
+    built on demand by the `_at(lambda)` accessors.
+    """
+    if raw is None:
+        return None
+    return WavelengthCurve.from_toml(raw, value_key=value_key)
+
+
+def _eval_wl_or_scalar(
+    raw: Optional[Dict[str, List[float]]],
+    value_key: str,
+    scalar: Optional[float],
+    unit_str: Optional[str],
+    wavelength: Any,
+) -> Optional["Quantity"]:
+    """Shared wavelength evaluator: prefer spectrum, fall back to scalar.
+
+    The wavelength twin of `_eval_curve_or_scalar`. Same precedence rule
+    (structured data beats the scalar), same clamp-never-extrapolate
+    contract inherited from `WavelengthCurve`.
+    """
+    curve = _as_wl_curve(raw, value_key)
+    if curve is None and scalar is None:
+        return None
+    # Validate the argument even on the scalar path. Otherwise a caller who
+    # passes a temperature to a wavelength accessor gets a plausible number
+    # back from whichever materials happen to have only a scalar, and a
+    # hard error from the ones that have a spectrum — the worst possible mix.
+    nm = _to_nm(wavelength)
+    value = curve.interpolate(nm) if curve is not None else scalar
+    if unit_str:
+        return value * ureg(unit_str)
+    return value
 
 
 def _eval_curve_or_scalar(
@@ -458,8 +519,23 @@ class OpticalProperties:
     # Basic optical properties
     refractive_index: Optional[float] = None  # n at 550nm (default)
     transparency: Optional[float] = None  # % transmission (0-100) - MEASURED VALUE
+    # Wavelength-resolved transmission, % — {wavelengths_nm: [...], values: [...]}.
+    # Couplants and windows are quoted at a stated path length; record it in the
+    # `_sources` note, since the number is meaningless without it.
+    transparency_spectrum: Optional[Dict[str, List[float]]] = None
+    # Bulk specular/total reflectivity, % (0-100) — same percent convention as
+    # `transparency` above. Reflector films (ESR, Teflon, Tyvek) carry this.
+    # NOTE (#243): `[esr.optical] reflectivity = 98.5` has been on disk since
+    # #147 but there was no field to receive it, so the loader silently
+    # dropped it on every load. Adding the field is the fix.
+    reflectivity: Optional[float] = None  # %
+    # Wavelength-resolved reflectivity, % — {wavelengths_nm: [...], values: [...]}.
+    # Reflector films and diffuse standards are strongly wavelength-dependent at
+    # the blue end, which is exactly where scintillators emit.
+    reflectivity_spectrum: Optional[Dict[str, List[float]]] = None
     absorption_coefficient: Optional[float] = None  # 1/cm
     absorption_length: Optional[float] = None  # mm (inverse of coefficient)
+    absorption_length_unit: str = "mm"
 
     # Scintillator properties (detector physics)
     light_yield: Optional[float] = None  # photons/MeV
@@ -489,6 +565,53 @@ class OpticalProperties:
     # Shape: {wavelengths_nm: [...], n: [...]}
     refractive_index_dispersion: Optional[Dict[str, List[float]]] = None
 
+    # ------------------------------------------------------------------
+    # Wavelength-resolved attenuation and the self-absorption split (#243)
+    # ------------------------------------------------------------------
+    # Shape for every `_spectrum` slot below: {wavelengths_nm: [...], values: [...]}.
+    # Each is the wavelength-resolved sibling of the scalar above it, and the
+    # `_at(lambda)` accessors prefer the spectrum when both are present.
+    absorption_length_spectrum: Optional[Dict[str, List[float]]] = None
+
+    # A photon absorbed in a doped scintillator has TWO physically distinct
+    # fates, and one lumped attenuation length cannot express the difference
+    # (ADR-0004 §5):
+    #   matrix — absorbed by the host lattice/impurities. Photon is gone.
+    #   reabs  — absorbed by the activator (e.g. Ce3+) on the overlap between
+    #            its excitation tail and its own emission band. The photon may
+    #            be re-emitted after a fresh decay draw, which puts a slow tail
+    #            on the timing distribution rather than simply losing light.
+    # Populate BOTH or NEITHER: a lone `absorption_length_matrix` reads as "the
+    # rest is self-absorption", which is a claim the data usually cannot make.
+    # When the split is not measurable for a material, declare it absent via
+    # the `[<material>._absent]` table rather than folding it into one number.
+    absorption_length_matrix: Optional[float] = None  # mm
+    absorption_length_matrix_unit: str = "mm"
+    absorption_length_matrix_spectrum: Optional[Dict[str, List[float]]] = None
+    absorption_length_reabs: Optional[float] = None  # mm
+    absorption_length_reabs_unit: str = "mm"
+    absorption_length_reabs_spectrum: Optional[Dict[str, List[float]]] = None
+    # Probability in [0, 1] that an activator-reabsorbed photon is re-emitted
+    # rather than lost non-radiatively. Only meaningful alongside `_reabs`.
+    reemit_qe: Optional[float] = None
+
+    # ------------------------------------------------------------------
+    # Kubelka-Munk two-flux coefficients for diffusing media (#243)
+    # ------------------------------------------------------------------
+    # Shape: {wavelengths_nm: [...], k: [...], s: [...]}, both in 1/cm.
+    #
+    # Bundled rather than split across `absorption_coefficient` and
+    # `scattering_length` on purpose. K-M `k` and `s` are the parameters of a
+    # SPECIFIC two-flux model of a diffusing layer; they are not general
+    # optical constants, `s` is not a transport mean free path, and `k` is not
+    # a Beer-Lambert coefficient. Only their RATIO is physically meaningful for
+    # the thick-layer limit, and they are useless individually — so they travel
+    # together, under the model's own name.
+    #
+    # This is what lets a powder reflector be modelled as a medium rather than
+    # a surface, which matters as soon as a layer is thin enough to transmit.
+    kubelka_munk: Optional[Dict[str, List[float]]] = None
+
     # Detector-physics scalars (#153)
     afterglow_pct_at_3ms: Optional[float] = None  # count-rate ceiling
     afterglow_pct_at_100ms: Optional[float] = None
@@ -496,6 +619,14 @@ class OpticalProperties:
     intrinsic_resolution_pct_at_662keV: Optional[float] = None  # 137Cs photopeak FWHM
     temperature_coefficient_light_yield: Optional[float] = None  # %/K
     hygroscopic: Optional[bool] = None  # NaI:Tl yes, BGO/LYSO no
+
+    # Activator identity and concentration (#243). Both have been written in
+    # the scintillator TOMLs since before there were fields to receive them
+    # (`[lyso.Ce.optical] dopant_pct = 0.1`, `[nai.Tl.optical] dopant = "Tl"`),
+    # so the loader silently dropped them on every load. The activator is what
+    # makes a scintillator scintillate; it is not an incidental label.
+    dopant: Optional[str] = None  # e.g. "Ce", "Tl", "Na"
+    dopant_pct: Optional[float] = None  # mol %
 
     # T-dependent curves (#148). Refractive index, light yield, decay time
     # are the dimensionless / unit-implicit ones — no `_unit` field exists.
@@ -515,6 +646,12 @@ class OpticalProperties:
             return None
         return self.rayleigh_length * ureg(self.rayleigh_length_unit)
 
+    @property
+    def absorption_length_qty(self) -> Optional["Quantity"]:
+        if self.absorption_length is None:
+            return None
+        return self.absorption_length * ureg(self.absorption_length_unit)
+
     def refractive_index_at(self, temp: "Quantity") -> Optional[float]:
         """Refractive index at T. Curve > scalar fallback (#148)."""
         return _eval_curve_or_scalar(self.refractive_index_curve, self.refractive_index, None, temp)
@@ -526,6 +663,373 @@ class OpticalProperties:
     def decay_time_at(self, temp: "Quantity") -> Optional[float]:
         """Scintillator decay time at T. Curve > scalar fallback (#148)."""
         return _eval_curve_or_scalar(self.decay_time_curve, self.decay_time, None, temp)
+
+    # =====================================================================
+    # Wavelength accessors (#243, ADR-0004 §4)
+    #
+    # The lambda twins of the `_at(T)` methods above. Deliberately named
+    # differently — `refractive_index_at(T)` is temperature and has shipped
+    # since #148, so overloading it on argument type would be a silent
+    # behaviour change for existing callers. `n_at(lambda)` is unambiguous.
+    #
+    # Every one accepts a Pint Quantity or a bare number in nm, prefers the
+    # structured spectrum over the scalar, and CLAMPS outside the measured
+    # range rather than extrapolating.
+    # =====================================================================
+
+    @property
+    def refractive_index_dispersion_curve(self) -> Optional[WavelengthCurve]:
+        """`refractive_index_dispersion` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.refractive_index_dispersion, "n")
+
+    @property
+    def extinction_curve(self) -> Optional[WavelengthCurve]:
+        """The `k` column of `refractive_index_dispersion`, or None.
+
+        Absorbing media (metals) carry `k` alongside `n` in the same table;
+        transparent ones omit it. The #164 enricher writes both when the
+        upstream CC0 entry has them.
+        """
+        if self.refractive_index_dispersion is None:
+            return None
+        if "k" not in self.refractive_index_dispersion:
+            return None
+        return _as_wl_curve(self.refractive_index_dispersion, "k")
+
+    @property
+    def emission_spectrum_curve(self) -> Optional[WavelengthCurve]:
+        """`emission_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.emission_spectrum, "intensities")
+
+    @property
+    def absorption_length_curve(self) -> Optional[WavelengthCurve]:
+        """`absorption_length_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.absorption_length_spectrum, "values")
+
+    @property
+    def transparency_curve(self) -> Optional[WavelengthCurve]:
+        """`transparency_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.transparency_spectrum, "values")
+
+    def transparency_at(self, wavelength: Any) -> Optional[float]:
+        """Transmission (%) at a wavelength. Spectrum > scalar fallback.
+
+        The path length the figure was measured over lives in the `_sources`
+        note, because a transmission percentage without one is not a number.
+        """
+        return _eval_wl_or_scalar(
+            self.transparency_spectrum, "values", self.transparency, None, wavelength
+        )
+
+    @property
+    def reflectivity_curve(self) -> Optional[WavelengthCurve]:
+        """`reflectivity_spectrum` as a `WavelengthCurve`, or None."""
+        return _as_wl_curve(self.reflectivity_spectrum, "values")
+
+    def reflectivity_at(self, wavelength: Any) -> Optional[float]:
+        """Reflectivity (%) at a wavelength. Spectrum > scalar fallback.
+
+        Distinct from `normal_reflectance_at`, which *derives* reflectance from
+        n,k. This one returns a *measured* reflectivity where the data carries
+        one — for a diffuse reflector like pressed BaSO4 there is no meaningful
+        n,k to derive from, because the reflectance comes from multiple
+        scattering in a powder rather than a Fresnel step at a smooth surface.
+        """
+        return _eval_wl_or_scalar(
+            self.reflectivity_spectrum, "values", self.reflectivity, None, wavelength
+        )
+
+    def n_at(self, wavelength: Any) -> Optional[float]:
+        """Refractive index at a wavelength. Dispersion > scalar fallback.
+
+        Args:
+            wavelength: Pint Quantity (e.g. `420 * ureg.nm`) or bare nm.
+
+        Returns:
+            Dimensionless n, or None when neither dispersion nor scalar is set.
+        """
+        return _eval_wl_or_scalar(
+            self.refractive_index_dispersion, "n", self.refractive_index, None, wavelength
+        )
+
+    def k_at(self, wavelength: Any) -> Optional[float]:
+        """Extinction coefficient at a wavelength, or None for a transparent medium."""
+        curve = self.extinction_curve
+        if curve is None:
+            return None
+        return curve.interpolate(_to_nm(wavelength))
+
+    def normal_reflectance_at(self, wavelength: Any) -> Optional[float]:
+        """Normal-incidence reflectance from vacuum, in PERCENT (0-100).
+
+        Derived, not stored — the Fresnel result for a semi-infinite medium
+        with complex index `n - ik` against vacuum::
+
+            R = ((n - 1)^2 + k^2) / ((n + 1)^2 + k^2)
+
+        Returned as a percent to match the `reflectivity` / `transparency`
+        convention on this dataclass. This is the number a wrap or mirror
+        contributes per bounce, so it is worth deriving from cited n,k rather
+        than carrying a separate hand-entered scalar that can drift from them.
+
+        A dielectric with no `k` uses k = 0, which is the correct limit.
+        Returns None when there is no refractive index at all.
+
+        NOTE: this is a *bulk, normal-incidence, optically-thick, perfectly
+        smooth* reflectance. A real wrap is rough, oxidised, and struck at all
+        angles, so it will measure lower — treat this as the ceiling, and
+        prefer a measured surface entry where one exists (ADR-0004 §3).
+        """
+        n = self.n_at(wavelength)
+        if n is None:
+            return None
+        k = self.k_at(wavelength) or 0.0
+        r = ((n - 1.0) ** 2 + k**2) / ((n + 1.0) ** 2 + k**2)
+        return 100.0 * r
+
+    def absorption_length_at(self, wavelength: Any) -> Optional["Quantity"]:
+        """Bulk attenuation length at a wavelength. Spectrum > scalar fallback.
+
+        This is the LUMPED length — everything that removes a photon from the
+        beam. When a material declares the `_matrix` / `_reabs` split, prefer
+        those: they separate true loss from re-emittable self-absorption.
+        """
+        return _eval_wl_or_scalar(
+            self.absorption_length_spectrum,
+            "values",
+            self.absorption_length,
+            self.absorption_length_unit,
+            wavelength,
+        )
+
+    def absorption_length_matrix_at(self, wavelength: Any) -> Optional["Quantity"]:
+        """Host-matrix (true-loss) attenuation length at a wavelength."""
+        return _eval_wl_or_scalar(
+            self.absorption_length_matrix_spectrum,
+            "values",
+            self.absorption_length_matrix,
+            self.absorption_length_matrix_unit,
+            wavelength,
+        )
+
+    def absorption_length_reabs_at(self, wavelength: Any) -> Optional["Quantity"]:
+        """Activator self-absorption length at a wavelength.
+
+        A photon absorbed on this channel may be re-emitted with probability
+        `reemit_qe` after a fresh decay draw.
+        """
+        return _eval_wl_or_scalar(
+            self.absorption_length_reabs_spectrum,
+            "values",
+            self.absorption_length_reabs,
+            self.absorption_length_reabs_unit,
+            wavelength,
+        )
+
+    # --- Kubelka-Munk (#243) ------------------------------------------
+
+    def km_k_at(self, wavelength: Any) -> Optional[float]:
+        """Kubelka-Munk absorption coefficient (1/cm) at a wavelength."""
+        curve = _as_wl_curve(self.kubelka_munk, "k")
+        return None if curve is None else curve.interpolate(_to_nm(wavelength))
+
+    def km_s_at(self, wavelength: Any) -> Optional[float]:
+        """Kubelka-Munk scattering coefficient (1/cm) at a wavelength."""
+        curve = _as_wl_curve(self.kubelka_munk, "s")
+        return None if curve is None else curve.interpolate(_to_nm(wavelength))
+
+    def km_reflectance_infinite_at(self, wavelength: Any) -> Optional[float]:
+        """Reflectance (%) of an infinitely thick layer, from the K-M ratio.
+
+        ``R_inf = 1 + k/s - sqrt((k/s)^2 + 2k/s)``
+
+        Derived rather than stored. Its value is that it is *independently*
+        derived: if a material also carries a measured `reflectivity_spectrum`
+        and the two disagree, that is a real discrepancy between two sources
+        and the material should say so rather than quietly carry both.
+        """
+        k = self.km_k_at(wavelength)
+        s = self.km_s_at(wavelength)
+        if k is None or s is None or s <= 0:
+            return None
+        x = k / s
+        return 100.0 * (1.0 + x - math.sqrt(x * x + 2.0 * x))
+
+    @staticmethod
+    def obliquity_factor(incidence_deg: float) -> float:
+        """Path-length multiplier `1/cos(theta)` for a slab at incidence `theta`.
+
+        A ray crossing a slab of thickness `d` at `theta` from the normal
+        travels `d/cos(theta)`. At grazing incidence this diverges, so it is
+        capped at 40 (≈88.6°) — beyond that a plane-parallel slab model has
+        stopped describing anything real, and returning a finite large number
+        is less misleading than returning infinity.
+        """
+        theta = math.radians(abs(float(incidence_deg)))
+        factor = float("inf") if theta >= math.pi / 2 else 1.0 / math.cos(theta)
+        if factor > 40.0:
+            logger.debug(
+                "obliquity_factor: theta=%s deg gives 1/cos = %s; capping at 40. "
+                "A plane-parallel slab model has stopped describing anything real "
+                "by this angle.",
+                incidence_deg,
+                factor,
+            )
+            return 40.0
+        return factor
+
+    def km_split_at(
+        self, wavelength: Any, thickness_cm: float, incidence_deg: float = 0.0
+    ) -> Optional[tuple]:
+        """`(R, T, A)` in PERCENT for a finite layer — every photon's fate.
+
+        Returns reflected, transmitted and absorbed fractions, which sum to
+        100% by construction. This is the accessor a segmented-detector model
+        wants: `T` is the inter-crystal crosstalk channel, `A` is the only true
+        loss, and `R` is the reflectance that layer *actually* delivers — which
+        is not `km_reflectance_infinite_at` unless the layer is thick.
+
+        **The layer is against a non-reflecting (black) backing**, i.e. a
+        transmitted photon is gone from this interface's point of view. That is
+        the correct model for an inter-crystal septum, where a photon crossing
+        the septum has entered the neighbour.
+
+        There is deliberately no `backing_reflectance` parameter. With a
+        reflective backing, Kubelka-Munk's `R` is the reflectance of the
+        *composite* (layer plus backing, including light that crossed the layer,
+        bounced, and came back), while `T` remains the layer's own
+        transmittance. Those are not two parts of one photon budget, so
+        `A := 100 - R - T` stops meaning "absorbed" and can go negative. An
+        earlier revision of this method exposed such a parameter and documented
+        a conservation property it did not have; rather than guess at the right
+        decomposition it was removed, and will return only with a physical
+        definition and a consumer that needs it.
+
+        Note the limiting behaviour, because it is easy to get backwards:
+        with `k = 0` the thick-layer reflectance is exactly 1, not 0.999.
+        **Absorption is the only thing that makes R_inf differ from unity** —
+        it is not a small correction to a non-absorbing model, it is the entire
+        reason the asymptote is below 1. Finite thickness is what drives R
+        below R_inf; `k` is what sets R_inf itself.
+        """
+        k = self.km_k_at(wavelength)
+        s = self.km_s_at(wavelength)
+        if k is None or s is None or s <= 0 or thickness_cm <= 0:
+            return None
+        # Obliquity: a ray at theta crosses d/cos(theta) of material.
+        thickness_cm = thickness_cm * self.obliquity_factor(incidence_deg)
+        if k == 0:
+            sd = s * thickness_cm
+            r = sd / (1.0 + sd)
+            t = 1.0 / (1.0 + sd)
+            return (100.0 * r, 100.0 * t, 0.0)
+        a = 1.0 + k / s
+        b = math.sqrt(a * a - 1.0)
+        bsd = b * s * thickness_cm
+        # Optically thick limit. `cosh` overflows a float64 above ~710, and
+        # `coth` is already 1.0 to machine precision by ~20, so branch before
+        # the arithmetic can raise. This branch is EXACT, not an approximation:
+        # coth -> 1 gives R = 1/(a+b), and (1+x+sqrt(x^2+2x))(1+x-sqrt(x^2+2x))
+        # = 1, so 1/(a+b) is identically R_inf. T falls as e^-bsd, i.e. below
+        # 1e-9 here.
+        if bsd > 20.0:
+            r = 1.0 / (a + b)
+            return (100.0 * r, 0.0, 100.0 * (1.0 - r))
+        coth = math.cosh(bsd) / math.sinh(bsd)
+        r = 1.0 / (a + b * coth)
+        t = b / (a * math.sinh(bsd) + b * math.cosh(bsd))
+        return (100.0 * r, 100.0 * t, 100.0 * (1.0 - r - t))
+
+    def km_reflectance_at(
+        self, wavelength: Any, thickness_cm: float, incidence_deg: float = 0.0
+    ) -> Optional[float]:
+        """Reflectance (%) of a FINITE layer — the number a real reflector delivers.
+
+        Prefer this over `km_reflectance_infinite_at` for any physical layer.
+        A 0.2 mm BaSO4 septum reflects ~92%, not the ~97% thick-layer limit and
+        certainly not the ~99.9% quoted for a pressed-powder standard, because
+        the balance goes straight through.
+        """
+        split = self.km_split_at(wavelength, thickness_cm, incidence_deg)
+        return None if split is None else split[0]
+
+    def km_transmittance_at(
+        self, wavelength: Any, thickness_cm: float, incidence_deg: float = 0.0
+    ) -> Optional[float]:
+        """Diffuse transmittance (%) through a finite layer, K-M hyperbolic form.
+
+        ``T = b / (a*sinh(b*s*d) + b*cosh(b*s*d))``, with ``a = 1 + k/s`` and
+        ``b = sqrt(a^2 - 1)``.
+
+        This is the accessor that matters for a thin reflector, and it answers
+        a *different question* from `km_reflectance_infinite_at`. Reflectance
+        converges to its thick-layer limit quickly; transmittance does not go
+        to zero anywhere near as fast. A layer can be "optically thick" for the
+        purpose of reflectance and still transmit several percent — which is a
+        crosstalk channel, not a rounding error.
+
+        **`incidence_deg` is for COLLIMATED light at a known angle.** For
+        DIFFUSE illumination pass 0 — see the double-counting warning below.
+
+        A ray crossing at `theta` travels `d/cos(theta)`, so a beam at 60
+        degrees sees twice the material. That much is straightforward.
+
+        TWO TRAPS, both of which have bitten real consumers of this accessor:
+
+        1. **A diffuse reflector erases the incident angular distribution.**
+           After one contact with a Lambertian surface, direction is
+           cosine-distributed about that surface's normal, with mean
+           `|cos theta| = 2/3` exactly, i.e. 48.2 degrees — *regardless* of how
+           the light arrived. So reasoning like "the crystal is high-aspect, so
+           light strikes the walls at grazing incidence" is wrong the moment the
+           wall is a diffuse reflector: the reflector, not the geometry, sets
+           the angle. It is only right for a specular wall.
+
+        2. **Kubelka-Munk coefficients are already defined for diffuse flux.**
+           The K-M two-flux formalism bakes the obliquity of diffuse
+           illumination into `k` and `s` (this is the origin of the factor 2 in
+           the usual `K = 2k` convention). So if your light IS diffuse, plain
+           `d` is already correct and multiplying by `1/cos` double-counts.
+           Use this parameter for a collimated beam; leave it at 0 for
+           diffusely-illuminated layers.
+
+        Note also that transmittance is nonlinear in path, so evaluating at a
+        mean angle is not the same as averaging over the distribution — though
+        for a Lambertian distribution on a 0.2 mm septum the two agree to about
+        0.1 percentage points, so it is a small effect here.
+
+        **`thickness_cm` and `incidence_deg` are degenerate.** They enter only
+        through the product `d/cos(theta)` — the optical thickness — so
+        `(0.02 cm, 76.7 deg)` and `(0.087 cm, 0 deg)` return byte-identical
+        results. Nothing downstream of this call can tell them apart.
+
+        That matters when fitting. A layer fitted against measured R or T
+        constrains the PRODUCT, never either factor, so "the light arrives at
+        77 degrees" and "the layer is 4.3x thicker than nominal" are the same
+        claim wearing different clothes. Both have been proposed for the same
+        detector; the arithmetic could not distinguish them, and only measuring
+        the angle directly did. If you fit here, fit optical thickness and say
+        so — then go measure a factor independently.
+        """
+        split = self.km_split_at(wavelength, thickness_cm, incidence_deg)
+        return None if split is None else split[1]
+
+    def emission_at(self, wavelength: Any) -> Optional[float]:
+        """Relative emission intensity at a wavelength, or None if no spectrum.
+
+        No scalar fallback exists by construction — `emission_peak` is one
+        point on a band, not a stand-in for its shape. A caller with only a
+        peak should sample monochromatically and know that it is doing so.
+        """
+        # Validate the argument before the early return, so a bad wavelength
+        # fails the same way regardless of whether this particular material
+        # happens to have a spectrum. Otherwise the same call silently returns
+        # None on LYSO and raises on the next material along.
+        nm = _to_nm(wavelength)
+        curve = self.emission_spectrum_curve
+        if curve is None:
+            return None
+        return curve.interpolate(nm)
 
 
 @dataclass
@@ -724,6 +1228,12 @@ class ComplianceProperties:
     uv_resistant: Optional[bool] = None
     radiation_resistant: Optional[bool] = None  # gamma, neutron, etc.
     flame_retardant: Optional[bool] = None
+    # Distinct from `flame_retardant`, which is a property of a treated
+    # material; `flammable` is a hazard classification. Both written in the
+    # TOMLs (hydrogen, methane) with no field to land in until #243.
+    flammable: Optional[bool] = None
+    # Handling hazard — beryllia dust is the canonical case.
+    toxic: Optional[bool] = None
 
     # Recyclability
     recyclable: Optional[bool] = None

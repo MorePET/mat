@@ -685,3 +685,70 @@ class TestCuratedCatalog:
         assert inconel718.density == 8.22
         # Inconel 718 STA — much higher Ftu than 625 annealed
         assert inconel718.properties.mechanical.tensile_strength == 1241
+
+    def test_wavelength_dependent_optics(self):
+        """
+        ## Wavelength-dependent optical properties
+
+        Refractive index, attenuation and emission are functions of
+        wavelength, not scalars. Accessors take nanometres (or a Pint
+        `Quantity`) and **clamp** outside the measured range rather than
+        extrapolating — `range_nm` tells you where the data actually stops.
+        """
+        import pymat
+
+        bgo = pymat.bgo.properties.optical
+
+        # n(lambda) from a CC0 Sellmeier fit, not a single scalar.
+        assert round(bgo.n_at(420), 3) == 2.198
+        assert round(bgo.n_at(480), 3) == 2.154
+
+        # The scalar is fitted near the emission peak, so it understates n
+        # at the blue end of the band.
+        assert bgo.refractive_index == 2.15
+        assert bgo.n_at(420) > bgo.refractive_index
+
+        # Outside the measured range the curve clamps; `range_nm` says where.
+        lo, hi = bgo.refractive_index_dispersion_curve.range_nm
+        assert bgo.n_at(lo - 100) == bgo.n_at(lo)
+
+    def test_declared_absences(self):
+        """
+        ## Declared absences
+
+        `None` cannot distinguish "nobody looked" from "we looked and the
+        number does not exist". A declared absence records the second, with
+        a reason from a closed vocabulary and a note explaining the search.
+        """
+        import pymat
+
+        # LYSO's emission spectrum exists only in paywalled figures.
+        assert pymat.lyso.properties.optical.emission_spectrum is None
+        assert pymat.lyso.is_absent("optical.emission_spectrum")
+        assert pymat.lyso.absent("optical.emission_spectrum").reason == "proprietary"
+
+        # A property nobody has declared anything about stays silent.
+        assert pymat.lyso.properties.optical.scattering_length is None
+        assert not pymat.lyso.is_absent("optical.scattering_length")
+
+    def test_measured_surface_finishes(self):
+        """
+        ## Measured surface finishes
+
+        `pymat.surfaces` catalogues measured optical *interfaces* — the 21
+        LBNL and 9 DAVIS look-up tables from Geant4's `RealSurface` 2.2 data
+        set, plus cited diffuse and specular reflectors. A `Surface` is not a
+        `Material`: it has no density, formula or mass.
+        """
+        from pymat import surfaces
+
+        s = surfaces["davis.polished_esr_grease"]
+        assert s.lut_surface == "PolishedESRGrease_LUT"  # exact G4 enum spelling
+        assert s.coupling == "optical_contact"
+        assert s.coupling_index == 1.465  # BC-630 silicone grease
+
+        # Air-gap and index-matched coupling are physically different and
+        # are distinguishable — the same reflector, two measured surfaces.
+        air = surfaces["davis.polished_esr"]
+        assert air.coupling == "air_gap"
+        assert air.reflector_material == s.reflector_material == "esr"

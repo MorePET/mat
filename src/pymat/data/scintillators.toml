@@ -1,5 +1,28 @@
 # Scintillator crystals and plastic scintillators database
 # Units: All values use explicit *_value and *_unit format for v2.0.0 compatibility
+#
+# ---------------------------------------------------------------------------
+# Who owns `refractive_index_dispersion` here (ADR-0004 §10)
+# ---------------------------------------------------------------------------
+# `scripts/enrich_from_refractiveindex.py` (#164) is an ADD-ONLY enricher that
+# pulls CC0 dispersion from refractiveindex.info and writes it with a `_sources`
+# row. It SKIPS any material that already has dispersion, so hand-authored data
+# inside its scope would permanently mask the automated pull and the two would
+# diverge invisibly.
+#
+#   In scope, DO NOT hand-author:  nai, nai.Tl, csi, csi.Tl, csi.Na, bgo
+#   Out of scope, hand-author with a citation:  lyso, lso, gagg, labr3, pwo,
+#                                               plastic_scint, cebr3, sri2
+#
+# All six in-scope materials are currently EMPTY on disk — the enricher has not
+# been run to `--write`. That is the action, not typing the numbers in:
+#
+#     python scripts/enrich_from_refractiveindex.py --key bgo --dry-run
+#     python scripts/enrich_from_refractiveindex.py --write
+#
+# Note that refractiveindex.info carries neither LSO nor LYSO, so `lyso` is out
+# of scope for a reason that no amount of running the enricher will fix — see
+# its `_absent` block below.
 
 [lyso]
 name = "LYSO"
@@ -10,14 +33,60 @@ density_value = 7.1
 density_unit = "g/cm^3"
 
 [lyso.optical]
+# LYSO is optically BIAXIAL positive — n_x = 1.8077, n_y = 1.8110, n_z = 1.8307
+# at 524 nm (Chen/Mao/Zhu 2011). The scalar below is the isotropic value the
+# vendor datasheets quote near the emission peak, which is what a transport
+# code using a single index wants; the anisotropy is recorded in the source
+# note rather than faked with a tensor the schema cannot hold.
 refractive_index = 1.82
 light_yield = 32000
 decay_time = 41
 emission_peak = 420
+# Emission band shape. Peak 420 nm (vendor), but the band is centred nearer
+# 430 nm with ~60 nm FWHM (Bosca & Lopez 2023) because it is the sum of two
+# inequivalent Ce sites (Ce1 ~393/427 nm, Ce2 ~460 nm).
+emission_range = [380, 600]
+# Lumped bulk attenuation. See the _sources note — this is a Monte-Carlo
+# CONVENTION with a traceable provenance chain, not a measured bulk constant.
+absorption_length = 200.0
+# Self-absorption channel. Bosca & Lopez 2023 measure a loss coefficient of
+# alpha_L = 1.7e-2 /cm in the emission band over 105 mm of propagation;
+# 1/alpha_L = 58.8 cm = 588 mm. This is the Ce re-absorption channel
+# specifically, not total attenuation.
+absorption_length_reabs = 588.0
+temperature_coefficient_light_yield = -0.15
+hygroscopic = false
 
 [lyso.nuclear]
 radiation_length = 1.14
 interaction_length = 25
+# 176-Lu is 2.6% of natural Lu and beta-decays with T_1/2 = 3.76e10 yr, giving
+# LYSO a permanent internal count rate. Load-bearing for low-activity PET.
+intrinsic_activity_Bq_per_g = 40
+
+[lyso._sources]
+"optical.refractive_index" = { citation = "chen_mao_zhu_2011", kind = "doi", ref = "10.1016/j.optmat.2011.10.006", license = "proprietary-reference-only", note = "Chen, Mao, Zhu, 'Refractive index measurement of cerium-doped Lu_xY_(2-x)SiO5 single crystal', Opt. Mater. 34, 351-353 (2011). Minimum-deviation method, 7 wavelengths over 400-700 nm. Principal indices at 524 nm: n_x=1.8077, n_y=1.8110, n_z=1.8307. The 1.82 scalar here is the vendor near-peak figure (Luxium quotes 1.81 at 420 nm, Berkeley Nucleonics 1.82); it sits within the measured principal-index spread." }
+"optical.emission_range" = { citation = "bosca_lopez_2023", kind = "doi", ref = "10.1038/s41598-023-32689-z", license = "CC-BY-4.0", note = "Bosca & Lopez, Sci. Rep. 13, 7199 (2023). Band centred 430 nm with 60 nm FWHM from a two-Ce-site Gaussian decomposition (Ce1 at 3.17 eV / 2.93 eV = 393 / 427 nm; Ce2 near 460 nm). The [380, 600] range here is the practical support, not a measured cutoff." }
+"optical.absorption_length" = { citation = "usubov_2013", kind = "doi", ref = "10.48550/arXiv.1305.3010", license = "proprietary-reference-only", note = "CAUTION: this is a Monte-Carlo CONVENTION, not a measured bulk constant. Usubov 2013 adopts 20 cm flat across the emission band, inferred from Vilardi et al. 2006 (NIM A 564, 506-514, doi:10.1016/j.nima.2006.04.079), who measured ~10 cm EFFECTIVE attenuation in 3.2x3.2x100 mm polished bars — a figure that includes surface and wrapping losses, so it is a lower bound on the bulk value. Other simulation papers use 15 cm and 40 cm. A consumer that needs the physical bulk number should prefer the self-absorption channel below, which is directly measured. SENSITIVITY (measured downstream, 2026-08-14): this value is NOT second-order. In a wrapped 3x3x25 mm crystal it moves mean collection efficiency by +17% at a reflector R=0.97 but by +53% at R=0.999, because the two interact - at low reflectivity photons die at the wrap before path length matters, at high reflectivity they survive to accumulate path and absorption takes over. Sweep this value; do not adopt it. Any claim that it is second-order is only true at whatever reflectance it was computed against." }
+"optical.absorption_length_reabs" = { citation = "bosca_lopez_2023", kind = "doi", ref = "10.1038/s41598-023-32689-z", license = "CC-BY-4.0", note = "Self-absorption loss coefficient alpha_L = 1.7e-2 /cm measured over 105 mm of propagation in the emission band; inverted to 588 mm. This is the Ce re-absorption channel only. Corroborated qualitatively by Mao/Zhang/Zhu 2008 (IEEE TNS 55, 1229, doi:10.1109/TNS.2008.922804), who observe the emission spectrum red-shifting with path length in a 200 mm crystal — the signature of the Ce excitation tail eating the emission blue edge." }
+"optical.temperature_coefficient_light_yield" = { citation = "tully_2022", kind = "doi", ref = "10.48550/arXiv.2205.14890", license = "proprietary-reference-only", note = "-0.15 %/degC mean across producers; producer range -0.28 to -0.08 %/degC." }
+"optical.hygroscopic" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "Non-hygroscopic — one of LYSO's main practical advantages over NaI:Tl." }
+"nuclear.intrinsic_activity_Bq_per_g" = { citation = "enriquez_mier_y_teran_2020", kind = "doi", ref = "10.1186/s40658-020-00291-1", license = "CC-BY-4.0", note = "~40 Bq/g (~300 Bq/cm^3 at 7.1 g/cm^3). The 39 Bq/g figure widely quoted elsewhere is the same number derived from 2.59% 176-Lu abundance and T_1/2 = 3.76e10 yr; the ~5% spread tracks the half-life uncertainty (Kossert et al. 2023 remeasure 3.72e10 yr). Decay: beta- endpoint 593 keV, prompt gammas at 88 / 202 / 307 keV (Alva-Sanchez et al. 2018, doi:10.1038/s41598-018-35684-x, CC-BY-4.0)." }
+
+# ---------------------------------------------------------------------------
+# Declared absences (#243, ADR-0004 §6). These are NOT gaps nobody looked at.
+# Each one was searched for and is recorded here so a downstream engine can
+# tell "unmeasured" from "unvisited" — including the field the strata brief
+# calls its single highest-value ask.
+# ---------------------------------------------------------------------------
+[lyso._absent]
+"optical.emission_spectrum" = { reason = "proprietary", note = "No tabulated (wavelength, intensity) LYSO:Ce emission spectrum exists in a redistributable source. The two papers that plot one — Mao/Zhang/Zhu 2008 (IEEE TNS 55, 1229, doi:10.1109/TNS.2008.922804) and Melcher & Schweitzer's original LSO characterisation — are paywalled figures, and digitising them would produce a derivative of a proprietary figure. What IS available and cited above: peak 420 nm, band centre 430 nm, FWHM 60 nm, and the two-Ce-site Gaussian decomposition from Bosca & Lopez 2023 (CC-BY). A consumer needing a curve should synthesise it from those parameters ON ITS OWN SIDE and label it as synthesised — this database will not ship a fabricated Gaussian as if it were measured." }
+"optical.refractive_index_dispersion" = { reason = "proprietary", note = "Sellmeier coefficients for LYSO exist — Chen/Mao/Zhu 2011 (doi:10.1016/j.optmat.2011.10.006) fit all three principal indices, and Petrosyan et al. 2015 (doi:10.1016/j.optmat.2015.06.023) publish another — but both sit behind Elsevier paywalls and the coefficients could not be extracted. refractiveindex.info, which is CC0 and is the automated enricher's source (#164), carries neither LSO nor LYSO; verified twice. This is a genuine absence, not a licensing artifact of our tooling. Populating it requires paid access to Chen 2011." }
+"optical.decay_components" = { reason = "not-measured", note = "No clean multi-exponential (tau_i, A_i) table for standard uncodoped LYSO:Ce at room temperature exists in an openly readable primary. The review literature repeats 'fast 20-30 ns at 10-40%, slow ~43 ns at 60-90%' but it could not be tied to a single measurement paper. Related primaries that are NOT the same material or condition: ter Weele/Schaart/Dorenbos 2014 (doi:10.1186/2197-7364-1-S1-A10) for Ca-codoped LSO:Ce, and Jary et al. 2015 (doi:10.1002/pssb.201451234) for a microsecond-scale thermally-stimulated component. The single-exponential decay_time above is the honest representation of what is published." }
+"optical.absorption_length_matrix" = { reason = "not-measured", note = "The host-matrix loss channel with cerium subtracted has no clean measurement. Undoped LSO/LYSO transmits down to a ~200 nm cutoff, so the matrix contribution at 420-500 nm is expected to be small relative to the Ce self-absorption recorded above — but 'expected to be small' is not a number. Declared absent rather than back-computed from absorption_length minus absorption_length_reabs, which would silently promote a Monte-Carlo convention into a measurement (ADR-0004 §5). PRIORITY NOTE: a downstream 2D sweep shows absorption length matters far more at realistic reflector reflectivity than a standalone sensitivity suggested (+53% at R=0.999 against +17% at R=0.97), so closing this gap is worth more than it first appeared. It still needs a measurement that does not exist; this records the raised value of finding one." }
+"optical.intrinsic_resolution_pct_at_662keV" = { reason = "proprietary", note = "LYSO:Ce-specific extracted intrinsic resolution exists but only behind paywalls: Wanarak, Chewpraditkul & Phunpueok, Procedia Engineering 32, 765-771 (2012), doi:10.1016/j.proeng.2012.02.010, and Sreebunpeng et al., Radiat. Meas. 125, 73-77 (2019), doi:10.1016/j.radmeas.2019.02.002. The nearest citable figure in this database is 7.7 +/- 1.0% on `lso.Ce`, and LYSO is expected to be BETTER, not equal - Wanarak measures total resolution 8.2% for LYSO:Ce against 10.6% for LSO:Ce at 662 keV, so the LYSO residual should sit below the LSO one. USING THE LSO VALUE FOR LYSO WOULD BE BIASED HIGH. Note also that R_int is a derived quantity, not a measured one: it is the residual after subtracting an ASSUMED photostatistical term, so a literature R_int and one extracted from your own detector are only comparable if the light-collection assumptions match. Chewpraditkul's LSO figure comes from a 10x10x5 mm crystal on a PMT with N_pe = 6610; a small PET crystal on a SiPM is a different regime entirely." }
+"optical.intrinsic_resolution_pct_at_511keV" = { reason = "not-measured", note = "No primary source at 511 keV for LYSO:Ce or LSO:Ce - see the same declaration on `lso.Ce` for the full reasoning. R_int is energy-dependent, so the 662 keV figure is not a substitute." }
+"optical.reemit_qe" = { reason = "not-measured", note = "No published scalar for the probability that a REABSORBED scintillation photon is re-emitted. The number frequently pressed into this role is Bosca & Lopez 2023's absolute photoluminescence quantum yield, PLQY = 0.51 at 365 nm excitation (CC-BY, doi:10.1038/s41598-023-32689-z) — but PLQY under external UV pumping is not the same physical quantity as re-emission efficiency following self-absorption within the emission band, and the substitution is an assumption, not a measurement. A consumer that needs a value should adopt 0.51 explicitly as an assumption anchored to that paper, on its own side, where the assumption is visible in the run config." }
 [lyso.vis]
 base_color = [0.0, 1.0, 1.0, 0.85]
 metallic = 0.0
@@ -37,7 +106,29 @@ formula = "Lu1.8Y0.2SiO5:Ce"
 [lyso.Ce.optical]
 light_yield = 33000
 decay_time = 41
+dopant = "Ce"
 dopant_pct = 0.1
+# 72 ps rise, measured under 511 keV excitation with a solid-state photon
+# counter. Short relative to the 41 ns decay, but it is the term that sets the
+# leading edge of the timing distribution, so a CTR calculation needs it.
+rise_time = 0.072
+
+[lyso.Ce._sources]
+"optical.rise_time" = { citation = "seifert_2012", kind = "doi", ref = "10.1088/1748-0221/7/09/P09004", license = "CC-BY-3.0", note = "Seifert et al., JINST 7 P09004 (2012). Same measurement reports a 43 ns single-exponential decay under 511 keV excitation, consistent with the 41 ns photoluminescence lifetime above." }
+"optical.dopant_pct" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "Nominal Ce doping; producers vary and rarely publish exact concentrations. Tully 2022 (arXiv:2205.14890) finds ~8% relative spread in light output across 8 producers, of which doping variation is one contributor." }
+
+# LYSO:Ce with a polished crystal face. A treatment is a substance fact — the
+# face was prepared this way — and everything else inherits (#243).
+#
+# Deliberately NOT carrying a `default_surface` key. Which finish a polished
+# crystal is then WRAPPED in (ESR with grease? Teflon with an air gap?) is a
+# fact about a detector somebody built, not about the crystal, and it would
+# inherit down to every vendor variant below as a wrapping choice nobody made.
+# The surface catalogue in surfaces.toml names the finishes; pairing a material
+# with a finish is the consuming engine's job. See ADR-0004 §9.
+[lyso.Ce.polished]
+name = "LYSO:Ce, polished"
+treatment = "polished"
 
 # Saint-Gobain
 [lyso.Ce.saint_gobain]
@@ -49,8 +140,15 @@ name = "Saint-Gobain PreLude 420 LYSO:Ce"
 vendor = "saint_gobain"
 
 [lyso.Ce.saint_gobain.prelude420.optical]
-light_yield = 34000
+# Corrected 34000 -> 33200 in #243: the Luxium (formerly Saint-Gobain Crystals)
+# PreLude 420 data sheet states 33200 ph/MeV. 34000 was an uncited round-up.
+light_yield = 33200
 decay_time = 41
+refractive_index = 1.81
+
+[lyso.Ce.saint_gobain.prelude420._sources]
+"optical.light_yield" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "33200 ph/MeV. Saint-Gobain Crystals was rebranded Luxium Solutions in 2022; PreLude 420 is the same product line." }
+"optical.refractive_index" = { citation = "luxium_prelude420", kind = "vendor", ref = "https://luxiumsolutions.com/sites/default/files/2021-08/LYSO-Material-Data-Sheet.pdf", license = "proprietary-reference-only", note = "1.81 at the 420 nm emission peak — the vendor's own figure, slightly below the 1.82 generic scalar on the parent." }
 
 # Epic Crystal
 [lyso.Ce.epic]
@@ -76,10 +174,26 @@ density_value = 7.13
 density_unit = "g/cm^3"
 
 [bgo.optical]
+refractive_index_dispersion = {wavelengths_nm = [305.0, 312.4815, 320.1465, 327.9996, 336.0453, 344.2883, 352.7336, 361.386, 370.2506, 379.3327, 388.6376, 398.1707, 407.9376, 417.9441, 428.1961, 438.6996, 449.4607, 460.4858, 471.7813, 483.3539, 495.2103, 507.3576, 519.8029, 532.5534, 545.6167, 559.0005, 572.7125, 586.7609, 601.1539, 615.8999, 631.0077, 646.486, 662.344, 678.591, 695.2366, 712.2904, 729.7626, 747.6633, 766.0032, 784.7929, 804.0435, 823.7664, 843.973, 864.6753, 885.8854, 907.6158, 929.8792, 952.6887, 976.0577, 1000.0], n = [2.410454, 2.385429, 2.362493, 2.341416, 2.322001, 2.304077, 2.287495, 2.272127, 2.257859, 2.244592, 2.232237, 2.220716, 2.209958, 2.199903, 2.190492, 2.181677, 2.173412, 2.165655, 2.158369, 2.15152, 2.145077, 2.139012, 2.133299, 2.127915, 2.122837, 2.118046, 2.113523, 2.109251, 2.105214, 2.101398, 2.097789, 2.094375, 2.091144, 2.088085, 2.085188, 2.082444, 2.079844, 2.077379, 2.075043, 2.072827, 2.070725, 2.068731, 2.066839, 2.065044, 2.063339, 2.06172, 2.060183, 2.058723, 2.057337, 2.056019]}
 refractive_index = 2.15
 light_yield = 8500
 decay_time = 300
 emission_peak = 480
+emission_range = [375, 650]
+hygroscopic = false
+# DO NOT hand-author `refractive_index_dispersion` here — `bgo` is inside the
+# enricher's scope; see the header of this file and ADR-0004 §10.
+#
+# The data exists and is CC0: Williams et al., Appl. Opt. 35, 3562-3569 (1996),
+# doi:10.1364/AO.35.003562, Sellmeier n^2 - 1 = 3.1218393*L^2/(L^2 - 0.1807^2)
+# for L in um over 0.305-1.0 um, republished by refractiveindex.info under CC0.
+# It gives n = 2.177 at 420 nm and 2.080 at the 480 nm emission peak — note
+# that the 2.15 scalar above sits between them, so a monochromatic-at-peak
+# simulation using it is off by ~3% in n at the peak.
+#
+# THE ACTION IS TO RUN THE ENRICHER, not to type the numbers:
+#     python scripts/enrich_from_refractiveindex.py --key bgo --dry-run
+#     python scripts/enrich_from_refractiveindex.py --key bgo --write
 
 [bgo.nuclear]
 radiation_length = 1.12
@@ -113,6 +227,7 @@ refractive_index = 1.85
 light_yield = 38000
 decay_time = 230
 emission_peak = 410
+refractive_index_dispersion = {wavelengths_nm = [250.0, 277.2822, 307.5418, 341.1035, 378.3277, 419.6142, 465.4063, 516.1956, 572.5275, 635.0068, 704.3044, 781.1644, 866.4121, 960.9627, 1065.8316, 1182.1446, 1311.1508, 1454.2353, 1612.9345, 1788.9524, 1984.1789, 2200.7102, 2440.8714, 2707.2411, 3002.6795, 3330.3588, 3693.7973, 4096.8975, 4543.9876, 5039.8682, 5589.8638, 6199.8797, 6876.4661, 7626.8876, 8459.2018, 9382.3456, 10406.2311, 11541.8521, 12801.4023, 14198.4059, 15747.863, 17466.4107, 19372.5017, 21486.6025, 23831.4128, 26432.1098, 29316.6181, 32515.9098, 36064.3369, 40000.0], n = [2.080304, 1.983085, 1.919381, 1.875156, 1.843232, 1.81954, 1.801597, 1.787798, 1.77706, 1.768628, 1.761957, 1.756648, 1.752401, 1.748989, 1.746236, 1.744003, 1.742185, 1.740693, 1.739458, 1.738425, 1.737546, 1.736782, 1.7361, 1.735468, 1.73486, 1.734249, 1.733609, 1.73291, 1.732123, 1.731214, 1.730142, 1.728859, 1.727309, 1.725421, 1.72311, 1.720268, 1.716762, 1.712425, 1.707043, 1.700344, 1.691975, 1.681478, 1.668243, 1.651449, 1.629965, 1.602191, 1.565789, 1.517187, 1.45061, 1.355947]}
 
 [nai.nuclear]
 radiation_length = 2.59
@@ -134,6 +249,7 @@ light_yield = 38000
 decay_time = 230
 dopant = "Tl"
 dopant_pct = 0.05
+refractive_index_dispersion = {wavelengths_nm = [250.0, 277.2822, 307.5418, 341.1035, 378.3277, 419.6142, 465.4063, 516.1956, 572.5275, 635.0068, 704.3044, 781.1644, 866.4121, 960.9627, 1065.8316, 1182.1446, 1311.1508, 1454.2353, 1612.9345, 1788.9524, 1984.1789, 2200.7102, 2440.8714, 2707.2411, 3002.6795, 3330.3588, 3693.7973, 4096.8975, 4543.9876, 5039.8682, 5589.8638, 6199.8797, 6876.4661, 7626.8876, 8459.2018, 9382.3456, 10406.2311, 11541.8521, 12801.4023, 14198.4059, 15747.863, 17466.4107, 19372.5017, 21486.6025, 23831.4128, 26432.1098, 29316.6181, 32515.9098, 36064.3369, 40000.0], n = [2.080304, 1.983085, 1.919381, 1.875156, 1.843232, 1.81954, 1.801597, 1.787798, 1.77706, 1.768628, 1.761957, 1.756648, 1.752401, 1.748989, 1.746236, 1.744003, 1.742185, 1.740693, 1.739458, 1.738425, 1.737546, 1.736782, 1.7361, 1.735468, 1.73486, 1.734249, 1.733609, 1.73291, 1.732123, 1.731214, 1.730142, 1.728859, 1.727309, 1.725421, 1.72311, 1.720268, 1.716762, 1.712425, 1.707043, 1.700344, 1.691975, 1.681478, 1.668243, 1.651449, 1.629965, 1.602191, 1.565789, 1.517187, 1.45061, 1.355947]}
 
 [nai.Tl.saint_gobain]
 name = "Saint-Gobain NaI(Tl)"
@@ -159,6 +275,7 @@ density_unit = "g/cm^3"
 [csi.optical]
 refractive_index = 1.95
 emission_peak = 420
+refractive_index_dispersion = {wavelengths_nm = [250.0, 280.2165, 314.0853, 352.0475, 394.5982, 442.2918, 495.7499, 555.6693, 622.8309, 698.1101, 782.4881, 877.0644, 983.0719, 1101.892, 1235.0735, 1384.3521, 1551.6735, 1739.2184, 1949.4311, 2185.0514, 2449.1503, 2745.1698, 3076.968, 3448.8694, 3865.7211, 4332.9561, 4856.664, 5443.6706, 6101.6263, 6839.1067, 7665.7235, 8592.2503, 9630.7629, 10794.7966, 12099.5225, 13561.9458, 15201.1266, 17038.4289, 19097.799, 21406.0773, 23993.3484, 26893.3332, 30143.828, 33787.1978, 37870.9279, 42448.2429, 47578.8005, 53329.4691, 59775.1991, 67000.0], n = [2.209377, 2.038658, 1.948334, 1.892185, 1.854323, 1.827527, 1.807959, 1.793356, 1.782289, 1.773805, 1.767246, 1.76214, 1.758146, 1.755007, 1.752532, 1.750574, 1.749019, 1.74778, 1.746787, 1.745986, 1.745334, 1.744795, 1.744339, 1.743944, 1.743589, 1.743253, 1.74292, 1.742572, 1.742191, 1.741757, 1.741246, 1.740631, 1.739881, 1.738954, 1.737801, 1.736359, 1.734549, 1.73227, 1.729393, 1.725753, 1.721134, 1.715256, 1.707747, 1.698107, 1.685658, 1.669456, 1.648153, 1.61976, 1.581219, 1.527552]}
 
 [csi.nuclear]
 radiation_length = 1.86
@@ -176,6 +293,7 @@ name = "CsI(Tl)"
 formula = "CsI:Tl"
 
 [csi.Tl.optical]
+refractive_index_dispersion = {wavelengths_nm = [250.0, 280.2165, 314.0853, 352.0475, 394.5982, 442.2918, 495.7499, 555.6693, 622.8309, 698.1101, 782.4881, 877.0644, 983.0719, 1101.892, 1235.0735, 1384.3521, 1551.6735, 1739.2184, 1949.4311, 2185.0514, 2449.1503, 2745.1698, 3076.968, 3448.8694, 3865.7211, 4332.9561, 4856.664, 5443.6706, 6101.6263, 6839.1067, 7665.7235, 8592.2503, 9630.7629, 10794.7966, 12099.5225, 13561.9458, 15201.1266, 17038.4289, 19097.799, 21406.0773, 23993.3484, 26893.3332, 30143.828, 33787.1978, 37870.9279, 42448.2429, 47578.8005, 53329.4691, 59775.1991, 67000.0], n = [2.209377, 2.038658, 1.948334, 1.892185, 1.854323, 1.827527, 1.807959, 1.793356, 1.782289, 1.773805, 1.767246, 1.76214, 1.758146, 1.755007, 1.752532, 1.750574, 1.749019, 1.74778, 1.746787, 1.745986, 1.745334, 1.744795, 1.744339, 1.743944, 1.743589, 1.743253, 1.74292, 1.742572, 1.742191, 1.741757, 1.741246, 1.740631, 1.739881, 1.738954, 1.737801, 1.736359, 1.734549, 1.73227, 1.729393, 1.725753, 1.721134, 1.715256, 1.707747, 1.698107, 1.685658, 1.669456, 1.648153, 1.61976, 1.581219, 1.527552]}
 light_yield = 54000
 decay_time = 1000
 dopant = "Tl"
@@ -187,6 +305,7 @@ name = "CsI(Na)"
 formula = "CsI:Na"
 
 [csi.Na.optical]
+refractive_index_dispersion = {wavelengths_nm = [250.0, 280.2165, 314.0853, 352.0475, 394.5982, 442.2918, 495.7499, 555.6693, 622.8309, 698.1101, 782.4881, 877.0644, 983.0719, 1101.892, 1235.0735, 1384.3521, 1551.6735, 1739.2184, 1949.4311, 2185.0514, 2449.1503, 2745.1698, 3076.968, 3448.8694, 3865.7211, 4332.9561, 4856.664, 5443.6706, 6101.6263, 6839.1067, 7665.7235, 8592.2503, 9630.7629, 10794.7966, 12099.5225, 13561.9458, 15201.1266, 17038.4289, 19097.799, 21406.0773, 23993.3484, 26893.3332, 30143.828, 33787.1978, 37870.9279, 42448.2429, 47578.8005, 53329.4691, 59775.1991, 67000.0], n = [2.209377, 2.038658, 1.948334, 1.892185, 1.854323, 1.827527, 1.807959, 1.793356, 1.782289, 1.773805, 1.767246, 1.76214, 1.758146, 1.755007, 1.752532, 1.750574, 1.749019, 1.74778, 1.746787, 1.745986, 1.745334, 1.744795, 1.744339, 1.743944, 1.743589, 1.743253, 1.74292, 1.742572, 1.742191, 1.741757, 1.741246, 1.740631, 1.739881, 1.738954, 1.737801, 1.736359, 1.734549, 1.73227, 1.729393, 1.725753, 1.721134, 1.715256, 1.707747, 1.698107, 1.685658, 1.669456, 1.648153, 1.61976, 1.581219, 1.527552]}
 light_yield = 41000
 decay_time = 630
 dopant = "Na"
@@ -384,10 +503,27 @@ density_unit = "g/cm^3"
 [lso.Ce.optical]
 decay_time = 42
 hygroscopic = false
+# Intrinsic (non-statistical) energy resolution, FWHM %, at the 662 keV 137Cs
+# photopeak. READ THE SOURCE NOTE BEFORE COMPARING THIS TO YOUR OWN NUMBER.
+# R_int is not measured — it is what REMAINS after an assumed photostatistical
+# term is subtracted in quadrature, so it inherits whatever the authors assumed
+# for light collection. Two labs can report different R_int for the same
+# crystal purely by using different photodetectors.
+intrinsic_resolution_pct_at_662keV = { nominal = 7.7, stddev = 1.0 }
+# Photon non-proportionality: LSO:Ce retains ~57% of its 662 keV light yield at
+# 10 keV, i.e. ~43% down. This is the physical cause of R_int.
+non_proportionality = 43.0
 decay_components = [
     { tau_ns = 12.0, fraction = 0.30 },
     { tau_ns = 42.0, fraction = 0.70 },
 ]
+
+[lso.Ce._sources]
+"optical.intrinsic_resolution_pct_at_662keV" = { citation = "chewpraditkul_moszynski_2011", kind = "doi", ref = "10.1016/j.phpro.2011.11.035", license = "proprietary-reference-only", note = "Chewpraditkul & Moszynski, Phys. Procedia 22, 218-226 (2011). LSO:Ce 10x10x5 mm, Crytur, XP5500B PMT. EXTRACTION METHOD, from which the value is inseparable: measured total dE/E = 8.3 +/- 0.3% at 662 keV with N_pe = 6610 photoelectrons; statistical term 2.355*sqrt(1+eps)/sqrt(N_pe) with PMT variance eps = 0.1 gives 3.0%; transfer term assumed zero; the 7.7% residual is attributed to the scintillator. Reproduced from those inputs as 7.72%. THE STDDEV OF 1.0 IS NOT THE PAPER ERROR BAR - the paper quotes +/-0.3 on the TOTAL, not the residual. It is an honest widening for two effects the paper cannot capture: extraction-assumption sensitivity (a different photodetector changes N_pe, hence the statistical term, hence the residual), and sample-to-sample spread, for which Khodyuk & Dorenbos 2012 Table I gives published LSO:Ce total resolution spanning 7.9-11.9% across five references. Paper is open access under CC BY-NC-ND; recorded as proprietary-reference-only because NC-ND is not in this repo redistributable set, so the number is cited rather than the table reproduced." }
+"optical.non_proportionality" = { citation = "khodyuk_dorenbos_2012", kind = "doi", ref = "10.1109/TNS.2012.2221094", license = "proprietary-reference-only", note = "Khodyuk & Dorenbos, IEEE TNS 59 (2012), Table I: LSO:Ce photon non-proportional response at 10 keV is 56.7% of the 662 keV yield, i.e. 43% down; sigma_photon-nPR = 8.40%. Open-access preprint arXiv:1204.4350. The highest-precision underlying electron-response measurement is Khodyuk, de Haas & Dorenbos, doi:10.1109/TNS.2011.2175214 (preprint arXiv:1101.4485), resolving 9-100 keV in 25 eV steps plus K-dip spectroscopy to ~100 eV - but that exists only as figures, so no table is reproduced here." }
+
+[lso.Ce._absent]
+"optical.intrinsic_resolution_pct_at_511keV" = { reason = "not-measured", note = "NO PRIMARY SOURCE REPORTS AN EXTRACTED INTRINSIC RESOLUTION AT 511 keV for LSO:Ce or LYSO:Ce. Extraction is conventionally done at the 662 keV 137Cs photopeak, where the statistical term is smallest and the subtraction most stable. R_int IS energy-dependent - it falls from roughly 15-20% near 16.6 keV to ~7.7% at 662 keV, driven by non-proportionality - so a 511 keV value is not simply the 662 keV one. It can only be read off published curves (Chewpraditkul 2011 Fig. 3; Wanarak et al. 2012 Fig. 3, doi:10.1016/j.proeng.2012.02.010), which are figures behind a paywall, not tables. Reading a value off such a figure would produce a number with the appearance of a citation and none of the substance. Interpolation suggests roughly 7.5-8.5% for LSO:Ce; that is an inference, and it is recorded in this note rather than in the field." }
 
 
 # ============================================================================
@@ -564,6 +700,15 @@ license = "proprietary-reference-only"
 
 # --- BGO ---------------------------------------------------------------------
 
+[bgo._sources]
+"optical.emission_range" = { citation = "luxium_bgo", kind = "vendor", ref = "https://luxiumsolutions.com/radiation-detection-scintillators/crystal-scintillators/bgo-bismuth-germanate", license = "proprietary-reference-only", note = "Practical band support around the 480 nm peak. Neither the Luxium nor the Berkeley Nucleonics BGO datasheet states an emission FWHM — see _absent." }
+"optical.hygroscopic" = { citation = "luxium_bgo", kind = "vendor", ref = "https://luxiumsolutions.com/radiation-detection-scintillators/crystal-scintillators/bgo-bismuth-germanate", license = "proprietary-reference-only", note = "Non-hygroscopic." }
+"optical.refractive_index_dispersion" = {citation = "Williams 1996 (BGO ord. ray) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/Bi4Ge3O12/nk/Williams", license = "CC0", note = "n,k tabulated 50 rows, 305-1000 nm, fetched 2026-08-14"}
+
+[bgo._absent]
+"optical.emission_spectrum" = { reason = "not-measured", note = "Same situation as LYSO: peak (480 nm) is universally published, a tabulated (wavelength, intensity) curve is not, and neither vendor datasheet states an FWHM. Unlike LYSO, BGO's refractive-index dispersion IS available under CC0 (Williams et al. 1996, doi:10.1364/AO.35.003562) — but it is the automated enricher's to write, not this file's. See the comment on [bgo.optical]." }
+"optical.decay_components" = { reason = "not-measured", note = "BGO is dominated by a ~300 ns component with a small fast contribution; one secondary source quotes 45.8 ns (8%) / 365 ns (92%) but it could not be traced to a readable primary. Left absent rather than recorded on a broken citation chain." }
+
 [bgo._sources."optical.light_yield"]
 citation = "weber_monchamp_1973"
 kind = "doi"
@@ -585,6 +730,9 @@ license = "proprietary-reference-only"
 
 # --- NaI / NaI:Tl ------------------------------------------------------------
 
+[nai._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (NaI, 297 K) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/NaI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-40000 nm, fetched 2026-08-14"}
+
 [nai._sources."optical.light_yield"]
 citation = "hofstadter_1948"
 kind = "doi"
@@ -603,6 +751,9 @@ citation = "hofstadter_1948"
 kind = "doi"
 ref = "10.1103/PhysRev.74.100"
 license = "proprietary-reference-only"
+
+[nai.Tl._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (NaI, 297 K) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/NaI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-40000 nm, fetched 2026-08-14"}
 
 [nai.Tl._sources."optical.light_yield"]
 citation = "hofstadter_1948"
@@ -630,6 +781,9 @@ license = "proprietary-reference-only"
 
 # --- CsI / CsI:Tl / CsI:Na ---------------------------------------------------
 
+[csi._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (CsI) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/CsI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-67000 nm, fetched 2026-08-14"}
+
 [csi._sources."optical.light_yield"]
 citation = "holl_lorenz_mageras_1988"
 kind = "doi"
@@ -642,6 +796,9 @@ citation = "holl_lorenz_mageras_1988"
 kind = "doi"
 ref = "10.1109/23.12684"
 license = "proprietary-reference-only"
+
+[csi.Tl._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (CsI) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/CsI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-67000 nm, fetched 2026-08-14"}
 
 [csi.Tl._sources."optical.light_yield"]
 citation = "holl_lorenz_mageras_1988"
@@ -658,6 +815,9 @@ license = "proprietary-reference-only"
 # CsI:Na — Holl 1988 covered CsI(Tl), not CsI(Na). No verified primary cite at
 # this time; keep the audit placeholder. TODO(#170): locate primary CsI:Na
 # scintillation paper (Hofstadter et al. 1950s era? Brinckmann?) and replace.
+[csi.Na._sources]
+"optical.refractive_index_dispersion" = {citation = "Li 1976 (CsI) via refractiveindex.info", kind = "doi", ref = "refractiveindex.info:main/CsI/nk/Li", license = "CC0", note = "n,k tabulated 50 rows, 250-67000 nm, fetched 2026-08-14"}
+
 [csi.Na._sources._default]
 citation = "py-mat-curation-3.x"
 kind = "handbook"

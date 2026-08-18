@@ -33,7 +33,19 @@ SHORT_ALIASES: dict[str, str] = {
     "refractive_index": "optical.refractive_index",
     "light_yield": "optical.light_yield",
     "decay_time": "optical.decay_time",
-    "radiation_length": "optical.radiation_length",
+    # #157 moved radiation_length to NuclearProperties but this alias kept
+    # pointing at `optical.` — so `mat.cite("radiation_length")` silently
+    # resolved to a path no TOML writes, and fell through to `_default`.
+    # Fixed in #243; the qualified form `nuclear.radiation_length` was
+    # always correct and is unaffected.
+    "radiation_length": "nuclear.radiation_length",
+    "interaction_length": "nuclear.interaction_length",
+    "moliere_radius": "nuclear.moliere_radius",
+    "reflectivity": "optical.reflectivity",
+    "absorption_length": "optical.absorption_length",
+    "emission_spectrum": "optical.emission_spectrum",
+    "emission_peak": "optical.emission_peak",
+    "decay_components": "optical.decay_components",
 }
 
 
@@ -91,6 +103,71 @@ class Source:
         if self.note:
             fields.append(f"  annotation = {{{self.note}}}")
         return "@misc{" + self.citation + ",\n" + ",\n".join(fields) + "\n}"
+
+
+# Why a value is missing. Deliberately a closed set — the whole point of a
+# declared absence is that it can be audited, and a free-text reason cannot
+# be counted. Extend the set in a PR, not in a data file.
+ABSENT_REASONS: frozenset[str] = frozenset(
+    {
+        # Nobody has measured it (for this material, to our knowledge).
+        "not-measured",
+        # The property is meaningless here (e.g. `hygroscopic` for a gas).
+        "not-applicable",
+        # The quantity exists but cannot be decomposed the way the schema
+        # asks — e.g. a lumped attenuation length that no published work
+        # splits into matrix-loss and self-absorption channels.
+        "not-separable",
+        # Measured, but the only source forbids redistribution.
+        "proprietary",
+        # We intend to populate it; tracked elsewhere. Use `note` for the ref.
+        "pending",
+    }
+)
+
+
+@dataclass(frozen=True)
+class Absent:
+    """A declared absence for a property path (#243, ADR-0004 §6).
+
+    The negative twin of `Source`. `None` on a property means "no value
+    here" and cannot distinguish *nobody looked* from *we looked and the
+    number does not exist* — but those two facts make a downstream engine
+    behave very differently. A declared absence makes the second case
+    visible and greppable.
+
+    Attributes:
+        reason: One of `ABSENT_REASONS`. Validated at load.
+        note: Human-readable detail — what was searched, what was found
+            instead, which issue tracks it.
+    """
+
+    reason: str
+    note: Optional[str] = None
+
+    @classmethod
+    def from_toml(cls, path: str, data: dict[str, Any]) -> "Absent":
+        """Build from a TOML inline-table. Raises on an unknown reason."""
+        if "reason" not in data:
+            raise ValueError(f"_absent entry {path!r} missing required key 'reason'")
+        reason = data["reason"]
+        if reason not in ABSENT_REASONS:
+            allowed = ", ".join(sorted(ABSENT_REASONS))
+            raise ValueError(
+                f"_absent entry {path!r} has unknown reason {reason!r}; allowed: {allowed}"
+            )
+        return cls(reason=reason, note=data.get("note"))
+
+
+def parse_absent_table(raw: dict[str, Any]) -> dict[str, "Absent"]:
+    """Parse a `[<material>._absent]` TOML table into `{path: Absent}`."""
+    out: dict[str, Absent] = {}
+    for key, val in raw.items():
+        if not isinstance(val, dict):
+            kind = type(val).__name__
+            raise ValueError(f"_absent entry {key!r} must be an inline table, got {kind}")
+        out[key] = Absent.from_toml(key, val)
+    return out
 
 
 def resolve_path(path: str) -> str:

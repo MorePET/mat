@@ -23,6 +23,18 @@ metalness = "metalness"
 # "PNGs" (plural of the PNG file format) — typos rewrites to "ONGs".
 PNGs = "PNGs"
 pngs = "pngs"
+# "tio" is TiO2 (titanium dioxide) reflective paint — it appears in the
+# Geant4 RealSurface finish names (`polishedtioair`, `etchedtioair`,
+# `groundtioair`) and in the catalogue keys derived from them (#243).
+# The default dictionary rewrites it to "to", which would silently rename
+# three measured surfaces.
+tio = "tio"
+TiO = "TiO"
+# G. Hass, "Filmed surfaces for reflecting optics", JOSA 45, 945 (1955) —
+# a surname, cited for evaporated-aluminium reflectance. Rewritten to "Hash".
+Hass = "Hass"
+# "mis-parsed" / "mis-" as a prefix; the dictionary suggests "miss"/"mist".
+mis = "mis"
 # Deliberate misspelling appearing in a test docstring as an example
 # of the kind of TOML key typo the integrity test catches. The actual
 # TOML-side enforcement lives in tests/test_toml_integrity.py — this

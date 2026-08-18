@@ -20,4 +20,11 @@ Add the TOML in `src/pymat/data/<category>.toml`, then add a symlink here:
 ln -s ../../src/pymat/data/<category>.toml mat-rs/data/<category>.toml
 ```
 
-And register the category in `mat-rs/src/db.rs` via the `BUILTIN_DATA` array.
+And register the category in `mat-rs/src/db.rs` via the `BUILTIN_TOML` array.
+
+## `surfaces.toml` is not a material category
+
+`surfaces.toml` (#243) is symlinked here on the same terms, but it holds
+`Surface` entries — measured optical interfaces — not materials. It is embedded
+by `mat-rs/src/surface.rs` and read by `SurfaceDb`, not by `MaterialDb`, so it
+appears in neither `BUILTIN_TOML` nor `CATEGORIES`.

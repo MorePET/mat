@@ -1239,3 +1239,134 @@ kind = "handbook"
 ref = "pdg.lbl.gov:atomic-nuclear/shielding-concrete"
 license = "CC-BY-4.0"
 note = "Z_eff ≈ 11 reported as the working effective-Z value for ordinary/shielding concrete in the PDG-derived simulation community (Geant4, MCNP). Computed via Mayneord-style weighting of the NIST composition; documented but not directly tabulated by NIST/PDG, so cited as a PDG-community-derived scalar."
+
+
+# ============================================================================
+# Barium sulfate (BaSO4) — the classic diffuse reflectance standard (#243)
+# ============================================================================
+# Pressed BaSO4 powder is the reference white Lambertian diffuse reflector; it
+# was the working reflectance standard before sintered PTFE (Spectralon)
+# replaced it for NIST calibrations. In detector construction it is the usual
+# inter-crystal septum material in a PET block.
+#
+# ---------------------------------------------------------------------------
+# READ THIS BEFORE USING THE REFLECTANCE. It is not the number you will see.
+# ---------------------------------------------------------------------------
+# `reflectivity` / `reflectivity_spectrum` below are SEMI-INFINITE reflectance:
+# what a thick pile of this powder returns. That is a genuine material property
+# and it is why the field exists — but NO REAL LAYER IS SEMI-INFINITE, and the
+# reflectance a finite layer delivers is substantially lower because the
+# balance goes straight through.
+#
+#   DO NOT adopt reflectivity_at(nm) unless your layer is optically thick.
+#   DO use the Kubelka-Munk coefficients with YOUR thickness:
+#
+#       R, T, A = opt.km_split_at(420, thickness_cm)   # percent, sums to 100
+#       R       = opt.km_reflectance_at(420, 0.02)     # 0.2 mm -> 91.9%
+#
+# At 420 nm this material gives, per thickness (R / T / A, %):
+#
+#       0.1 mm   85.4 / 14.4 / 0.2
+#       0.2 mm   91.9 /  7.6 / 0.5     <- a typical PET inter-crystal septum
+#       0.3 mm   94.2 /  5.1 / 0.7
+#       0.5 mm   96.0 /  2.9 / 1.1     <- vendor-recommended coating thickness
+#       0.6 mm   96.4 /  2.3 / 1.3
+#       infinite 97.2 /  0   / 2.8     (the R_inf below)
+#
+# That T column is not a rounding error. In a segmented detector it IS the
+# inter-crystal crosstalk channel, and it is also why vendors specify 0.5-0.6 mm
+# — that is where transmission falls under ~3% and the coating starts behaving
+# like the reflectance standard it is made of.
+#
+# ON ANGLE OF INCIDENCE — and on a trap this material creates for itself.
+#
+# km_split_at() takes an optional `incidence_deg` for COLLIMATED light, since a
+# ray at theta crosses d/cos(theta) of material. For a BaSO4 septum, though,
+# the honest default is usually 0, for two reasons that pull the same way:
+#
+#   1. THIS REFLECTOR ERASES THE ANGLE IT IS GIVEN. BaSO4 is Lambertian. After
+#      one contact, direction is cosine-distributed about the septum normal
+#      with mean |cos| = 2/3 exactly, i.e. 48.2 deg, NO MATTER how the light
+#      arrived. So "the crystal is long and thin, therefore light hits the walls
+#      at grazing incidence" is false the moment the wall is this material. The
+#      reflector sets the angle, not the geometry. (That reasoning IS valid for
+#      a specular wall — see the aluminium entry.)
+#
+#   2. KUBELKA-MUNK IS ALREADY A DIFFUSE MODEL. k and s as published are
+#      defined for diffuse flux, with the obliquity averaged in — that is where
+#      the factor 2 in the usual K = 2k convention comes from. Multiplying by
+#      1/cos on top of diffuse coefficients double-counts.
+#
+# Net: for diffusely-illuminated layers use the table above as written. Use
+# `incidence_deg` when you genuinely have a collimated beam at a known angle.
+#
+# A worked consequence, recorded because two independent attempts got it wrong:
+# a 0.2 mm septum in a wrapped scintillator array is NOT optically thick. At
+# the Lambertian mean angle it transmits ~5%, and at normal incidence ~7.6%.
+# Reaching the semi-infinite limit would need ~77 deg, which this reflector's
+# own randomisation prevents.
+#
+# Two further caveats on the semi-infinite values themselves: they are PRESSED
+# POWDER at high packing density in an integrating sphere, and Grum & Luckey's
+# own BaSO4/PVA *paint* measures 0.992 rather than 0.995-0.999. Packing quality
+# and finite thickness are separate effects and both push the same way; the
+# thickness term usually dominates for a detector septum.
+#
+# There is no CC-licensed tabulated (lambda, R) source for BaSO4. The values
+# are cited from the Optica-paywalled primary; facts are not copyrightable, so
+# the numbers travel, but the table is not ours to redistribute.
+
+[baso4]
+name = "Barium Sulfate (BaSO4)"
+formula = "BaSO4"
+tags = ["reflector", "diffuse-reflector", "reflectance-standard", "ceramic"]
+
+[baso4.mechanical]
+density_value = 4.49
+density_unit = "g/cm^3"
+hardness_vickers = 125
+
+[baso4.thermal]
+melting_point_value = 1580
+melting_point_unit = "degC"
+
+[baso4.optical]
+# Total hemispherical diffuse reflectance, PERCENT, pressed powder.
+# Peaks 0.999 at 420-470 nm — squarely on the LYSO emission band.
+reflectivity = 99.9
+reflectivity_spectrum = { wavelengths_nm = [350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500, 550, 600, 650, 700], values = [98.50, 98.79, 99.07, 99.27, 99.39, 99.50, 99.72, 99.90, 99.92, 99.90, 99.90, 99.90, 99.90, 99.89, 99.85, 99.80, 99.80, 99.80, 99.80, 99.80] }
+# Kubelka-Munk two-flux coefficients, k and s in 1/cm. Bundled because they
+# are one model's parameters and are meaningless apart. Use the km_* accessors:
+#   km_reflectance_infinite_at(nm)      -> thick-layer R
+#   km_transmittance_at(nm, cm)         -> FINITE-layer T
+#
+# READ THIS BEFORE ASSUMING A THIN SEPTUM IS OPAQUE. Reflectance converges to
+# its thick-layer limit quickly; transmittance does NOT go to zero anywhere
+# near as fast, and the two are different questions. At 420 nm a 0.2 mm layer
+# at this (pressed-pellet) density still transmits ~7.6%. A "12 scattering
+# lengths, therefore optically thick" argument is about reflectance and does
+# not license ignoring transmission — in a segmented detector that transmission
+# IS the inter-crystal crosstalk channel. Vendors specify 0.5-0.6 mm for
+# coatings, and even 0.6 mm transmits ~2%.
+kubelka_munk = { wavelengths_nm = [300, 500, 700], k = [0.455, 0.100, 0.062], s = [619.0, 572.0, 517.0] }
+scattering_length = 0.00175
+scattering_length_unit = "cm"
+absorption_coefficient = 0.100
+
+[baso4.vis]
+base_color = [1.0, 1.0, 1.0, 1.0]
+metallic = 0.0
+roughness = 0.95
+transmission = 0.0
+
+[baso4._sources]
+"mechanical.density" = { citation = "crc_handbook_baso4", kind = "handbook", ref = "CRC Handbook of Chemistry and Physics, barium sulfate (barite)", license = "proprietary-reference-only", note = "4.49 g/cm^3 for the barite mineral form. A pressed powder septum is far less dense — this is the crystal density, not the packed-layer density." }
+"optical.reflectivity" = { citation = "grum_luckey_1968", kind = "doi", ref = "10.1364/AO.7.002289", license = "proprietary-reference-only", note = "F. Grum & G. W. Luckey, 'Optical Sphere Paint and a Working Standard of Reflectance', Appl. Opt. 7(11) 2289-2294 (1968). THE primary reference for pressed BaSO4 as a reflectance standard. Absolute luminous reflectance 0.995 +/- 0.001 for pressed powder; the paper's own BaSO4/PVA paint formulation measures 0.992. Values cited, table not redistributed." }
+"optical.reflectivity_spectrum" = { citation = "grum_luckey_1968", kind = "doi", ref = "10.1364/AO.7.002289", license = "proprietary-reference-only", note = "Table I, pressed BaSO4 (Eastman white reflectance standard #6091). Transcribed via the Purdue LARS FRData reflectance calibration tables, which reproduce the paper's grid; the 10 nm rows are on Grum & Luckey's own measurement grid. PRESSED POWDER, integrating sphere, total hemispherical — see the header comment before using this for a septum." }
+"optical.scattering_length" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "E. M. Patterson, C. E. Shelden, B. H. Stockton, 'Kubelka-Munk optical properties of a barium sulfate white reflectance standard', Appl. Opt. 16(3) 729-732 (1977). Table I gives s = 619 /cm at 300 nm, 572 /cm at 500 nm, 517 /cm at 700 nm. 1/s at 500 nm = 17.5 um, recorded here as 0.00175 cm. NOTE this is the Kubelka-Munk two-flux scattering coefficient for a compressed pellet, not a single-scatter transport mean free path, and not a photon-transport length in a looser coating." }
+"optical.absorption_coefficient" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "Kubelka-Munk k = 0.100 /cm at 500 nm (0.455 at 300 nm, 0.062 at 700 nm). Same two-flux caveat as the scattering coefficient." }
+
+"optical.kubelka_munk" = { citation = "patterson_1977", kind = "doi", ref = "10.1364/AO.16.000729", license = "proprietary-reference-only", note = "Table I, k and s in 1/cm at 300/500/700 nm. Verified self-consistent: the K-M thick-layer relation R_inf = 1 + k/s - sqrt((k/s)^2 + 2k/s) reproduces Patterson's own published R_inf (0.9624 / 0.9815 / 0.9846) to five decimal places from these coefficients. TWO-SOURCE DISAGREEMENT, READ THIS: these coefficients imply R_inf = 97.18% at 420 nm, while the Grum & Luckey reflectivity_spectrum on this same material gives 99.90% at 420 nm - a 2.7 point gap, and 1.3-2.3 points across 300-700 nm. Both are cited primaries measuring pressed BaSO4; they are different samples at different packing densities from different eras, and neither is wrong. The gap IS the packing-density sensitivity of this material, and it is the physical reason a reflectance value for BaSO4 has to be a bracket rather than a point. Grum & Luckey is the higher-packing, best-case artifact; Patterson sits near the bottom of the 0.98-0.999 bracket. Pick per what you physically have, and say which." }
+
+[baso4._absent]
+"optical.refractive_index" = { reason = "not-applicable", note = "A pressed powder has no single bulk refractive index that is useful for transport — its reflectance comes from multiple scattering between grains and voids, not from a Fresnel step at a smooth surface. The barite crystal is biaxial (n ~ 1.63-1.65), but that is the grain index, not the layer's optical behaviour. Use reflectivity_spectrum, not a Fresnel calculation." }
