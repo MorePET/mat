@@ -125,7 +125,7 @@ means you have a bug to fix on your side.
 And three found while implementing, the first of which is the strongest possible
 argument for your own §P2 point, from the opposite direction:
 
-4. **`[esr.optical] reflectivity = 98.5` had been on disk since #147 and was
+1. **`[esr.optical] reflectivity = 98.5` had been on disk since #147 and was
    silently dropped on every single load** — `OpticalProperties` had no
    `reflectivity` field, so the loader's `hasattr` guard swallowed it. A value
    can be cited, committed, reviewed, and still not be there. A corpus-wide audit
@@ -134,7 +134,7 @@ argument for your own §P2 point, from the opposite direction:
    filed under the wrong group). All fixed, and there is now a test that fails if
    any TOML key anywhere lacks a field to land in.
 
-5. **Every *root* material silently lost its `grade`, `temper`, `treatment` and
+2. **Every *root* material silently lost its `grade`, `temper`, `treatment` and
    `vendor`.** `loader.py` wrote `grade or parent.grade if parent else None`,
    which Python parses as `(grade or parent.grade) if parent else None` — so
    with no parent the whole expression collapsed to `None` and the node's own
@@ -142,7 +142,7 @@ argument for your own §P2 point, from the opposite direction:
    saying `"S-200F"`. Eleven grades and six vendors across the corpus. Child
    materials were unaffected, which is why it survived this long.
 
-6. **The Rust side merged child `tags` over the parent's instead of unioning
+3. **The Rust side merged child `tags` over the parent's instead of unioning
    them**, so `stainless.s316L` reported 4 tags where py-mat reports 7 —
    a divergence from the #132 inherit-and-extend rule.
 
@@ -501,8 +501,10 @@ Grum & Luckey 1968 (doi:10.1364/AO.7.002289), the primary reference for pressed
 BaSO4 as a reflectance standard: **0.999 at 420–470 nm**, 0.985 at 350 nm.
 strata's working estimate was **0.97**.
 
-    0.970 ^ 40 = 0.296
-    0.999 ^ 40 = 0.961
+```
+0.970 ^ 40 = 0.296
+0.999 ^ 40 = 0.961
+```
 
 That is not a refinement, it is a different model. Three caveats travel with it
 in the TOML header, and they matter more than the headline: the cited values are
@@ -652,7 +654,9 @@ predicts something outside the model it was fitted to.
 The `--write` enricher run put Rakić CC0 n,k on disk, so reflectance became
 derivable rather than typed:
 
-    OpticalProperties.normal_reflectance_at(420)  ->  92.46 %
+```
+OpticalProperties.normal_reflectance_at(420)  ->  92.46 %
+```
 
 92.29% mean over 400–500 nm, with the interband dip at 800 nm (now a test —
 if either the CC0 pull or the Fresnel derivation breaks, that shape is what
