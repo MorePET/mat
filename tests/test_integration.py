@@ -66,7 +66,10 @@ class TestApplyToShape:
 
         material = shape.material
         assert "LYSO" in material.name
-        assert material.properties.optical.light_yield == 34000
+        # 33200 ph/MeV, corrected from an uncited 34000 in #243 — the Luxium
+        # (formerly Saint-Gobain) PreLude 420 data sheet states 33200, and the
+        # value now carries that citation.
+        assert material.properties.optical.light_yield == 33200
 
 
 class TestGltfMaterialPassthrough:
