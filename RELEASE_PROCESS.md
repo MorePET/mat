@@ -31,8 +31,8 @@ A `feat:` touching only `mat-rs/**` triggers a Rust Release PR; a `feat:` touchi
 
 ### Registry credentials
 
-Both registries use **trusted publishing** (OIDC). Neither has a long-lived API
-token in repo secrets, so there is nothing to rotate and nothing that expires:
+Both registries use **trusted publishing** (OIDC). Neither publishing job reads
+a long-lived API token, so there is nothing to rotate and nothing that expires:
 
 | Registry  | Publishing job                       | Environment | Token exchanged by             |
 |-----------|--------------------------------------|-------------|--------------------------------|
@@ -45,16 +45,39 @@ the registry's trusted-publisher entry names. The crates.io entry lives at
 name, the workflow **filename**, and the environment name — renaming any of the
 three breaks publishing until the entry is updated to match.
 
+Trusted publishing authenticates the *workflow*, not the *ref* — the OIDC claim
+says nothing about which commit is checked out. What constrains that is each
+environment's **deployment branch policy**:
+
+| Environment | Refs allowed to deploy   |
+|-------------|--------------------------|
+| `pypi`      | `main`, tags `v*`        |
+| `crates-io` | `main`, tags `rs-materials/v*` |
+
+Without it, `workflow_dispatch` from any branch would publish whatever that
+branch's `pyproject.toml` / `Cargo.toml` claimed as its version. `main` is
+allowed because it is the retry path below; nothing else is.
+
 `vars.CRATES_IO_PUBLISH_ENABLED` remains as a kill switch independent of
 credentials (`gh variable set CRATES_IO_PUBLISH_ENABLED --body false`).
 
+The dead `CARGO_REGISTRY_TOKEN` secret is scheduled for deletion once the first
+trusted publish succeeds; it is already invalid and no workflow reads it.
+
 ### Retrying a failed publish
 
-Re-running a failed tag run replays the workflow file **as it was at that tag**,
-so fixing the workflow has no effect on a re-run. Both publish workflows
-therefore accept `workflow_dispatch`: land the fix on `main`, then
-`gh workflow run release-rs-materials.yml --ref main`. The tag does not need to
-be deleted or moved.
+Re-run from the tag, which is what pins the version being published:
+
+```console
+gh workflow run release-rs-materials.yml --ref rs-materials/v0.3.0
+```
+
+The one exception is a failure caused by the **workflow file itself**. A tag ref
+replays the workflow as it was at that tag, so the fix would not be picked up —
+land the fix on `main` and dispatch `--ref main` instead. That publishes the
+version in `main`'s manifest, which is only the version you want while `main`
+still points at the release commit. Check before dispatching. Either way the tag
+does not need to be deleted or moved.
 
 ## Why This Works
 

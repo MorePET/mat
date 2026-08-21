@@ -37,8 +37,17 @@ jobs:
     # Mirrors the `pypi` environment used by release.yml — a named environment
     # is what a crates.io Trusted Publisher can be scoped to, and it gives one
     # place to add an approval rule later without touching this file.
+    # Trusted Publishing does *not* pin the ref, so the environment carries a
+    # deployment branch policy (`main` + `rs-materials/v*` only) — that, not
+    # the OIDC claim, is what stops a dispatch from an arbitrary branch from
+    # publishing whatever its Cargo.toml happens to say.
     environment: crates-io
+    # Job-level `permissions` REPLACES the workflow-level block, it does not
+    # merge with it — so `contents: read` has to be restated here or checkout
+    # would fall back to an anonymous clone (works today only because the repo
+    # is public).
     permissions:
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
