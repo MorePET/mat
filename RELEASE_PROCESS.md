@@ -29,6 +29,33 @@ A `feat:` touching only `mat-rs/**` triggers a Rust Release PR; a `feat:` touchi
 
 `release-please.yml` uses the `RELEASE_APP` GitHub App (same App used by `sync-main-to-dev.yml`). This is required — tags pushed by `GITHUB_TOKEN` are inert under GitHub's recursion-protection and would silently skip the publish workflows.
 
+### Registry credentials
+
+Both registries use **trusted publishing** (OIDC). Neither has a long-lived API
+token in repo secrets, so there is nothing to rotate and nothing that expires:
+
+| Registry  | Publishing job                       | Environment | Token exchanged by             |
+|-----------|--------------------------------------|-------------|--------------------------------|
+| PyPI      | `release.yml`                        | `pypi`      | `pypa/gh-action-pypi-publish`  |
+| crates.io | `release-rs-materials.yml`           | `crates-io` | `rust-lang/crates-io-auth-action` |
+
+Each job needs `permissions: id-token: write` and must run in the environment
+the registry's trusted-publisher entry names. The crates.io entry lives at
+<https://crates.io/crates/rs-materials/settings> and pins repository owner and
+name, the workflow **filename**, and the environment name — renaming any of the
+three breaks publishing until the entry is updated to match.
+
+`vars.CRATES_IO_PUBLISH_ENABLED` remains as a kill switch independent of
+credentials (`gh variable set CRATES_IO_PUBLISH_ENABLED --body false`).
+
+### Retrying a failed publish
+
+Re-running a failed tag run replays the workflow file **as it was at that tag**,
+so fixing the workflow has no effect on a re-run. Both publish workflows
+therefore accept `workflow_dispatch`: land the fix on `main`, then
+`gh workflow run release-rs-materials.yml --ref main`. The tag does not need to
+be deleted or moved.
+
 ## Why This Works
 
 Projects can now use:

@@ -8,6 +8,9 @@ name: Release
 on:  # yamllint disable-line rule:truthy
   push:
     tags: ["v*"]
+  # Retry path: re-running a failed tag run replays the workflow file as it was
+  # at that tag, so a fix here only takes effect on a fresh run.
+  workflow_dispatch:
 
 permissions:
   contents: read

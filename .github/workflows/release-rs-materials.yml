@@ -3,10 +3,16 @@ name: Release rs-materials
 # Triggered by tags pushed by release-please (release-please.yml).
 # Tests + publishes the Rust crate to crates.io. The GitHub Release is created
 # by release-please — do not duplicate it here.
+#
+# `workflow_dispatch` exists so a failed publish can be retried against a ref
+# without deleting and re-pushing the tag. Re-running a failed *tag* run replays
+# the workflow file as it was at that tag, so a fix to this file only takes
+# effect on a fresh run.
 
 on:  # yamllint disable-line rule:truthy
   push:
     tags: ["rs-materials/v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,21 +23,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      # --locked: fail on a stale Cargo.lock here rather than have `cargo
+      # publish --locked` discover it after the test gate has already passed.
       - name: Run tests
-        run: cargo test --manifest-path mat-rs/Cargo.toml
+        run: cargo test --manifest-path mat-rs/Cargo.toml --locked
 
   publish-crates-io:
     needs: test
     runs-on: ubuntu-latest
-    # Gated until `CARGO_REGISTRY_TOKEN` is configured and downstream consumers
-    # are coordinated. Flip on via:
-    #   gh variable set CRATES_IO_PUBLISH_ENABLED --body true
-    # Tracking issue: MorePET/mat (search label:release-infra)
+    # Kill switch, independent of credentials. Flip off via:
+    #   gh variable set CRATES_IO_PUBLISH_ENABLED --body false
     if: vars.CRATES_IO_PUBLISH_ENABLED == 'true'
+    # Mirrors the `pypi` environment used by release.yml — a named environment
+    # is what a crates.io Trusted Publisher can be scoped to, and it gives one
+    # place to add an approval rule later without touching this file.
+    environment: crates-io
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      # Trusted Publishing (OIDC): exchanges the job's GitHub identity for a
+      # crates.io token valid ~30 min, revoked by this action's post step. No
+      # long-lived `CARGO_REGISTRY_TOKEN` secret to rotate or leak.
+      # Configured at https://crates.io/crates/rs-materials/settings — the
+      # publisher entry must name this repo, this workflow filename, and the
+      # `crates-io` environment above.
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+      # --locked, not --allow-dirty: `cargo publish` refreshes the crates.io
+      # index, which can rewrite the tracked `mat-rs/Cargo.lock` and trip
+      # cargo's own dirty-tree check. The old fix silenced the check, which
+      # would also have silenced a genuinely modified tree. This one keeps the
+      # check and removes the cause.
       - name: Publish to crates.io
-        run: cargo publish --manifest-path mat-rs/Cargo.toml --allow-dirty
+        run: cargo publish --manifest-path mat-rs/Cargo.toml --locked
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
