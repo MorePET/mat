@@ -77,15 +77,22 @@ trusted publish succeeds; it is already invalid and no workflow reads it.
 Re-run from the tag, which is what pins the version being published:
 
 ```console
-gh workflow run release-rs-materials.yml --ref rs-materials/v0.3.0
+gh workflow run release-rs-materials.yml --ref rs-materials/vX.Y.Z
 ```
 
-The one exception is a failure caused by the **workflow file itself**. A tag ref
-replays the workflow as it was at that tag, so the fix would not be picked up —
-land the fix on `main` and dispatch `--ref main` instead. That publishes the
-version in `main`'s manifest, which is only the version you want while `main`
-still points at the release commit. Check before dispatching. Either way the tag
-does not need to be deleted or moved.
+Two cases where that does not work:
+
+- **The workflow file itself is the bug.** A tag ref replays the workflow as it
+  was at that tag, so the fix would not be picked up.
+- **The tag predates `workflow_dispatch:`** on that workflow. `gh workflow run`
+  reads the trigger from the target ref, so a tag whose workflow file has no
+  dispatch trigger cannot be dispatched at all — this applies to every tag
+  before `rs-materials/v0.3.0`.
+
+In both cases: land the fix on `main` and dispatch `--ref main`. That publishes
+the version in `main`'s manifest, which is the version you want only while
+`main` still points at the release commit — check before dispatching. Either
+way the tag never needs to be deleted or moved.
 
 ## Why This Works
 
