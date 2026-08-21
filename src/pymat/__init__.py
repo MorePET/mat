@@ -71,7 +71,7 @@ from .vis import FinishEntry, Vis, VisDeltas
 _MaterialsClass.__module__ = "pymat"
 materials = _MaterialsClass()
 
-__version__ = "3.10.0"  # x-release-please-version
+__version__ = "3.11.0"  # x-release-please-version
 __all__ = [
     "Material",
     "AllProperties",
