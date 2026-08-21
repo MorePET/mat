@@ -69,8 +69,9 @@ tag pushes will fail with *"Branch not allowed to deploy"* after a green build.
 `vars.CRATES_IO_PUBLISH_ENABLED` remains as a kill switch independent of
 credentials (`gh variable set CRATES_IO_PUBLISH_ENABLED --body false`).
 
-The dead `CARGO_REGISTRY_TOKEN` secret is scheduled for deletion once the first
-trusted publish succeeds; it is already invalid and no workflow reads it.
+There are no registry secrets left in the repo. `CARGO_REGISTRY_TOKEN` was
+deleted after the first trusted publish (`rs-materials` 0.3.0, 2026-08-21);
+`gh secret list` should stay empty of registry credentials.
 
 ### Retrying a failed publish
 
