@@ -10,6 +10,11 @@ name: Publish pymat-mcp
 on:  # yamllint disable-line rule:truthy
   push:
     tags: ["pymat-mcp/v*"]
+  # Retry path: re-running a failed tag run replays the workflow file as it was
+  # at that tag, so a fix here only takes effect on a fresh run. Refs a
+  # dispatch may publish from are constrained by the `pypi` environment's
+  # deployment branch policy, not by this trigger.
+  workflow_dispatch:
 
 permissions:
   contents: read
