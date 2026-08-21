@@ -37,6 +37,7 @@ a long-lived API token, so there is nothing to rotate and nothing that expires:
 | Registry  | Publishing job                       | Environment | Token exchanged by             |
 |-----------|--------------------------------------|-------------|--------------------------------|
 | PyPI      | `release.yml`                        | `pypi`      | `pypa/gh-action-pypi-publish`  |
+| PyPI      | `publish-mcp.yml`                    | `pypi`      | `pypa/gh-action-pypi-publish`  |
 | crates.io | `release-rs-materials.yml`           | `crates-io` | `rust-lang/crates-io-auth-action` |
 
 Each job needs `permissions: id-token: write` and must run in the environment
@@ -49,14 +50,21 @@ Trusted publishing authenticates the *workflow*, not the *ref* — the OIDC clai
 says nothing about which commit is checked out. What constrains that is each
 environment's **deployment branch policy**:
 
-| Environment | Refs allowed to deploy   |
-|-------------|--------------------------|
-| `pypi`      | `main`, tags `v*`        |
-| `crates-io` | `main`, tags `rs-materials/v*` |
+| Environment | Refs allowed to deploy                        |
+|-------------|-----------------------------------------------|
+| `pypi`      | `main`, tags `v*` and `pymat-mcp/v*`          |
+| `crates-io` | `main`, tags `rs-materials/v*`                |
 
 Without it, `workflow_dispatch` from any branch would publish whatever that
 branch's `pyproject.toml` / `Cargo.toml` claimed as its version. `main` is
 allowed because it is the retry path below; nothing else is.
+
+A policy pattern must be added for **every** tag prefix that deploys to the
+environment — `*` does not cross `/`, so `v*` matches neither `pymat-mcp/v0.1.0`
+nor `rs-materials/v0.3.0`. Two PyPI projects share the `pypi` environment
+(`release.yml` and `publish-mcp.yml`), which is why it carries two tag patterns.
+Adding a third publishing workflow means adding its tag pattern here, or its
+tag pushes will fail with *"Branch not allowed to deploy"* after a green build.
 
 `vars.CRATES_IO_PUBLISH_ENABLED` remains as a kill switch independent of
 credentials (`gh variable set CRATES_IO_PUBLISH_ENABLED --body false`).
