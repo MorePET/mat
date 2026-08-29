@@ -1,11 +1,15 @@
 name: Release rs-materials
 
+# Triggered by tags pushed by release-please (release-please.yml).
+# Tests + publishes the Rust crate to crates.io. The GitHub Release is created
+# by release-please — do not duplicate it here.
+
 on:  # yamllint disable-line rule:truthy
   push:
     tags: ["rs-materials/v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test:
@@ -19,6 +23,11 @@ jobs:
   publish-crates-io:
     needs: test
     runs-on: ubuntu-latest
+    # Gated until `CARGO_REGISTRY_TOKEN` is configured and downstream consumers
+    # are coordinated. Flip on via:
+    #   gh variable set CRATES_IO_PUBLISH_ENABLED --body true
+    # Tracking issue: MorePET/mat (search label:release-infra)
+    if: vars.CRATES_IO_PUBLISH_ENABLED == 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -26,15 +35,3 @@ jobs:
         run: cargo publish --manifest-path mat-rs/Cargo.toml --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-  github-release:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true

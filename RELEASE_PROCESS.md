@@ -1,39 +1,33 @@
 # Release Process for mat
 
-## Creating a New Release
+Releases are driven by [release-please](https://github.com/googleapis/release-please) — see `.github/workflows/release-please.yml`. **Do not bump versions or push tags by hand.**
 
-When releasing a new version of mat:
+## How a release happens
 
-1. **Update version numbers:**
+1. Land conventional commits on `dev` (`feat:`, `fix:`, `feat!:`, etc. — the commit-msg hook enforces the format).
+2. Open a `release/x.y.z → main` PR (manual gate; CI runs the full check matrix).
+3. Merge to `main`. On every push to main, release-please re-evaluates the commit history since the last tag and (per package) opens or updates a **Release PR** titled `chore(main): release X.Y.Z`. The PR bumps `pyproject.toml` + `src/pymat/__init__.py` (Python) or `mat-rs/Cargo.toml` (Rust) and prepends a CHANGELOG section generated from commits.
+4. Review the Release PR — version computation:
+   - `feat:` → minor bump
+   - `fix:` → patch bump
+   - `feat!:` or `BREAKING CHANGE:` footer → major bump
+   - `chore:`, `docs:`, `ci:`, `test:`, `style:` → no release
+5. Merge the Release PR. Release-please pushes the tag (`vX.Y.Z` for Python, `rs-materials/vX.Y.Z` for Rust). The tag push triggers `release.yml` (PyPI) or `release-rs-materials.yml` (crates.io). Release-please also creates the GitHub Release with auto-generated notes.
 
-   ```bash
-   cd /Users/larsgerchow/Projects/mat
+## Two independent packages
 
-   # Edit version in:
-   # - pyproject.toml
-   # - src/pymat/__init__.py
-   ```
+Each package has its own Release PR, version, and tag:
 
-2. **Commit and tag:**
+| Package        | Path     | Tag format             | Publishes to |
+|----------------|----------|------------------------|--------------|
+| `py-materials` | `.`      | `vX.Y.Z`               | PyPI         |
+| `rs-materials` | `mat-rs` | `rs-materials/vX.Y.Z`  | crates.io    |
 
-   ```bash
-   git add -A
-   git commit -m "Release vX.Y.Z - Description"
-   git tag -a vX.Y.Z -m "Release vX.Y.Z"
-   ```
+A `feat:` touching only `mat-rs/**` triggers a Rust Release PR; a `feat:` touching `src/pymat/**` triggers a Python Release PR. Commits affecting both produce two Release PRs.
 
-3. **Update the 'latest' tag (force overwrite):**
+## Auth
 
-   ```bash
-   git tag -f -a latest -m "Latest release"
-   ```
-
-4. **Push everything:**
-
-   ```bash
-   git push origin main --tags
-   git push -f origin latest  # Force push to update 'latest' tag
-   ```
+`release-please.yml` uses the `RELEASE_APP` GitHub App (same App used by `sync-main-to-dev.yml`). This is required — tags pushed by `GITHUB_TOKEN` are inert under GitHub's recursion-protection and would silently skip the publish workflows.
 
 ## Why This Works
 

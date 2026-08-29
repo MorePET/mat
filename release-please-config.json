@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separate-pull-requests": true,
+  "include-v-in-tag": true,
+  "pull-request-header": ":robot: Automated release. Merging this PR creates a tag, which fires the publish workflow (PyPI for `py-materials`, crates.io for `rs-materials`).\n\n### Release Reviewer Checklist\n\n_Check before merging. PR Hygiene CI is intentionally skipped on release-please PRs — these boxes are for the human merging the release._\n\n- [ ] Version bump matches expected scope (no surprise major from a stray `feat!:`)\n- [ ] CHANGELOG entries read correctly and credit external contributors\n- [ ] No security-sensitive deps changed without prior review\n- [ ] Downstream consumers (build123d, ocp_vscode, mat-vis-client) still compatible\n- [ ] Migration notes (if breaking change) present and linked from CHANGELOG\n- [ ] All required CI checks green",
+  "changelog-sections": [
+    { "type": "feat", "section": "Added" },
+    { "type": "fix", "section": "Fixed" },
+    { "type": "refactor", "section": "Changed" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "chore", "section": "Chore", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "style", "section": "Style", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "package-name": "py-materials",
+      "component": "py-materials",
+      "include-component-in-tag": false,
+      "extra-files": [
+        {
+          "type": "python",
+          "path": "src/pymat/__init__.py"
+        }
+      ]
+    },
+    "mat-rs": {
+      "release-type": "rust",
+      "package-name": "rs-materials",
+      "component": "rs-materials",
+      "include-component-in-tag": true,
+      "tag-separator": "/"
+    }
+  }
+}
